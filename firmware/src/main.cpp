@@ -1,5 +1,5 @@
 #include "main.h"
-#include "artnet.h"
+#include "led_control.h"
 #include "globals.h"
 
 byte mac[] = MAC_ADDRESS;
@@ -8,6 +8,7 @@ Artnet artnet;
 
 void setup()
 {
+    Wire.begin();
     Serial.begin(115200);
 
     Serial.println("Fetching IP Address via DHCP");
@@ -27,7 +28,9 @@ void setup()
 
     IPAddress address = Ethernet.localIP();
     byte addressBytes[] = {address[0], address[1], address[2], address[3]};
-    artnet = initializeArtnet(mac, addressBytes, addressBytes);
+    artnet = initializeLEDs(mac, addressBytes, addressBytes);
+
+    initializeSensors();
 }
 
 void loop()
@@ -35,6 +38,8 @@ void loop()
     checkDHCPStatus();
     artnet.read();
 }
+
+#pragma region DHCP
 
 void checkDHCPStatus()
 {
@@ -91,3 +96,41 @@ bool initializeDHCP()
 
     return true;
 }
+
+#pragma endregion
+
+#pragma region Sensors
+
+const uint8_t currentSensor1Address = CURRENT_SENSOR_1_ADDRESS;
+INA226 *currentSensor1 = new INA226(currentSensor1Address);
+
+const uint8_t currentSensor2Address = CURRENT_SENSOR_2_ADDRESS;
+INA226 *currentSensor2 = new INA226(currentSensor2Address);
+
+const uint8_t currentSensor3Address = CURRENT_SENSOR_3_ADDRESS;
+INA226 *currentSensor3 = new INA226(currentSensor3Address);
+
+void initializeSensors()
+{
+    initializeCurrentSensor(currentSensor1);
+    initializeCurrentSensor(currentSensor2);
+    initializeCurrentSensor(currentSensor3);
+}
+
+bool initializeCurrentSensor(INA226 *sensor)
+{
+    if (sensor->begin())
+    {
+        return false;
+    }
+
+    switch (sensor->setMaxCurrentShunt(12.0F, 0.006F))
+    {
+    case INA226_ERR_NONE:
+        return true;
+    default:
+        return false;
+    }
+}
+
+#pragma endregion
