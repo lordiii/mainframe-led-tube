@@ -3,12 +3,14 @@
 
 byte mac[] = MAC_ADDRESS;
 
+IntervalTimer artnetTimer;
 Artnet artnet;
 
 void setup()
 {
     Wire.begin();
     Serial.begin(115200);
+    artnetTimer.begin(onArtnetReadTimer, 8000);
 
     Serial.println("Fetching IP Address via DHCP");
     bool hasIP = initializeDHCP();
@@ -32,10 +34,30 @@ void setup()
     initializeSensors();
 }
 
+bool checkArtnet = false;
+long lastMillis = 0;
 void loop()
 {
-    checkDHCPStatus();
-    artnet.read();
+    if (checkArtnet)
+    {
+        artnet.read();
+        noInterrupts();
+        checkArtnet = false;
+        interrupts();
+    }
+    else
+    {
+        checkDHCPStatus();
+
+        // Perform Measurements every 2.5 second
+        if (millis() - lastMillis > 2500)
+        {
+            // TODO: measureCurrent();
+            // TODO: measureTemperatures();
+        }
+
+        // TODO: Update Info Display
+    }
 }
 
 #pragma region Network
@@ -137,10 +159,10 @@ bool initializeCurrentSensor(INA226 *sensor)
 #pragma region LED Control
 
 /**
- * 
+ *
  * Heavily Based on the ArtnetOctoWS2811 Example of https://github.com/natcl/Artnet/
- * 
-*/
+ *
+ */
 
 // OctoWS2811 settings
 const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
@@ -176,6 +198,11 @@ Artnet initializeLEDs(byte mac[4], byte ipAddress[4], byte broadcast[4])
     artnet.setArtDmxCallback(onDmxFrame);
 
     return artnet;
+}
+
+void onArtnetReadTimer()
+{
+    checkArtnet = true;
 }
 
 void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *data, IPAddress remoteIP)
@@ -248,4 +275,4 @@ void testLEDColors()
     leds.show();
 }
 
-#pragma endregion
+#pragma endregions

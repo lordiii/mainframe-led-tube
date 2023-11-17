@@ -24,6 +24,7 @@ bool initializeCurrentSensor(INA226 *sensor);
 
 Artnet initializeLEDs(byte mac[4], byte ipAddress[4], byte broadcast[4]);
 void testLEDColors();
+void onArtnetReadTimer();
 void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* data, IPAddress remoteIP);
 
 #pragma endregion
