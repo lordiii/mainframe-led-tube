@@ -1,0 +1,9 @@
+#define LED_STRIP_AMOUNT 8
+#define LED_PINS {2, 3, 4, 5, 6, 7, 8}
+
+#define LED_PER_STRIP 32 * 8
+#define LED_CONFIGURATION (WS2811_GRB | WS2811_800kHz);
+
+#define ARTNET_START_UNIVERSE 0
+
+#define MAC_ADDRESS {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED}
