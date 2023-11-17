@@ -52,6 +52,7 @@ void loop()
         // Perform Measurements every 2.5 second
         if (millis() - lastMillis > 2500)
         {
+            lastMillis = millis();
             // TODO: measureCurrent();
             // TODO: measureTemperatures();
         }
