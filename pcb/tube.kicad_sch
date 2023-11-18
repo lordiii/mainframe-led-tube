@@ -5598,31 +5598,6 @@
     )
   )
 
-  (symbol (lib_id "power:+5V") (at 198.12 201.93 180) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid 2b7de151-7de1-4450-9bb8-f995147dc1c7)
-    (property "Reference" "#PWR040" (at 198.12 198.12 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Value" "+5V" (at 198.12 205.74 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (property "Footprint" "" (at 198.12 201.93 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "" (at 198.12 201.93 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid ac93efc3-4ac0-4b1f-b8ee-efb3f3ba640e))
-    (instances
-      (project "tube"
-        (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
-          (reference "#PWR040") (unit 1)
-        )
-      )
-    )
-  )
-
   (symbol (lib_id "Connector:RJ45_Shielded") (at 67.31 173.99 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 2f05dabf-8655-4f60-8258-8beabda85b70)
@@ -9143,6 +9118,31 @@
       (project "tube"
         (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
           (reference "R15") (unit 1)
+        )
+      )
+    )
+  )
+
+  (symbol (lib_id "power:+3.3V") (at 198.12 201.93 180) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid fbd568dc-0a2f-4dea-a787-adb8d40c97af)
+    (property "Reference" "#PWR040" (at 198.12 198.12 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3.3V" (at 198.12 205.74 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 198.12 201.93 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 198.12 201.93 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid 59afd8b7-6223-48f8-8223-926b291e7dc5))
+    (instances
+      (project "tube"
+        (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
+          (reference "#PWR040") (unit 1)
         )
       )
     )
