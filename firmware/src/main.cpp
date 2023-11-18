@@ -3,14 +3,12 @@
 
 byte mac[] = MAC_ADDRESS;
 
-IntervalTimer artnetTimer;
 Artnet artnet;
 
 void setup()
 {
     Wire.begin();
     Serial.begin(115200);
-    artnetTimer.begin(onArtnetReadTimer, 8000);
 
     Serial.println("Fetching IP Address via DHCP");
     bool hasIP = initializeDHCP();
@@ -34,30 +32,18 @@ void setup()
     initializeSensors();
 }
 
-bool checkArtnet = false;
 long lastMillis = 0;
 void loop()
 {
-    if (checkArtnet)
+    // Perform other tasks every 2.5 second
+    if ((millis() - lastMillis) < 2500)
     {
         artnet.read();
-        noInterrupts();
-        checkArtnet = false;
-        interrupts();
     }
     else
     {
+        lastMillis = millis();
         checkDHCPStatus();
-
-        // Perform Measurements every 2.5 second
-        if (millis() - lastMillis > 2500)
-        {
-            lastMillis = millis();
-            // TODO: measureCurrent();
-            // TODO: measureTemperatures();
-        }
-
-        // TODO: Update Info Display
     }
 }
 
@@ -199,11 +185,6 @@ Artnet initializeLEDs(byte mac[4], byte ipAddress[4], byte broadcast[4])
     artnet.setArtDmxCallback(onDmxFrame);
 
     return artnet;
-}
-
-void onArtnetReadTimer()
-{
-    checkArtnet = true;
 }
 
 void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *data, IPAddress remoteIP)
