@@ -5078,6 +5078,31 @@
     )
   )
 
+  (symbol (lib_id "power:+3.3V") (at 186.69 148.59 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid 12ed588e-e68d-4a7f-a4df-7f8e400aa6cd)
+    (property "Reference" "#PWR028" (at 186.69 152.4 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3.3V" (at 186.69 144.78 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 186.69 148.59 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 186.69 148.59 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid 7fc99700-0809-4f43-aaed-6afeca730c6b))
+    (instances
+      (project "tube"
+        (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
+          (reference "#PWR028") (unit 1)
+        )
+      )
+    )
+  )
+
   (symbol (lib_id "power:GND") (at 237.49 194.31 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 131e315c-d492-4df8-97d9-e007d3af9d5d)
@@ -5764,31 +5789,6 @@
       (project "tube"
         (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
           (reference "J10") (unit 1)
-        )
-      )
-    )
-  )
-
-  (symbol (lib_id "power:+5V") (at 186.69 179.07 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid 3a686062-d486-40fd-bd4e-268dfacc4986)
-    (property "Reference" "#PWR038" (at 186.69 182.88 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Value" "+5V" (at 186.69 176.53 90)
-      (effects (font (size 1.27 1.27)) (justify left))
-    )
-    (property "Footprint" "" (at 186.69 179.07 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "" (at 186.69 179.07 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid 7ea2e6bb-4d35-45ab-bf92-3f5b70b6af11))
-    (instances
-      (project "tube"
-        (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
-          (reference "#PWR038") (unit 1)
         )
       )
     )
@@ -6804,6 +6804,31 @@
     )
   )
 
+  (symbol (lib_id "power:+3.3V") (at 186.69 179.07 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid 6b0902ac-ee15-42b1-b3a5-edb668913927)
+    (property "Reference" "#PWR038" (at 186.69 182.88 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3.3V" (at 186.69 175.26 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 186.69 179.07 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 186.69 179.07 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid aa05de49-672e-4999-8803-8e43b1e6600e))
+    (instances
+      (project "tube"
+        (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
+          (reference "#PWR038") (unit 1)
+        )
+      )
+    )
+  )
+
   (symbol (lib_id "power:+5V") (at 19.05 203.2 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 6b73d733-bc99-4d27-acb6-f236f4208004)
@@ -7205,31 +7230,6 @@
       (project "tube"
         (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
           (reference "R11") (unit 1)
-        )
-      )
-    )
-  )
-
-  (symbol (lib_id "power:+5V") (at 186.69 148.59 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid 888dfaad-f6ee-49ea-b71c-4f118bc1aa4c)
-    (property "Reference" "#PWR033" (at 186.69 152.4 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Value" "+5V" (at 186.69 146.05 90)
-      (effects (font (size 1.27 1.27)) (justify left))
-    )
-    (property "Footprint" "" (at 186.69 148.59 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "" (at 186.69 148.59 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid 3863fb4e-070b-4c84-8e37-8b2e347cf62c))
-    (instances
-      (project "tube"
-        (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
-          (reference "#PWR033") (unit 1)
         )
       )
     )
@@ -7692,31 +7692,6 @@
     )
   )
 
-  (symbol (lib_id "power:+5V") (at 186.69 118.11 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid a505b3f2-a2d7-4b66-a9ff-9ac8295ccbcd)
-    (property "Reference" "#PWR028" (at 186.69 121.92 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Value" "+5V" (at 186.69 115.57 90)
-      (effects (font (size 1.27 1.27)) (justify left))
-    )
-    (property "Footprint" "" (at 186.69 118.11 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "" (at 186.69 118.11 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid c0c566a9-558a-4671-b07c-1850389306d0))
-    (instances
-      (project "tube"
-        (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
-          (reference "#PWR028") (unit 1)
-        )
-      )
-    )
-  )
-
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 165.1 25.4 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid a51a3fa9-0f3e-44cd-a9c1-d0e371090dae)
@@ -7890,6 +7865,31 @@
       (project "tube"
         (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
           (reference "#PWR019") (unit 1)
+        )
+      )
+    )
+  )
+
+  (symbol (lib_id "power:+3.3V") (at 186.69 118.11 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid afd07674-3b5f-42d3-bedf-492359adaf34)
+    (property "Reference" "#PWR033" (at 186.69 121.92 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3.3V" (at 186.69 114.3 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 186.69 118.11 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 186.69 118.11 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid 0ca5e70e-f3dd-4273-bc5f-8c270857d93f))
+    (instances
+      (project "tube"
+        (path "/17a681e7-f555-4501-b0f6-333651e2bfd6"
+          (reference "#PWR033") (unit 1)
         )
       )
     )
