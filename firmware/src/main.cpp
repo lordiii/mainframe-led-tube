@@ -35,12 +35,14 @@ void setup()
 
     Wire.begin();
     Serial.begin(115200);
-
+    while (!Serial)
+    {
+    }
     Ethernet.begin();
-    //while (!Ethernet.waitForLocalIP(15000))
+    // while (!Ethernet.waitForLocalIP(15000))
     //{
-    //    Serial.println("Waiting for IP Address");
-    //}
+    //     Serial.println("Waiting for IP Address");
+    // }
 
     Serial.println("Current IP: ");
     Serial.print(Ethernet.localIP()[0]);
@@ -55,21 +57,31 @@ void setup()
     leds.show();
     testLEDColors();
 
-
     Serial.println("Initializing Current Sensors");
     initializeCurrentSensor(currentSensor1);
     initializeCurrentSensor(currentSensor2);
     initializeCurrentSensor(currentSensor3);
 }
 
-#define RED 0xFF0000
-#define GREEN 0x00FF00
-#define BLUE 0x0000FF
+#define RED 0x550000
+#define GREEN 0x005500
+#define BLUE 0x000055
 
 long last = 0;
 void loop()
 {
     testLEDColors();
+
+    File dataFile = getFileContents("text.txt");
+    if (dataFile)
+    {
+        while (dataFile.available())
+        {
+            Serial.write(dataFile.read());
+        }
+
+        Serial.println();
+    }
 
     if (millis() - last > 2500)
     {
@@ -91,6 +103,26 @@ void loop()
         Serial.println();
 
         last = millis();
+    }
+}
+
+File getFileContents(char *fileName)
+{
+    File dataFile = SD.open(fileName, FILE_READ);
+
+    if (dataFile)
+    {
+        return dataFile;
+    }
+    else if (SD.begin(BUILTIN_SDCARD))
+    {
+        return NULL;
+    } else {
+        while(!SD.begin(BUILTIN_SDCARD)) {
+            Serial.println("ERROR: SD CARD NOT FOUND");
+        }
+
+        return getFileContents(fileName);
     }
 }
 
