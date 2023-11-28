@@ -1,11 +1,6 @@
-#include <SPI.h>
-#include <Wire.h>
-#include <INA226.h>
-#include <QNEthernet.h>
-#include <OctoWS2811.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
 #include <SD.h>
+#include <QNEthernet.h>
+#include <INA226.h>
 
 using namespace qindesign::network;
 
