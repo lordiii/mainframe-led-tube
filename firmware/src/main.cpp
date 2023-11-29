@@ -10,6 +10,7 @@
 #include "main.h"
 #include "globals.h"
 #include "console.h"
+#include "effects.h"
 
 // Setup LEDs
 const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
@@ -65,9 +66,9 @@ void setup()
 
     leds.begin();
     leds.show();
-    taskRenderLeds.begin(renderFrame, 16000);
+    taskRenderLeds.begin(renderFrame, 10000);
 
-    sensorValues = (SensorValues*)malloc(sizeof(SensorValues));
+    sensorValues = (SensorValues *)malloc(sizeof(SensorValues));
     sensorValues->temperatureTop = 0.0f;
     sensorValues->temperatureCenter = 0.0f;
     sensorValues->temperatureBottom = 0.0f;
@@ -165,47 +166,47 @@ bool initializeCurrentSensor(INA226 *sensor)
     }
 }
 
-// OctoWS2811 settings
-#define RED 0x550000
-#define GREEN 0x005500
-#define BLUE 0x000055
-
-// Check if we got all universes
-void testLEDColor(unsigned int color)
+LED_EFFECT currentEffect = LED_TEST;
+unsigned long lastChange = 0;
+void renderFrame()
 {
-    for (int i = 0; i < numLeds; i++)
+    bool updated = false;
+    unsigned long delta = millis() - lastChange;
+
+    switch (currentEffect)
     {
-        leds.setPixel(i, color);
+    case OFF:
+        updated = off(leds, delta);
+        break;
+    case LED_TEST:
+        updated = testLEDs(leds, delta);
+        break;
+    case STROBE:
+        updated = strobe(leds, delta);
+        break;
+    case RAINBOW_STROBE:
+        updated = rainbowStrobe(leds, delta);
+    default:
+        break;
     }
+
+    if (updated)
+    {
+        lastChange = millis();
+    }
+
     leds.show();
 }
 
-unsigned int lastColor = BLUE;
-unsigned long lastFrame = 0;
-void renderFrame()
+void setCurrentEffect(LED_EFFECT effect)
 {
-    if ((millis() - lastFrame) > 500)
-    {
-        lastFrame = millis();
-
-        switch (lastColor)
-        {
-        case RED:
-            lastColor = GREEN;
-            break;
-        case GREEN:
-            lastColor = BLUE;
-            break;
-        case BLUE:
-        default:
-            lastColor = RED;
-            break;
-        }
-
-        testLEDColor(lastColor);
-    }
+    noInterrupts();
+    currentEffect = effect;
+    lastChange = 0;
+    interrupts();
 }
 
-SensorValues* getSensorValues() {
+SensorValues *getSensorValues()
+{
     return sensorValues;
 }

@@ -9,9 +9,15 @@ struct SensorValues {
     float temperatureBottom;
 };
 
+enum LED_EFFECT {
+    OFF,
+    LED_TEST,
+    STROBE,
+    RAINBOW_STROBE
+};
+
 bool initializeCurrentSensor(INA226 *sensor);
-void testLEDColor(unsigned int color);
-void colorWipe(int color, int wait);
 void renderFrame();
+void setCurrentEffect(LED_EFFECT effect);
 File getFileContents(char *fileName);
 SensorValues* getSensorValues();
