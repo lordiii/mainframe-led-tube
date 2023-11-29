@@ -9,6 +9,7 @@
 
 #include "main.h"
 #include "globals.h"
+#include "console.h"
 
 // Setup LEDs
 const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
@@ -33,9 +34,21 @@ INA226 *currentSensor3 = new INA226(currentSensor3Address);
 
 OneWire oneWire(16);
 DallasTemperature sensors(&oneWire);
-const unsigned char tempProbeUpper[8] = TEMPERATURE_SENSOR_TOP_ADDRESS;
-const unsigned char tempProbeMiddle[8] = TEMPERATURE_SENSOR_MIDDLE_ADDRESS;
-const unsigned char tempProbeLower[8] = TEMPERATURE_SENSOR_BOTTOM_ADDRESS;
+const unsigned char tempProbeTop[8] = TEMPERATURE_SENSOR_TOP_ADDRESS;
+const unsigned char tempProbeCenter[8] = TEMPERATURE_SENSOR_CENTER_ADDRESS;
+const unsigned char tempProbeBottom[8] = TEMPERATURE_SENSOR_BOTTOM_ADDRESS;
+
+// LED Render Task
+IntervalTimer taskRenderLeds;
+
+// Scheduled Tasks
+long taskHandleWebRequests = 0;
+long taskReadSensors = 0;
+long taskRenderScreen = 0;
+long taskActivityLed = 0;
+
+// Sensor Values
+SensorValues *sensorValues;
 
 void setup()
 {
@@ -44,75 +57,73 @@ void setup()
 
     Wire.begin();
     Serial.begin(115200);
-    while (!Serial)
+
+    qindesign::network::Ethernet.begin();
+    while (!qindesign::network::Ethernet.waitForLocalIP(100))
     {
     }
-    Ethernet.begin();
-    // while (!Ethernet.waitForLocalIP(15000))
-    //{
-    //     Serial.println("Waiting for IP Address");
-    // }
-
-    Serial.println("Current IP: ");
-    Serial.print(Ethernet.localIP()[0]);
-    Serial.print(".");
-    Serial.print(Ethernet.localIP()[1]);
-    Serial.print(".");
-    Serial.print(Ethernet.localIP()[2]);
-    Serial.print(".");
-    Serial.print(Ethernet.localIP()[3]);
 
     leds.begin();
     leds.show();
-    testLEDColors();
+    taskRenderLeds.begin(renderFrame, 16000);
 
-    Serial.println("Initializing Current Sensors");
+    sensorValues = (SensorValues*)malloc(sizeof(SensorValues));
+    sensorValues->temperatureTop = 0.0f;
+    sensorValues->temperatureCenter = 0.0f;
+    sensorValues->temperatureBottom = 0.0f;
+
     initializeCurrentSensor(currentSensor1);
     initializeCurrentSensor(currentSensor2);
     initializeCurrentSensor(currentSensor3);
+
+    initConsole();
 }
 
-#define RED 0x550000
-#define GREEN 0x005500
-#define BLUE 0x000055
-
-long last = 0;
+bool toggleTemperatureReadWrite = false;
+bool activityLedState = false;
 void loop()
 {
-    testLEDColors();
+    long time = millis();
 
-    File dataFile = getFileContents("text.txt");
-    if (dataFile)
+    if ((time - taskHandleWebRequests) > 25)
     {
-        while (dataFile.available())
+        taskHandleWebRequests = time;
+    }
+
+    if ((time - taskReadSensors) > 1000)
+    {
+        taskReadSensors = time;
+
+        // Read Temperature Values
+        if (toggleTemperatureReadWrite)
         {
-            Serial.write(dataFile.read());
+            sensors.requestTemperatures();
+            toggleTemperatureReadWrite = !toggleTemperatureReadWrite;
         }
+        else
+        {
+            sensorValues->temperatureTop = sensors.getTempC(tempProbeTop);
+            sensorValues->temperatureCenter = sensors.getTempC(tempProbeCenter);
+            sensorValues->temperatureBottom = sensors.getTempC(tempProbeBottom);
 
-        Serial.println();
+            toggleTemperatureReadWrite = !toggleTemperatureReadWrite;
+        }
     }
 
-    if (millis() - last > 2500)
+    if ((time - taskRenderScreen) > 2000)
     {
-        sensors.requestTemperatures();
-        float tempCTop = sensors.getTempC(tempProbeUpper);
-        float tempCMiddle = sensors.getTempC(tempProbeMiddle);
-        float tempCBottom = sensors.getTempC(tempProbeLower);
-
-        Serial.print("Temperatures: ");
-        Serial.print(tempCTop);
-        Serial.print(" \xC2\xB0");
-        Serial.print("C  Top |  ");
-        Serial.print(tempCMiddle);
-        Serial.print(" \xC2\xB0");
-        Serial.print("C  Middle |  ");
-        Serial.print(tempCBottom);
-        Serial.print(" \xC2\xB0");
-        Serial.print("C Bottom");
-        Serial.println();
-
-        last = millis();
+        taskRenderScreen = time;
     }
+
+    if ((time - taskActivityLed) > 500)
+    {
+        taskActivityLed = time;
+
+        digitalWrite(13, activityLedState ? LOW : HIGH);
+        activityLedState = !activityLedState;
+    }
+
+    processConsoleData();
 }
 
 File getFileContents(char *fileName)
@@ -126,23 +137,16 @@ File getFileContents(char *fileName)
     else if (SD.begin(BUILTIN_SDCARD))
     {
         return NULL;
-    } else {
-        while(!SD.begin(BUILTIN_SDCARD)) {
+    }
+    else
+    {
+        while (!SD.begin(BUILTIN_SDCARD))
+        {
             Serial.println("ERROR: SD CARD NOT FOUND");
         }
 
         return getFileContents(fileName);
     }
-}
-
-void colorWipe(int color, int wait)
-{
-    for (int i = 0; i < leds.numPixels(); i++)
-    {
-        leds.setPixel(i, color);
-    }
-    leds.show();
-    delay(wait);
 }
 
 bool initializeCurrentSensor(INA226 *sensor)
@@ -162,42 +166,46 @@ bool initializeCurrentSensor(INA226 *sensor)
 }
 
 // OctoWS2811 settings
+#define RED 0x550000
+#define GREEN 0x005500
+#define BLUE 0x000055
 
 // Check if we got all universes
-void testLEDColors()
+void testLEDColor(unsigned int color)
 {
-    Serial.println("Testing LEDs");
-
     for (int i = 0; i < numLeds; i++)
     {
-        leds.setPixel(i, 127, 0, 0);
+        leds.setPixel(i, color);
     }
-    Serial.println("Testing Red LEDs");
     leds.show();
+}
 
-    delay(500);
-
-    for (int i = 0; i < numLeds; i++)
+unsigned int lastColor = BLUE;
+unsigned long lastFrame = 0;
+void renderFrame()
+{
+    if ((millis() - lastFrame) > 500)
     {
-        leds.setPixel(i, 0, 127, 0);
+        lastFrame = millis();
+
+        switch (lastColor)
+        {
+        case RED:
+            lastColor = GREEN;
+            break;
+        case GREEN:
+            lastColor = BLUE;
+            break;
+        case BLUE:
+        default:
+            lastColor = RED;
+            break;
+        }
+
+        testLEDColor(lastColor);
     }
-    Serial.println("Testing Green LEDs");
-    leds.show();
+}
 
-    delay(500);
-
-    for (int i = 0; i < numLeds; i++)
-    {
-        leds.setPixel(i, 0, 0, 127);
-    }
-    Serial.println("Testing Blue LEDs");
-    leds.show();
-
-    delay(500);
-
-    for (int i = 0; i < numLeds; i++)
-    {
-        leds.setPixel(i, 0, 0, 0);
-    }
-    leds.show();
+SensorValues* getSensorValues() {
+    return sensorValues;
 }
