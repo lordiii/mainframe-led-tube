@@ -176,16 +176,16 @@ void renderFrame()
     switch (currentEffect)
     {
     case OFF:
-        updated = off(leds, delta);
+        updated = effectOff(leds, delta);
         break;
     case LED_TEST:
-        updated = testLEDs(leds, delta);
+        updated = effectTestLEDs(leds, delta);
         break;
     case STROBE:
-        updated = strobe(leds, delta);
+        updated = effectStrobe(leds, delta);
         break;
     case RAINBOW_STROBE:
-        updated = rainbowStrobe(leds, delta);
+        updated = effectRainbowStrobe(leds, delta);
     default:
         break;
     }
