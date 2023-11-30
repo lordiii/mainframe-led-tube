@@ -1,16 +1,15 @@
-#include <Wire.h>
-#include <INA226.h>
-#include <QNEthernet.h>
-#include <OctoWS2811.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
-#include <SD.h>
-
 #include "main.h"
 #include "globals.h"
 #include "console.h"
 #include "effects.h"
 #include "web.h"
+
+#include <Wire.h>
+#include <INA226.h>
+#include <OctoWS2811.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <SD.h>
 
 // Setup LEDs
 const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
@@ -83,7 +82,7 @@ void loop()
 {
     unsigned long time = millis();
 
-    if ((time - taskHandleWebRequests) > 25)
+    if ((time - taskHandleWebRequests) > 5)
     {
         taskHandleWebRequests = time;
         handleWebClient();

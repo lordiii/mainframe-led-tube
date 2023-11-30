@@ -1,6 +1,7 @@
-#include <EthernetWebServer.h>
-
 #include "web.h"
+#include "globals.h"
+
+#include <EthernetWebServer.h>
 
 EthernetWebServer server(80);
 
@@ -8,6 +9,7 @@ void initWebServer()
 {
     server.on(F("/"), handleRoot);
     server.onNotFound(handleNotFound);
+
     server.begin();
 }
 
