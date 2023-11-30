@@ -10,6 +10,7 @@
 #include "globals.h"
 #include "console.h"
 #include "effects.h"
+#include "web.h"
 
 // Setup LEDs
 const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
@@ -73,6 +74,7 @@ void setup()
     initializeCurrentSensor(currentSensor3);
 
     initConsole();
+    initWebServer();
 }
 
 bool toggleTemperatureReadWrite = false;
@@ -84,6 +86,7 @@ void loop()
     if ((time - taskHandleWebRequests) > 25)
     {
         taskHandleWebRequests = time;
+        handleWebClient();
     }
 
     if ((time - taskReadSensors) > 1000)
