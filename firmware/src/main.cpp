@@ -11,15 +11,6 @@
 #include <DallasTemperature.h>
 #include <SD.h>
 
-// Setup LEDs
-const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
-
-DMAMEM int displayMemory[LED_PER_STRIP * 6];
-int drawingMemory[LED_PER_STRIP * 6];
-
-const int config = LED_CONFIGURATION;
-OctoWS2811 leds(LED_PER_STRIP, displayMemory, drawingMemory, config, LED_STRIP_AMOUNT, pinList);
-
 // Create Current Sensor Objects
 const unsigned char currentSensor1Address = CURRENT_SENSOR_1_ADDRESS;
 INA226 *currentSensor1 = new INA226(currentSensor1Address);
@@ -58,9 +49,6 @@ void setup()
 
     qindesign::network::Ethernet.begin();
 
-    leds.begin();
-    leds.show();
-
     taskRenderLeds.begin(renderFrame, 10000);
 
     sensorValues = (SensorValues *)malloc(sizeof(SensorValues));
@@ -74,6 +62,7 @@ void setup()
 
     initConsole();
     initWebServer();
+    initLeds();
 }
 
 bool toggleTemperatureReadWrite = false;
@@ -124,9 +113,9 @@ void loop()
     processConsoleData();
 }
 
-File getFileContents(char *fileName)
+File getFileContents(String fileName)
 {
-    File dataFile = SD.open(fileName, FILE_READ);
+    File dataFile = SD.open(fileName.c_str(), FILE_READ);
 
     if (dataFile)
     {
@@ -161,34 +150,6 @@ bool initializeCurrentSensor(INA226 *sensor)
     default:
         return false;
     }
-}
-
-bool (*currentEffect)(OctoWS2811, unsigned long) = nullptr;
-unsigned long lastFrameChange = 0;
-
-void renderFrame()
-{
-    bool updated = false;
-
-    if(currentEffect != nullptr) {
-        unsigned long delta = millis() - lastFrameChange;
-        updated = currentEffect(leds, delta);
-    }
-
-    if (updated)
-    {
-        lastFrameChange = millis();
-    }
-
-    leds.show();
-}
-
-void setCurrentEffect(bool (*function)(OctoWS2811,unsigned long))
-{
-    noInterrupts();
-    currentEffect = function;
-    lastFrameChange = 0;
-    interrupts();
 }
 
 SensorValues *getSensorValues()

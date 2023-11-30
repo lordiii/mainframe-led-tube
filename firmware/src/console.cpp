@@ -8,6 +8,22 @@ bool debug = false;
 const int BUFFER_SIZE = 65;
 String consoleBuffer;
 
+struct EFFECT_INFOS
+{
+    const char *name;
+    EFFECT_CALLBACK callback;
+};
+
+const int EFFECT_COUNT = 6;
+EFFECT_INFOS effectInfos[EFFECT_COUNT] = {
+    (EFFECT_INFOS){"led-test", &effectTestLEDs},
+    (EFFECT_INFOS){"strobe", &effectStrobe},
+    (EFFECT_INFOS){"rainbow-strobe", &effectRainbowStrobe},
+    (EFFECT_INFOS){"police", &effectPolice},
+    (EFFECT_INFOS){"off", &effectOff},
+    (EFFECT_INFOS){"solid-white", &effectSolidWhite},
+};
+
 void initConsole()
 {
     consoleBuffer = String("");
@@ -47,7 +63,8 @@ void processConsoleData()
         }
     }
 
-    if(change) {
+    if (change)
+    {
         size_t bufferLength = consoleBuffer.length();
 
         Serial.print("\33[2K\r#> ");
@@ -72,19 +89,23 @@ void processCommand()
 {
     if (consoleBuffer.equals("temperature"))
     {
-        printTemperatures();
+        commandPrintTemperatures();
     }
     else if (consoleBuffer.equals("network"))
     {
-        printNetworkInfo();
+        commandPrintNetworkInfo();
     }
     else if (consoleBuffer.equals("reboot"))
     {
-        reboot();
+        commandReboot();
     }
     else if (consoleBuffer.startsWith("effect "))
     {
-        setEffect();
+        commandSetEffect();
+    }
+    else if (consoleBuffer.startsWith("brightness "))
+    {
+        commandSetBrightness();
     }
     else if (consoleBuffer.equals("debug"))
     {
@@ -92,7 +113,7 @@ void processCommand()
     }
 }
 
-void printTemperatures()
+void commandPrintTemperatures()
 {
     SensorValues *sensorValues = getSensorValues();
 
@@ -109,7 +130,7 @@ void printTemperatures()
     Serial.println("°C");
 }
 
-void printNetworkInfo()
+void commandPrintNetworkInfo()
 {
     Serial.print("IP: ");
     Serial.println(qindesign::network::Ethernet.localIP());
@@ -124,32 +145,17 @@ void printNetworkInfo()
     Serial.println(qindesign::network::Ethernet.dnsServerIP());
 }
 
-void reboot()
+void commandReboot()
 {
     _reboot_Teensyduino_();
 }
 
-struct EFFECT_INFOS
-{
-    const char *name;
-    EFFECT_CALLBACK callback;
-};
-
-const int EFFECT_COUNT = 5;
-EFFECT_INFOS effectInfos[EFFECT_COUNT] = {
-    (EFFECT_INFOS){"led-test", &effectTestLEDs},
-    (EFFECT_INFOS){"strobe", &effectStrobe},
-    (EFFECT_INFOS){"rainbow-strobe", &effectRainbowStrobe},
-    (EFFECT_INFOS){"police",  &effectPolice},
-    (EFFECT_INFOS){"off", &effectOff}
-};
-
-void setEffect()
+void commandSetEffect()
 {
     String effectName = consoleBuffer.substring(strlen("effect "));
 
     bool found = false;
-    for (auto & effectInfo : effectInfos)
+    for (auto &effectInfo : effectInfos)
     {
         if (String(effectInfo.name).equals(effectName))
         {
@@ -171,4 +177,33 @@ void setEffect()
         Serial.print(effectName);
         Serial.println("'!");
     }
+}
+
+void commandSetBrightness()
+{
+    long brightness = consoleBuffer.substring(strlen("brightness ")).toInt();
+    Serial.println(brightness);
+
+    if (brightness)
+    {
+        if (brightness < 0)
+        {
+            brightness = 0;
+        }
+
+        if (brightness > 100)
+        {
+            brightness = 100;
+        }
+    }
+    else
+    {
+        brightness = 0;
+    }
+
+    float value = brightness / 100.0f;
+    setBrightness(value);
+    Serial.print("Brightness changed to: ");
+    Serial.print(brightness);
+    Serial.println('%');
 }

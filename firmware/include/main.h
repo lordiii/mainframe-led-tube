@@ -12,7 +12,5 @@ struct SensorValues {
 };
 
 bool initializeCurrentSensor(INA226 *sensor);
-void renderFrame();
-void setCurrentEffect(EFFECT_CALLBACK callback);
-File getFileContents(char *fileName);
+File getFileContents(String fileName);
 SensorValues* getSensorValues();

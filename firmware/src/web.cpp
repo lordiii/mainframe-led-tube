@@ -1,12 +1,40 @@
 #include "web.h"
+#include "main.h"
 #include "globals.h"
 
 #include <EthernetWebServer.h>
+#include <SD.h>
+
+const size_t MAX_CHUNK_SIZE = 1000;
 
 EthernetWebServer server(80);
 
+char *buffer = (char *)malloc(MAX_CHUNK_SIZE);
+
 void initWebServer()
 {
+    server.on(F("/index.html"), []() {
+        File file = getFileContents("index.html");
+
+        if(!file) {
+            handleNotFound();
+        }
+
+        server.send(200, "text/html");
+
+        while(file.available()) {
+            size_t chunkSize = min(MAX_CHUNK_SIZE, file.available());
+            
+            file.readBytes(buffer, chunkSize);
+
+            server.sendContent(buffer, chunkSize);
+
+            free(buffer);
+        }
+
+        server.sendContent(RETURN_NEWLINE);
+    });
+
     server.on(F("/"), handleRoot);
     server.onNotFound(handleNotFound);
 
