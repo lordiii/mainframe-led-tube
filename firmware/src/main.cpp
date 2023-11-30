@@ -14,8 +14,6 @@
 
 // Setup LEDs
 const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
-const int numLeds = LED_PER_STRIP * LED_STRIP_AMOUNT;
-const int numberOfChannels = numLeds * 3; // Total number of channels you want to receive (1 led = 3 channels)
 
 DMAMEM int displayMemory[LED_PER_STRIP * 6];
 int drawingMemory[LED_PER_STRIP * 6];
