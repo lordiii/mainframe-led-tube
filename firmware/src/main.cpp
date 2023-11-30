@@ -39,8 +39,9 @@ const unsigned char tempProbeTop[8] = TEMPERATURE_SENSOR_TOP_ADDRESS;
 const unsigned char tempProbeCenter[8] = TEMPERATURE_SENSOR_CENTER_ADDRESS;
 const unsigned char tempProbeBottom[8] = TEMPERATURE_SENSOR_BOTTOM_ADDRESS;
 
-// LED Render Task
+// LED Render Tasks
 IntervalTimer taskRenderLeds;
+IntervalTimer taskCalculateFrame;
 
 // Scheduled Tasks
 long taskHandleWebRequests = 0;
@@ -66,7 +67,9 @@ void setup()
 
     leds.begin();
     leds.show();
-    taskRenderLeds.begin(renderFrame, 10000);
+
+    taskRenderLeds.begin(renderFrame, 12500);
+    taskCalculateFrame.begin(calculateFrame, 5000);
 
     sensorValues = (SensorValues *)malloc(sizeof(SensorValues));
     sensorValues->temperatureTop = 0.0f;
@@ -166,12 +169,17 @@ bool initializeCurrentSensor(INA226 *sensor)
     }
 }
 
-LED_EFFECT currentEffect = LED_TEST;
-unsigned long lastChange = 0;
 void renderFrame()
 {
+    leds.show();
+}
+
+LED_EFFECT currentEffect = LED_TEST;
+unsigned long lastFrameChange = 0;
+
+void calculateFrame() {
     bool updated = false;
-    unsigned long delta = millis() - lastChange;
+    unsigned long delta = millis() - lastFrameChange;
 
     switch (currentEffect)
     {
@@ -186,23 +194,25 @@ void renderFrame()
         break;
     case RAINBOW_STROBE:
         updated = effectRainbowStrobe(leds, delta);
+        break;
+    case POLICE:
+        updated = effectPolice(leds, delta);
+        break;
     default:
         break;
     }
 
     if (updated)
     {
-        lastChange = millis();
+        lastFrameChange = millis();
     }
-
-    leds.show();
 }
 
 void setCurrentEffect(LED_EFFECT effect)
 {
     noInterrupts();
     currentEffect = effect;
-    lastChange = 0;
+    lastFrameChange = 0;
     interrupts();
 }
 
