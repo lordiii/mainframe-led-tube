@@ -2,13 +2,7 @@
 #include <QNEthernet.h>
 #include <INA226.h>
 
-enum LED_EFFECT {
-    OFF,
-    LED_TEST,
-    STROBE,
-    RAINBOW_STROBE,
-    POLICE
-};
+#include "console.h"
 
 // Temperature Sensor Values
 struct SensorValues {
@@ -19,7 +13,6 @@ struct SensorValues {
 
 bool initializeCurrentSensor(INA226 *sensor);
 void renderFrame();
-void calculateFrame();
-void setCurrentEffect(LED_EFFECT effect);
+void setCurrentEffect(EFFECT_CALLBACK callback);
 File getFileContents(char *fileName);
 SensorValues* getSensorValues();

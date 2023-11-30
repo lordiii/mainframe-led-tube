@@ -1,4 +1,3 @@
-#include <SPI.h>
 #include <Wire.h>
 #include <INA226.h>
 #include <QNEthernet.h>
@@ -39,13 +38,12 @@ const unsigned char tempProbeBottom[8] = TEMPERATURE_SENSOR_BOTTOM_ADDRESS;
 
 // LED Render Tasks
 IntervalTimer taskRenderLeds;
-IntervalTimer taskCalculateFrame;
 
 // Scheduled Tasks
-long taskHandleWebRequests = 0;
-long taskReadSensors = 0;
-long taskRenderScreen = 0;
-long taskActivityLed = 0;
+unsigned long taskHandleWebRequests = 0;
+unsigned long taskReadSensors = 0;
+unsigned long taskRenderScreen = 0;
+unsigned long taskActivityLed = 0;
 
 // Sensor Values
 SensorValues *sensorValues;
@@ -59,15 +57,11 @@ void setup()
     Serial.begin(115200);
 
     qindesign::network::Ethernet.begin();
-    while (!qindesign::network::Ethernet.waitForLocalIP(100))
-    {
-    }
 
     leds.begin();
     leds.show();
 
-    taskRenderLeds.begin(renderFrame, 12500);
-    taskCalculateFrame.begin(calculateFrame, 5000);
+    taskRenderLeds.begin(renderFrame, 10000);
 
     sensorValues = (SensorValues *)malloc(sizeof(SensorValues));
     sensorValues->temperatureTop = 0.0f;
@@ -85,7 +79,7 @@ bool toggleTemperatureReadWrite = false;
 bool activityLedState = false;
 void loop()
 {
-    long time = millis();
+    unsigned long time = millis();
 
     if ((time - taskHandleWebRequests) > 25)
     {
@@ -167,49 +161,30 @@ bool initializeCurrentSensor(INA226 *sensor)
     }
 }
 
-void renderFrame()
-{
-    leds.show();
-}
-
-LED_EFFECT currentEffect = LED_TEST;
+bool (*currentEffect)(OctoWS2811, unsigned long) = nullptr;
 unsigned long lastFrameChange = 0;
 
-void calculateFrame() {
+void renderFrame()
+{
     bool updated = false;
-    unsigned long delta = millis() - lastFrameChange;
 
-    switch (currentEffect)
-    {
-    case OFF:
-        updated = effectOff(leds, delta);
-        break;
-    case LED_TEST:
-        updated = effectTestLEDs(leds, delta);
-        break;
-    case STROBE:
-        updated = effectStrobe(leds, delta);
-        break;
-    case RAINBOW_STROBE:
-        updated = effectRainbowStrobe(leds, delta);
-        break;
-    case POLICE:
-        updated = effectPolice(leds, delta);
-        break;
-    default:
-        break;
+    if(currentEffect != nullptr) {
+        unsigned long delta = millis() - lastFrameChange;
+        updated = currentEffect(leds, delta);
     }
 
     if (updated)
     {
         lastFrameChange = millis();
     }
+
+    leds.show();
 }
 
-void setCurrentEffect(LED_EFFECT effect)
+void setCurrentEffect(bool (*function)(OctoWS2811,unsigned long))
 {
     noInterrupts();
-    currentEffect = effect;
+    currentEffect = function;
     lastFrameChange = 0;
     interrupts();
 }

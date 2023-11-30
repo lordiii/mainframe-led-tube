@@ -1,22 +1,25 @@
 #include "console.h"
 #include "main.h"
+#include "effects.h"
 #include "globals.h"
 
 bool debug = false;
 
 const int BUFFER_SIZE = 65;
-char *consoleBuffer;
+String consoleBuffer;
 
 void initConsole()
 {
-    consoleBuffer = (char *)malloc(BUFFER_SIZE);
-    resetConsoleBuffer(true);
+    consoleBuffer = String("");
 }
 
 void processConsoleData()
 {
+    bool change = false;
+
     while (Serial.available())
     {
+        size_t bufferLength = consoleBuffer.length();
         char character = Serial.read();
 
         switch (character)
@@ -24,69 +27,66 @@ void processConsoleData()
         case 0xD:
             Serial.print("\n\r");
             processCommand();
-            resetConsoleBuffer(false);
+            consoleBuffer = "";
+            change = true;
             break;
         case 0x7F:
-            if (strlen(consoleBuffer) > 0)
+            if (bufferLength > 0)
             {
-                consoleBuffer[strlen(consoleBuffer) - 1] = '\0';
+                consoleBuffer = consoleBuffer.substring(0, consoleBuffer.length() - 1);
+                change = true;
             }
             break;
         default:
-            if (strlen(consoleBuffer) < (BUFFER_SIZE - 1) && ((character >= 0x20 && character <= 0x7E) || debug))
+            if (bufferLength < (BUFFER_SIZE - 1) && ((character >= 0x20 && character <= 0x7E) || debug))
             {
-                consoleBuffer[strlen(consoleBuffer)] = character;
-                consoleBuffer[strlen(consoleBuffer) + 1] = '\0';
+                consoleBuffer.append(character);
+                change = true;
             }
             break;
         }
+    }
+
+    if(change) {
+        size_t bufferLength = consoleBuffer.length();
 
         Serial.print("\33[2K\r#> ");
-        for (size_t i = 0; i < strlen(consoleBuffer); i++)
+        for (size_t i = 0; i < bufferLength; i++)
         {
             char character = consoleBuffer[i];
 
-            if (character != 0x1B && character != 0x5B && character != 0x41 && character != 0x42)
+            if (!debug)
             {
-                if (!debug)
-                {
-                    Serial.write(consoleBuffer[i]);
-                }
-                else
-                {
-                    Serial.print(consoleBuffer[i], 16);
-                    Serial.print(' ');
-                }
+                Serial.write(character);
+            }
+            else
+            {
+                Serial.print(character, 16);
+                Serial.print(' ');
             }
         }
     }
-}
-
-void resetConsoleBuffer(bool skipHistory)
-{
-    memset(consoleBuffer, 0, BUFFER_SIZE);
-    consoleBuffer[0] = '\0';
 }
 
 void processCommand()
 {
-    if (strcmp(consoleBuffer, "temperature") == 0)
+    if (consoleBuffer.equals("temperature"))
     {
         printTemperatures();
     }
-    else if (strcmp(consoleBuffer, "network") == 0)
+    else if (consoleBuffer.equals("network"))
     {
         printNetworkInfo();
     }
-    else if (strcmp(consoleBuffer, "reboot") == 0)
+    else if (consoleBuffer.equals("reboot"))
     {
         reboot();
     }
-    else if (startsWith("effect ", consoleBuffer))
+    else if (consoleBuffer.startsWith("effect "))
     {
         setEffect();
     }
-    else if (strcmp(consoleBuffer, "debug") == 0)
+    else if (consoleBuffer.equals("debug"))
     {
         debug = !debug;
     }
@@ -129,36 +129,31 @@ void reboot()
     _reboot_Teensyduino_();
 }
 
-struct EffectName
+struct EFFECT_INFOS
 {
-    char *name;
-    LED_EFFECT type;
+    const char *name;
+    EFFECT_CALLBACK callback;
 };
 
-EffectName EFFECT_NAMES[] = {
-    (EffectName){"led-test", LED_EFFECT::LED_TEST},
-    (EffectName){"strobe", LED_EFFECT::STROBE},
-    (EffectName){"rainbow-strobe", LED_EFFECT::RAINBOW_STROBE},
-    (EffectName){"police", LED_EFFECT::POLICE},
-    (EffectName){"off", LED_EFFECT::OFF},
-
+const int EFFECT_COUNT = 5;
+EFFECT_INFOS effectInfos[EFFECT_COUNT] = {
+    (EFFECT_INFOS){"led-test", &effectTestLEDs},
+    (EFFECT_INFOS){"strobe", &effectStrobe},
+    (EFFECT_INFOS){"rainbow-strobe", &effectRainbowStrobe},
+    (EFFECT_INFOS){"police",  &effectPolice},
+    (EFFECT_INFOS){"off", &effectOff}
 };
 
 void setEffect()
 {
-    size_t offset = strlen("effect ");
-    size_t total = strlen(consoleBuffer);
-    size_t new_str = total - offset + 1;
-
-    char *effectName = (char *)malloc(new_str);
-    memcpy(effectName, &consoleBuffer[offset], new_str);
+    String effectName = consoleBuffer.substring(strlen("effect "));
 
     bool found = false;
-    for (size_t i = 0; i < sizeof(EFFECT_NAMES); i++)
+    for (auto & effectInfo : effectInfos)
     {
-        if (strcmp(EFFECT_NAMES[i].name, effectName) == 0)
+        if (String(effectInfo.name).equals(effectName))
         {
-            setCurrentEffect(EFFECT_NAMES[i].type);
+            setCurrentEffect(effectInfo.callback);
             found = true;
             break;
         }
@@ -176,11 +171,4 @@ void setEffect()
         Serial.print(effectName);
         Serial.println("'!");
     }
-}
-
-bool startsWith(const char *pre, const char *str)
-{
-    size_t lenpre = strlen(pre);
-    size_t lenstr = strlen(str);
-    return lenstr < lenpre ? false : memcmp(pre, str, lenpre) == 0;
 }
