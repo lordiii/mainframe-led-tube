@@ -107,6 +107,10 @@ void processCommand()
     {
         commandSetBrightness();
     }
+    else if (consoleBuffer.equals("current"))
+    {
+        commandPrintCurrent();
+    }
     else if (consoleBuffer.equals("debug"))
     {
         debug = !debug;
@@ -128,6 +132,23 @@ void commandPrintTemperatures()
     Serial.print("Bottom: ");
     Serial.print(sensorValues->temperatureBottom);
     Serial.println("°C");
+}
+
+void commandPrintCurrent()
+{
+    SensorValues *sensorValues = getSensorValues();
+
+    Serial.print("Top: ");
+    Serial.print(sensorValues->currentLine1);
+    Serial.println("mA");
+
+    Serial.print("Center: ");
+    Serial.print(sensorValues->currentLine2);
+    Serial.println("mA");
+
+    Serial.print("Bottom: ");
+    Serial.print(sensorValues->currentLine3);
+    Serial.println("mA");
 }
 
 void commandPrintNetworkInfo()

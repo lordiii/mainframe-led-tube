@@ -9,6 +9,10 @@ struct SensorValues {
     float temperatureTop;
     float temperatureCenter;
     float temperatureBottom;
+
+    float currentLine1;
+    float currentLine2;
+    float currentLine3;
 };
 
 bool initializeCurrentSensor(INA226 *sensor);

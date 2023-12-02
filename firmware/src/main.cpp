@@ -21,7 +21,7 @@ INA226 *currentSensor2 = new INA226(currentSensor2Address);
 const unsigned char currentSensor3Address = CURRENT_SENSOR_3_ADDRESS;
 INA226 *currentSensor3 = new INA226(currentSensor3Address);
 
-OneWire oneWire(16);
+OneWire oneWire(24);
 DallasTemperature sensors(&oneWire);
 const unsigned char tempProbeTop[8] = TEMPERATURE_SENSOR_TOP_ADDRESS;
 const unsigned char tempProbeCenter[8] = TEMPERATURE_SENSOR_CENTER_ADDRESS;
@@ -31,7 +31,6 @@ const unsigned char tempProbeBottom[8] = TEMPERATURE_SENSOR_BOTTOM_ADDRESS;
 IntervalTimer taskRenderLeds;
 
 // Scheduled Tasks
-unsigned long taskHandleWebRequests = 0;
 unsigned long taskReadSensors = 0;
 unsigned long taskRenderScreen = 0;
 unsigned long taskActivityLed = 0;
@@ -56,6 +55,10 @@ void setup()
     sensorValues->temperatureCenter = 0.0f;
     sensorValues->temperatureBottom = 0.0f;
 
+    sensorValues->currentLine1 = 0.0f;
+    sensorValues->currentLine2 = 0.0f;
+    sensorValues->currentLine3 = 0.0f;
+
     initializeCurrentSensor(currentSensor1);
     initializeCurrentSensor(currentSensor2);
     initializeCurrentSensor(currentSensor3);
@@ -70,12 +73,6 @@ bool activityLedState = false;
 void loop()
 {
     unsigned long time = millis();
-
-    if ((time - taskHandleWebRequests) > 5)
-    {
-        taskHandleWebRequests = time;
-        handleWebClient();
-    }
 
     if ((time - taskReadSensors) > 1000)
     {
@@ -95,6 +92,10 @@ void loop()
 
             toggleTemperatureReadWrite = !toggleTemperatureReadWrite;
         }
+
+        sensorValues->currentLine1 = currentSensor1->getCurrent();
+        sensorValues->currentLine2 = currentSensor2->getCurrent();
+        sensorValues->currentLine3 = currentSensor3->getCurrent();
     }
 
     if ((time - taskRenderScreen) > 2000)
@@ -102,7 +103,8 @@ void loop()
         taskRenderScreen = time;
     }
 
-    if ((time - taskActivityLed) > 500)
+    if (
+        ((time - taskActivityLed) > 125 && !qindesign::network::Ethernet.linkState()) || ((time - taskActivityLed) > 250 && qindesign::network::Ethernet.localIP()[0] == 0) || (time - taskActivityLed > 500))
     {
         taskActivityLed = time;
 
@@ -111,28 +113,28 @@ void loop()
     }
 
     processConsoleData();
+    handleWebClient();
 }
 
 File getFileContents(String fileName)
 {
-    File dataFile = SD.open(fileName.c_str(), FILE_READ);
+    if (SD.begin(BUILTIN_SDCARD))
+    {
 
-    if (dataFile)
-    {
-        return dataFile;
-    }
-    else if (SD.begin(BUILTIN_SDCARD))
-    {
-        return NULL;
+        File dataFile = SD.open(fileName.c_str(), FILE_READ);
+
+        if (dataFile)
+        {
+            return dataFile;
+        }
+        else
+        {
+            return NULL;
+        }
     }
     else
     {
-        while (!SD.begin(BUILTIN_SDCARD))
-        {
-            Serial.println("ERROR: SD CARD NOT FOUND");
-        }
-
-        return getFileContents(fileName);
+        return NULL;
     }
 }
 

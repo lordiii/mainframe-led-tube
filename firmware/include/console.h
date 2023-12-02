@@ -10,3 +10,4 @@ void commandPrintNetworkInfo();
 void commandReboot();
 void commandSetEffect();
 void commandSetBrightness();
+void commandPrintCurrent();
