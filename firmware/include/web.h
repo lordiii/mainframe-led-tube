@@ -7,10 +7,12 @@
 #define USE_ETHERNET_ENC false
 #define USE_CUSTOM_ETHERNET false
 
-#define _ETHERNET_WEBSERVER_LOGLEVEL_ 4
+#define _ETHERNET_WEBSERVER_LOGLEVEL_ 0
 #define DEBUG_ETHERNET_WEBSERVER_PORT Serial
+
+#include <Arduino.h>
 
 void initWebServer();
 void handleWebClient();
-void handleRoot();
-void handleNotFound();
+bool sendFile(String fileName);
+String getContentType(const String& filename);

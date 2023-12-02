@@ -139,7 +139,7 @@ bool effectRainbowStrobe(OctoWS2811 leds, unsigned long delta)
 
 bool effectTestLEDs(OctoWS2811 leds, unsigned long delta)
 {
-    if (delta > 1000)
+    if (delta > 250)
     {
         switch (lastColor)
         {

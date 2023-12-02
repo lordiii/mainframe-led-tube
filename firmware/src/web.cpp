@@ -5,38 +5,21 @@
 #include <EthernetWebServer.h>
 #include <SD.h>
 
-const size_t MAX_CHUNK_SIZE = 1000;
+const size_t MAX_CHUNK_SIZE = 1024;
+char *buffer = (char *)malloc(MAX_CHUNK_SIZE);
 
 EthernetWebServer server(80);
 
-char *buffer = (char *)malloc(MAX_CHUNK_SIZE);
-
 void initWebServer()
 {
-    server.on(F("/index.html"), []() {
-        File file = getFileContents("index.html");
-
-        if(!file) {
-            handleNotFound();
-        }
-
-        server.send(200, "text/html");
-
-        while(file.available()) {
-            size_t chunkSize = min(MAX_CHUNK_SIZE, file.available());
-            
-            file.readBytes(buffer, chunkSize);
-
-            server.sendContent(buffer, chunkSize);
-
-            free(buffer);
-        }
-
-        server.sendContent(RETURN_NEWLINE);
-    });
-
-    server.on(F("/"), handleRoot);
-    server.onNotFound(handleNotFound);
+    server.onNotFound(
+        []()
+        {
+            if (!sendFile(server.uri()))
+            {
+                server.send(404, "text/plain", "FileNotFound");
+            }
+        });
 
     server.begin();
 }
@@ -46,29 +29,104 @@ void handleWebClient()
     server.handleClient();
 }
 
-void handleRoot()
+bool sendFile(String fileName)
 {
-    String html = F("Hello from HelloServer running on ");
-    html += String("Teensy_41");
-    server.send(200, F("text/plain"), html);
-}
+    fileName = fileName.substring(1);
 
-void handleNotFound()
-{
-    String message = F("File Not Found\n\n");
-
-    message += F("URI: ");
-    message += server.uri();
-    message += F("\nMethod: ");
-    message += (server.method() == HTTP_GET) ? F("GET") : F("POST");
-    message += F("\nArguments: ");
-    message += server.args();
-    message += F("\n");
-
-    for (uint8_t i = 0; i < server.args(); i++)
+    if (fileName.endsWith("/"))
     {
-        message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+        fileName += "index.html";
     }
 
-    server.send(404, F("text/plain"), message);
+    Serial.println("handleFileRead: " + fileName);
+
+    File file = getFileContents(fileName);
+    if (file)
+    {
+        String contentType = getContentType(fileName);
+
+        server.setContentLength(file.size());
+        server.send(200, contentType, "");
+
+        while(true)
+        {
+            size_t chunkSize = min(file.available(), MAX_CHUNK_SIZE);
+            if(chunkSize == 0) {
+                break;
+            }
+
+            size_t fetched = file.readBytes(buffer, chunkSize);
+
+            Serial.print("Sending ");
+            Serial.print(fetched);
+            Serial.println(" bytes.");
+
+            server.client().writeFully(buffer, fetched);
+        }
+
+        file.close();
+        server.client().close();
+
+        return true;
+    }
+
+    return false;
+}
+
+String getContentType(const String &filename)
+{
+    if (server.hasArg("download"))
+    {
+        return "application/octet-stream";
+    }
+    else if (filename.endsWith(".htm"))
+    {
+        return "text/html";
+    }
+    else if (filename.endsWith(".html"))
+    {
+        return "text/html";
+    }
+    else if (filename.endsWith(".css"))
+    {
+        return "text/css";
+    }
+    else if (filename.endsWith(".js"))
+    {
+        return "application/javascript";
+    }
+    else if (filename.endsWith(".png"))
+    {
+        return "image/png";
+    }
+    else if (filename.endsWith(".gif"))
+    {
+        return "image/gif";
+    }
+    else if (filename.endsWith(".jpg"))
+    {
+        return "image/jpeg";
+    }
+    else if (filename.endsWith(".ico"))
+    {
+        return "image/x-icon";
+    }
+    else if (filename.endsWith(".xml"))
+    {
+        return "text/xml";
+    }
+    else if (filename.endsWith(".pdf"))
+    {
+        return "application/x-pdf";
+    }
+    else if (filename.endsWith(".zip"))
+    {
+        return "application/x-zip";
+    }
+    else if (filename.endsWith(".gz"))
+    {
+        return "application/x-gzip";
+    }
+
+    return "text/plain";
 }
