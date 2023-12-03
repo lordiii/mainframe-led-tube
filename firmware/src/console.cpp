@@ -120,6 +120,12 @@ void processCommand()
     {
         debug = !debug;
     }
+    else if (consoleBuffer.startsWith("power "))
+    {
+        commandTogglePowerSupply();
+    } else {
+        Serial.println("Command not found...");
+    }
 }
 
 void commandPrintTemperatures()
@@ -251,4 +257,29 @@ void commandSensorStatus()
     Serial.print("\t");
     Serial.print(sensor.getPower(), 3);
     Serial.println();
+}
+
+long lastToggle = 0;
+void commandTogglePowerSupply()
+{
+    if ((millis() - lastToggle) > 5000)
+    {
+        String sub = consoleBuffer.substring(strlen("power "));
+        if (sub.equals("on"))
+        {
+            digitalWrite(PIN_PW_ON, HIGH);
+            Serial.println("Power Supply Enabled");
+        }
+        else if (sub.equals("off"))
+        {
+            digitalWrite(PIN_PW_ON, LOW);
+            Serial.println("Power Supply Disabled");
+        }
+
+        lastToggle = millis();
+    }
+    else
+    {
+        Serial.println("Power supply recentry toggled...");
+    }
 }

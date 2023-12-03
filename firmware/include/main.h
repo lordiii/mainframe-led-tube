@@ -4,6 +4,9 @@
 
 #include "console.h"
 
+#define PIN_PW_ON 28
+#define PIN_PS_GOOD 29
+
 // Temperature Sensor Values
 struct SensorValues {
     float temperatureTop;

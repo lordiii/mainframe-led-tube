@@ -41,6 +41,11 @@ void setup()
 
     Serial.begin(115200);
 
+    pinMode(PIN_PW_ON, OUTPUT);
+    pinMode(PIN_PS_GOOD, INPUT);
+
+    digitalWrite(PIN_PW_ON, LOW);
+
     qindesign::network::Ethernet.begin();
 
     taskRenderLeds.begin(renderFrame, 10000);

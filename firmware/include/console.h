@@ -12,3 +12,4 @@ void commandSetEffect();
 void commandSetBrightness();
 void commandPrintCurrent();
 void commandSensorStatus();
+void commandTogglePowerSupply();
