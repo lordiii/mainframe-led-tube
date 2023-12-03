@@ -78,6 +78,14 @@ void fillLEDs(OctoWS2811 leds, int color)
     }
 }
 
+void setLedColor(OctoWS2811 leds, int pin, int color)
+{
+    if (pin < leds.numPixels() && pin >= 0)
+    {
+        leds.setPixel(pin, applyBrightness(color));
+    }
+}
+
 bool wasOn = false;
 bool effectStrobe(OctoWS2811 leds, unsigned long delta)
 {
@@ -220,6 +228,34 @@ bool effectSolidWhite(OctoWS2811 leds, unsigned long delta)
     if (delta > 10000)
     {
         fillLEDs(leds, 0xFFFFFF);
+
+        return true;
+    }
+
+    return false;
+}
+
+int lastPos = 0;
+bool effectSegmentTest(OctoWS2811 leds, unsigned long delta)
+{
+    if (delta > 100)
+    {
+        if (lastPos > leds.numPixels())
+        {
+            lastPos = 0;
+        }
+
+        for (int i = 0; i < 320; i++)
+        {
+            setLedColor(leds, lastPos - i, 0x0);
+        }
+
+        for (int i = 0; i < 320; i++)
+        {
+            setLedColor(leds, i + lastPos, 0xFFFFFF);
+        }
+
+        lastPos += 320;
 
         return true;
     }

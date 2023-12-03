@@ -14,3 +14,5 @@ bool effectRainbowStrobe(OctoWS2811 leds, unsigned long delta);
 bool effectOff(OctoWS2811 leds, unsigned long delta);
 bool effectPolice(OctoWS2811 leds, unsigned long delta);
 bool effectSolidWhite(OctoWS2811 leds, unsigned long delta);
+void setLedColor(OctoWS2811 leds, int pin, int color);
+bool effectSegmentTest(OctoWS2811 leds, unsigned long delta);

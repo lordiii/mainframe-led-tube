@@ -12,14 +12,9 @@
 #include <SD.h>
 
 // Create Current Sensor Objects
-const unsigned char currentSensor1Address = CURRENT_SENSOR_1_ADDRESS;
-INA226 *currentSensor1 = new INA226(currentSensor1Address);
-
-const unsigned char currentSensor2Address = CURRENT_SENSOR_2_ADDRESS;
-INA226 *currentSensor2 = new INA226(currentSensor2Address);
-
-const unsigned char currentSensor3Address = CURRENT_SENSOR_3_ADDRESS;
-INA226 *currentSensor3 = new INA226(currentSensor3Address);
+INA226 currentSensor1(CURRENT_SENSOR_1_ADDRESS);
+INA226 currentSensor2(CURRENT_SENSOR_2_ADDRESS);
+INA226 currentSensor3(CURRENT_SENSOR_3_ADDRESS);
 
 OneWire oneWire(24);
 DallasTemperature sensors(&oneWire);
@@ -34,6 +29,7 @@ IntervalTimer taskRenderLeds;
 unsigned long taskReadSensors = 0;
 unsigned long taskRenderScreen = 0;
 unsigned long taskActivityLed = 0;
+unsigned long taskReadCurrent = 0;
 
 // Sensor Values
 SensorValues *sensorValues;
@@ -43,7 +39,6 @@ void setup()
     pinMode(13, OUTPUT);
     digitalWrite(13, HIGH);
 
-    Wire.begin();
     Serial.begin(115200);
 
     qindesign::network::Ethernet.begin();
@@ -59,9 +54,15 @@ void setup()
     sensorValues->currentLine2 = 0.0f;
     sensorValues->currentLine3 = 0.0f;
 
-    initializeCurrentSensor(currentSensor1);
-    initializeCurrentSensor(currentSensor2);
-    initializeCurrentSensor(currentSensor3);
+    Wire.begin();
+    currentSensor1.begin();
+    currentSensor1.setMaxCurrentShunt(10, 0.006);
+
+    currentSensor2.begin();
+    currentSensor2.setMaxCurrentShunt(10, 0.006);
+
+    currentSensor3.begin();
+    currentSensor3.setMaxCurrentShunt(10, 0.006);
 
     initConsole();
     initWebServer();
@@ -70,6 +71,7 @@ void setup()
 
 bool toggleTemperatureReadWrite = false;
 bool activityLedState = false;
+bool status = false;
 void loop()
 {
     unsigned long time = millis();
@@ -92,10 +94,6 @@ void loop()
 
             toggleTemperatureReadWrite = !toggleTemperatureReadWrite;
         }
-
-        sensorValues->currentLine1 = currentSensor1->getCurrent();
-        sensorValues->currentLine2 = currentSensor2->getCurrent();
-        sensorValues->currentLine3 = currentSensor3->getCurrent();
     }
 
     if ((time - taskRenderScreen) > 2000)
@@ -110,6 +108,15 @@ void loop()
 
         digitalWrite(13, activityLedState ? LOW : HIGH);
         activityLedState = !activityLedState;
+    }
+
+    if ((time - taskRenderScreen) > 100)
+    {
+        sensorValues->currentLine1 = currentSensor1.getCurrent();
+        sensorValues->currentLine2 = currentSensor2.getCurrent();
+        sensorValues->currentLine3 = currentSensor3.getCurrent();
+
+        taskReadCurrent = 0;
     }
 
     processConsoleData();
@@ -138,19 +145,17 @@ File getFileContents(String fileName)
     }
 }
 
-bool initializeCurrentSensor(INA226 *sensor)
+INA226 getCurrentSensor(int id)
 {
-    if (sensor->begin())
+    switch (id)
     {
-        return false;
-    }
-
-    switch (sensor->setMaxCurrentShunt(12.0F, 0.006F))
-    {
-    case INA226_ERR_NONE:
-        return true;
+    case 1:
+        return currentSensor1;
+    case 2:
+        return currentSensor2;
+    case 3:
     default:
-        return false;
+        return currentSensor3;
     }
 }
 

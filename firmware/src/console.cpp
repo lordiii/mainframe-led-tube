@@ -14,9 +14,10 @@ struct EFFECT_INFOS
     EFFECT_CALLBACK callback;
 };
 
-const int EFFECT_COUNT = 6;
+const int EFFECT_COUNT = 7;
 EFFECT_INFOS effectInfos[EFFECT_COUNT] = {
-    (EFFECT_INFOS){"led-test", &effectTestLEDs},
+    (EFFECT_INFOS){"test-all", &effectTestLEDs},
+    (EFFECT_INFOS){"test-segment", &effectSegmentTest},
     (EFFECT_INFOS){"strobe", &effectStrobe},
     (EFFECT_INFOS){"rainbow-strobe", &effectRainbowStrobe},
     (EFFECT_INFOS){"police", &effectPolice},
@@ -111,6 +112,10 @@ void processCommand()
     {
         commandPrintCurrent();
     }
+    else if (consoleBuffer.startsWith("sensor-status "))
+    {
+        commandSensorStatus();
+    }
     else if (consoleBuffer.equals("debug"))
     {
         debug = !debug;
@@ -139,16 +144,16 @@ void commandPrintCurrent()
     SensorValues *sensorValues = getSensorValues();
 
     Serial.print("Top: ");
-    Serial.print(sensorValues->currentLine1);
-    Serial.println("mA");
+    Serial.print(sensorValues->currentLine1, 4);
+    Serial.println("A");
 
     Serial.print("Center: ");
-    Serial.print(sensorValues->currentLine2);
-    Serial.println("mA");
+    Serial.print(sensorValues->currentLine2, 4);
+    Serial.println("A");
 
     Serial.print("Bottom: ");
-    Serial.print(sensorValues->currentLine3);
-    Serial.println("mA");
+    Serial.print(sensorValues->currentLine3, 4);
+    Serial.println("A");
 }
 
 void commandPrintNetworkInfo()
@@ -203,7 +208,6 @@ void commandSetEffect()
 void commandSetBrightness()
 {
     long brightness = consoleBuffer.substring(strlen("brightness ")).toInt();
-    Serial.println(brightness);
 
     if (brightness)
     {
@@ -227,4 +231,24 @@ void commandSetBrightness()
     Serial.print("Brightness changed to: ");
     Serial.print(brightness);
     Serial.println('%');
+}
+
+void commandSensorStatus()
+{
+    int id = consoleBuffer.substring(strlen("sensor-status ")).toInt();
+
+    INA226 sensor = getCurrentSensor(id);
+
+    Serial.print("Die-ID:");
+    Serial.println(sensor.getDieID());
+
+    Serial.println("\nBUS\tSHUNT\tCURRENT\tPOWER");
+    Serial.print(sensor.getBusVoltage(), 3);
+    Serial.print("\t");
+    Serial.print(sensor.getShuntVoltage_mV(), 3);
+    Serial.print("\t");
+    Serial.print(sensor.getCurrent(), 3);
+    Serial.print("\t");
+    Serial.print(sensor.getPower(), 3);
+    Serial.println();
 }
