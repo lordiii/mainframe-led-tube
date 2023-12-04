@@ -6,16 +6,6 @@ struct Effect
 {
     String name;
     EffectCallback callback;
-
-    Effect* previous;
-    Effect* next;
-};
-
-struct EffectList
-{
-    Effect *first;
-    Effect *last;
-    unsigned short length;
 };
 
 struct EffectState
@@ -28,7 +18,9 @@ struct EffectState
 
 extern OctoWS2811 leds;
 extern EffectState *state;
-extern EffectList *effects;
+
+extern Effect **effects;
+extern int effectCount;
 
 void initOctoWS2811();
 void registerEffect(String name, EffectCallback callback);
@@ -41,4 +33,4 @@ bool effectStrobe(unsigned long delta);
 bool effectRainbowStrobe(unsigned long delta);
 bool effectPolice(unsigned long delta);
 bool effectSolidWhite(unsigned long delta);
-bool effectSegmentTest(OctoWS2811 leds, unsigned long delta);
+bool effectBeam(unsigned long delta);

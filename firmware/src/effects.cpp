@@ -12,44 +12,30 @@ const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
 DMAMEM int displayMemory[LED_PER_STRIP * 6];
 int drawingMemory[LED_PER_STRIP * 6];
 
+OctoWS2811 leds = OctoWS2811(LED_PER_STRIP, displayMemory, drawingMemory, LED_CONFIGURATION, LED_STRIP_AMOUNT, pinList);
+EffectState *state = new EffectState;
+
+int effectCount = 0;
+Effect **effects = (Effect **)malloc(256);
+
 void initOctoWS2811() {
-    leds = OctoWS2811(LED_PER_STRIP, displayMemory, drawingMemory, LED_CONFIGURATION, LED_STRIP_AMOUNT, pinList);
     leds.begin();
     leds.show();
-
-    state = (EffectState *) malloc(sizeof(EffectState));
 
     state->current = nullptr;
     state->effectData = nullptr;
     state->lastFrameChange = 0;
     state->brightness = 0.75f;
-
-    effects = (EffectList *) malloc(sizeof(EffectList));
-    effects->length = 0;
-    effects->first = nullptr;
-    effects->last = nullptr;
 }
 
 void registerEffect(String name, EffectCallback callback)
 {
-    Effect *effect = (Effect*) malloc(sizeof(Effect));
-
-    effect->name = std::move(name);
+    Effect *effect = new Effect;
     effect->callback = callback;
-    effect->previous = effects->last;
-    effect->next = nullptr;
+    effect->name = name;
 
-    if(effects->length == 0)
-    {
-        effects->first = effect;
-        effects->last = effect;
-    } else
-    {
-        effects->last->next = effect;
-        effects->last = effect;
-    }
-
-    effects->length++;
+    effects[effectCount] = effect;
+    effectCount++;
 }
 
 void setBrightness(float value) {
@@ -228,38 +214,13 @@ bool effectSolidWhite(unsigned long delta)
     return false;
 }
 
-int lastPos = 0;
-bool effectSegmentTest(OctoWS2811 leds, unsigned long delta)
-{
-    if (delta > 100)
-    {
-        if (lastPos > leds.numPixels())
-        {
-            lastPos = 0;
-        }
-
-        for (int i = 0; i < 320; i++)
-        {
-            setLedColor(leds, lastPos - i, 0x0);
-        }
-
-        for (int i = 0; i < 320; i++)
-        {
-            setLedColor(leds, i + lastPos, 0xFFFFFF);
-        }
-
-        lastPos += 320;
-
-        return true;
-    }
-
-    return false;
-}
-
 bool effectBeam(unsigned long delta)
 {
     if(delta > 30)
     {
         fadeAllToBlack(50);
+        return true;
     }
+
+    return false;
 }

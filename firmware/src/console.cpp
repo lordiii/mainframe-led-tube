@@ -166,11 +166,11 @@ void commandSetEffect()
     Effect *effect = nullptr;
 
     if(!effectName.equals("off")) {
-        for(int i = 0; i < effects->length; i++)
+        for(int i = 0; i < effectCount; i++)
         {
-            effect = i == 0 ? effects->first : effect->next;
+            effect = effects[i];
 
-            if(effect != nullptr && effect->name.equals(effectName))
+            if(effect->name.equals(effectName))
             {
                 break;
             }
@@ -265,14 +265,8 @@ void commandPrintEffectList()
 {
     Serial.println("Known effects: ");
 
-    Effect *effect = nullptr;
-    for(int i = 0; i < effects->length; i++)
+    for(int i = 0; i < effectCount; i++)
     {
-        effect = i == 0 ? effects->first : effect->next;
-
-        if(effect != nullptr)
-        {
-            Serial.println("\t> " + effect->name);
-        }
+        Serial.println("\t> " + effects[i]->name);
     }
 }

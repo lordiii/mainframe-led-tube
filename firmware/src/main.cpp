@@ -32,7 +32,7 @@ unsigned long taskActivityLed = 0;
 unsigned long taskReadCurrent = 0;
 
 // Sensor Values
-SensorValues *sensorValues;
+SensorValues *sensorValues = new SensorValues;
 
 // Screen
 #define RST 40
@@ -58,7 +58,6 @@ void setup()
 
     taskRenderLeds.begin(renderFrame, 10000);
 
-    sensorValues = (SensorValues *)malloc(sizeof(SensorValues));
     sensorValues->temperatureTop = 0.0f;
     sensorValues->temperatureCenter = 0.0f;
     sensorValues->temperatureBottom = 0.0f;
@@ -85,7 +84,6 @@ void setup()
     initOctoWS2811();
 
     registerEffect("test-led", &effectTestLEDs);
-    registerEffect("test-segment", &effectSegmentTest);
     registerEffect("strobe", &effectStrobe);
     registerEffect("rainbow-strobe", &effectRainbowStrobe);
     registerEffect("police", &effectPolice);
