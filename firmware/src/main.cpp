@@ -6,7 +6,6 @@
 
 #include <Wire.h>
 #include <INA226.h>
-#include <OctoWS2811.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SD.h>
@@ -83,32 +82,19 @@ void setup()
 
     initConsole();
     initWebServer();
-    initLeds();
-    Serial.println("test");
-}
+    initOctoWS2811();
 
-void testtriangles()
-{
-    tft.fillScreen(ST7735_BLACK);
-    int color = 0xF800;
-    int t;
-    int w = 63;
-    int x = 159;
-    int y = 0;
-    int z = 127;
-    for (t = 0; t <= 15; t += 1)
-    {
-        tft.drawTriangle(w, y, y, x, z, x, color);
-        x -= 4;
-        y += 4;
-        z -= 4;
-        color += 100;
-    }
+    registerEffect("test-led", &effectTestLEDs);
+    registerEffect("test-segment", &effectSegmentTest);
+    registerEffect("strobe", &effectStrobe);
+    registerEffect("rainbow-strobe", &effectRainbowStrobe);
+    registerEffect("police", &effectPolice);
+    registerEffect("solid-white", &effectSolidWhite);
+    registerEffect("beam", &effectBeam);
 }
 
 bool toggleTemperatureReadWrite = false;
 bool activityLedState = false;
-bool status = false;
 void loop()
 {
     unsigned long time = millis();
@@ -227,9 +213,4 @@ INA226 getCurrentSensor(int id)
     default:
         return currentSensor3;
     }
-}
-
-SensorValues *getSensorValues()
-{
-    return sensorValues;
 }

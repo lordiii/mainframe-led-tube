@@ -13,3 +13,4 @@ void commandSetBrightness();
 void commandPrintCurrent();
 void commandSensorStatus();
 void commandTogglePowerSupply();
+void commandPrintEffectList();

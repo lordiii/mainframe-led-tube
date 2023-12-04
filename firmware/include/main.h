@@ -18,6 +18,8 @@ struct SensorValues {
     float currentLine3;
 };
 
+extern SensorValues *sensorValues;
+
+bool initializeCurrentSensor(INA226 *sensor);
 File getFileContents(String fileName);
 INA226 getCurrentSensor(int id);
-SensorValues *getSensorValues();

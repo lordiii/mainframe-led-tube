@@ -1,97 +1,102 @@
 #include "effects.h"
 #include "globals.h"
+#include "effects_lib.h"
 
 #include <OctoWS2811.h>
 
+#define LED_STRIP_AMOUNT (LED_TOTAL_RINGS / LED_RINGS_PER_SEGMENT)
+#define LED_PER_STRIP (LED_PER_RING * LED_RINGS_PER_SEGMENT)
+
 // Setup LEDs
 const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
-
 DMAMEM int displayMemory[LED_PER_STRIP * 6];
 int drawingMemory[LED_PER_STRIP * 6];
 
-const int config = LED_CONFIGURATION;
-OctoWS2811 leds(LED_PER_STRIP, displayMemory, drawingMemory, config, LED_STRIP_AMOUNT, pinList);
-
-void initLeds()
-{
+void initOctoWS2811() {
+    leds = OctoWS2811(LED_PER_STRIP, displayMemory, drawingMemory, LED_CONFIGURATION, LED_STRIP_AMOUNT, pinList);
     leds.begin();
     leds.show();
+
+    state = (EffectState *) malloc(sizeof(EffectState));
+
+    state->current = nullptr;
+    state->effectData = nullptr;
+    state->lastFrameChange = 0;
+    state->brightness = 0.75f;
+
+    effects = (EffectList *) malloc(sizeof(EffectList));
+    effects->length = 0;
+    effects->first = nullptr;
+    effects->last = nullptr;
 }
 
-// OctoWS2811 settings
-#define RED 0xFF0000
-#define GREEN 0x00FF00
-#define BLUE 0x0000FF
+void registerEffect(String name, EffectCallback callback)
+{
+    Effect *effect = (Effect*) malloc(sizeof(Effect));
 
-float brightness = 75.0f;
+    effect->name = std::move(name);
+    effect->callback = callback;
+    effect->previous = effects->last;
+    effect->next = nullptr;
+
+    if(effects->length == 0)
+    {
+        effects->first = effect;
+        effects->last = effect;
+    } else
+    {
+        effects->last->next = effect;
+        effects->last = effect;
+    }
+
+    effects->length++;
+}
+
 void setBrightness(float value) {
-    brightness = value;
+    state->brightness = value;
+
+    for(int i = 0; i < leds.numPixels(); i++)
+    {
+        leds.setPixel(i, applyBrightness(leds.getPixel(i)));
+    }
 }
 
-bool (*currentEffect)(OctoWS2811, unsigned long) = nullptr;
-unsigned long lastFrameChange = 0;
+void setCurrentEffect(Effect *effect)
+{
+    noInterrupts();
+    state->lastFrameChange = 0;
+    state->current = effect;
+
+    if(state == nullptr)
+    {
+        fillLEDs(0x000000);
+    }
+    interrupts();
+}
 
 void renderFrame()
 {
     bool updated = false;
 
-    if(currentEffect != nullptr) {
-        unsigned long delta = millis() - lastFrameChange;
-        updated = currentEffect(leds, delta);
+    if(state->current != nullptr) {
+        unsigned long delta = millis() - state->lastFrameChange;
+        updated = state->current->callback(delta);
     }
 
     if (updated)
     {
-        lastFrameChange = millis();
+        state->lastFrameChange = millis();
     }
 
     leds.show();
 }
 
-void setCurrentEffect(bool (*function)(OctoWS2811,unsigned long))
-{
-    noInterrupts();
-    lastFrameChange = 0;
-    currentEffect = function;
-    interrupts();
-}
-
-int applyBrightness(int color)
-{
-    uint8_t r = color >> 16;
-    uint8_t g = color >> 8;
-    uint8_t b = color;
-
-    r *= brightness;
-    g *= brightness;
-    b *= brightness;
-
-    return (r << 16) | (g << 8) | b;
-}
-
-// Check if we got all universes
-void fillLEDs(OctoWS2811 leds, int color)
-{
-    for (int i = 0; i < leds.numPixels(); i++)
-    {
-        leds.setPixel(i, applyBrightness(color));
-    }
-}
-
-void setLedColor(OctoWS2811 leds, int pin, int color)
-{
-    if (pin < leds.numPixels() && pin >= 0)
-    {
-        leds.setPixel(pin, applyBrightness(color));
-    }
-}
-
 bool wasOn = false;
-bool effectStrobe(OctoWS2811 leds, unsigned long delta)
+bool effectStrobe(unsigned long delta)
 {
     if (delta > 5 && !wasOn)
     {
-        fillLEDs(leds, 0xFFFFFF);
+        fillLEDs(0xFFFFFF);
         wasOn = true;
 
         return true;
@@ -99,7 +104,7 @@ bool effectStrobe(OctoWS2811 leds, unsigned long delta)
 
     if (delta > 50 && wasOn)
     {
-        fillLEDs(leds, 0x000000);
+        fillLEDs(0x000000);
         wasOn = false;
 
         return true;
@@ -109,7 +114,7 @@ bool effectStrobe(OctoWS2811 leds, unsigned long delta)
 }
 
 int lastColor = BLUE;
-bool effectRainbowStrobe(OctoWS2811 leds, unsigned long delta)
+bool effectRainbowStrobe(unsigned long delta)
 {
     if (delta > 5 && !wasOn)
     {
@@ -129,14 +134,14 @@ bool effectRainbowStrobe(OctoWS2811 leds, unsigned long delta)
             break;
         }
 
-        fillLEDs(leds, lastColor);
+        fillLEDs(lastColor);
 
         return true;
     }
 
     if (delta > 25 && wasOn)
     {
-        fillLEDs(leds, 0x000000);
+        fillLEDs(0x000000);
         wasOn = false;
 
         return true;
@@ -145,7 +150,7 @@ bool effectRainbowStrobe(OctoWS2811 leds, unsigned long delta)
     return false;
 }
 
-bool effectTestLEDs(OctoWS2811 leds, unsigned long delta)
+bool effectTestLEDs(unsigned long delta)
 {
     if (delta > 250)
     {
@@ -163,19 +168,7 @@ bool effectTestLEDs(OctoWS2811 leds, unsigned long delta)
             break;
         }
 
-        fillLEDs(leds, lastColor);
-
-        return true;
-    }
-
-    return false;
-}
-
-bool effectOff(OctoWS2811 leds, unsigned long delta)
-{
-    if (delta > 10000)
-    {
-        fillLEDs(leds, 0x000000);
+        fillLEDs(lastColor);
 
         return true;
     }
@@ -184,7 +177,7 @@ bool effectOff(OctoWS2811 leds, unsigned long delta)
 }
 
 int blinkTimes = 0;
-bool effectPolice(OctoWS2811 leds, unsigned long delta)
+bool effectPolice(unsigned long delta)
 {
     if (delta > 25 && blinkTimes >= 2)
     {
@@ -197,7 +190,7 @@ bool effectPolice(OctoWS2811 leds, unsigned long delta)
             lastColor = BLUE;
         }
 
-        fillLEDs(leds, 0x000000);
+        fillLEDs(0x000000);
 
         blinkTimes = 0;
         return true;
@@ -209,12 +202,12 @@ bool effectPolice(OctoWS2811 leds, unsigned long delta)
         {
             wasOn = false;
             blinkTimes++;
-            fillLEDs(leds, 0x000000);
+            fillLEDs(0x000000);
         }
         else
         {
             wasOn = true;
-            fillLEDs(leds, lastColor);
+            fillLEDs(lastColor);
         }
 
         return true;
@@ -223,11 +216,11 @@ bool effectPolice(OctoWS2811 leds, unsigned long delta)
     return false;
 }
 
-bool effectSolidWhite(OctoWS2811 leds, unsigned long delta)
+bool effectSolidWhite(unsigned long delta)
 {
     if (delta > 10000)
     {
-        fillLEDs(leds, 0xFFFFFF);
+        fillLEDs(0xFFFFFF);
 
         return true;
     }
@@ -261,4 +254,12 @@ bool effectSegmentTest(OctoWS2811 leds, unsigned long delta)
     }
 
     return false;
+}
+
+bool effectBeam(unsigned long delta)
+{
+    if(delta > 30)
+    {
+        fadeAllToBlack(50);
+    }
 }
