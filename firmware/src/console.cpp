@@ -1,7 +1,8 @@
-#include "console.h"
-#include "main.h"
-#include "effects.h"
-#include "globals.h"
+#include <console.h>
+#include <main.h>
+
+#include <effects.h>
+#include <globals.h>
 
 bool debug = false;
 
