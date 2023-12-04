@@ -11,7 +11,7 @@ String consoleBuffer;
 struct EFFECT_INFOS
 {
     const char *name;
-    EFFECT_CALLBACK callback;
+    EffectCallback callback;
 };
 
 const int EFFECT_COUNT = 6;
@@ -119,8 +119,6 @@ void processCommand()
 
 void commandPrintTemperatures()
 {
-    SensorValues *sensorValues = getSensorValues();
-
     Serial.print("Top: ");
     Serial.print(sensorValues->temperatureTop);
     Serial.println("°C");
@@ -136,8 +134,6 @@ void commandPrintTemperatures()
 
 void commandPrintCurrent()
 {
-    SensorValues *sensorValues = getSensorValues();
-
     Serial.print("Top: ");
     Serial.print(sensorValues->currentLine1);
     Serial.println("mA");

@@ -6,7 +6,6 @@
 
 #include <Wire.h>
 #include <INA226.h>
-#include <OctoWS2811.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SD.h>
@@ -35,9 +34,6 @@ unsigned long taskReadSensors = 0;
 unsigned long taskRenderScreen = 0;
 unsigned long taskActivityLed = 0;
 
-// Sensor Values
-SensorValues *sensorValues;
-
 void setup()
 {
     pinMode(13, OUTPUT);
@@ -65,7 +61,8 @@ void setup()
 
     initConsole();
     initWebServer();
-    initLeds();
+
+    initOctoWS2811();
 }
 
 bool toggleTemperatureReadWrite = false;
@@ -152,9 +149,4 @@ bool initializeCurrentSensor(INA226 *sensor)
     default:
         return false;
     }
-}
-
-SensorValues *getSensorValues()
-{
-    return sensorValues;
 }
