@@ -214,11 +214,15 @@ bool effectSolidWhite(unsigned long delta)
     return false;
 }
 
+
+unsigned int lastRing = 0;
 bool effectBeam(unsigned long delta)
 {
     if(delta > 30)
     {
-        fadeAllToBlack(50);
+        setRingColor(lastRing, 0xFFFFFF);
+        lastRing++;
+
         return true;
     }
 
