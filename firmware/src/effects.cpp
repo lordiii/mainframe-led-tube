@@ -6,6 +6,9 @@
 
 #include <utility>
 
+#define LED_STRIP_AMOUNT (LED_TOTAL_RINGS / LED_RINGS_PER_SEGMENT)
+#define LED_PER_STRIP (LED_PER_RING * LED_RINGS_PER_SEGMENT)
+
 // Setup LEDs
 const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
 DMAMEM int displayMemory[LED_PER_STRIP * 6];
@@ -225,4 +228,12 @@ bool effectSolidWhite(unsigned long delta)
     }
 
     return false;
+}
+
+bool effectBeam(unsigned long delta)
+{
+    if(delta > 30)
+    {
+        fadeAllToBlack(50);
+    }
 }

@@ -4,4 +4,10 @@
 #define BLUE 0x0000FF
 
 int applyBrightness(int color);
+int applyBrightnessByAmount(int color, float amount);
 void fillLEDs(int color);
+unsigned int calculatePixelId(unsigned int ring, unsigned int pixel);
+void setPixelColor(unsigned int ring, unsigned int pixel, int color);
+void fadePixelToBlack(unsigned int ring, unsigned int pixel, byte strength);
+void fadeRingToBlack(unsigned int ring, byte strength);
+void fadeAllToBlack(byte strength);

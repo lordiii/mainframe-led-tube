@@ -1,7 +1,7 @@
-#define LED_STRIP_AMOUNT 8
-#define LED_PINS {2, 3, 4, 5, 6, 7, 8}
-
-#define LED_PER_STRIP 32 * 8
+#define LED_TOTAL_RINGS 60
+#define LED_PER_RING 32
+#define LED_RINGS_PER_SEGMENT 10
+#define LED_PINS {2, 3, 4, 6, 7, 8}
 #define LED_CONFIGURATION (WS2811_GRB | WS2811_800kHz)
 
 #define CURRENT_SENSOR_1_ADDRESS NULL
