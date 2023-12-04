@@ -11,3 +11,4 @@ void commandReboot();
 void commandSetEffect();
 void commandSetBrightness();
 void commandPrintCurrent();
+void commandPrintEffectList();

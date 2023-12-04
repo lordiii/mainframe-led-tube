@@ -8,22 +8,6 @@ bool debug = false;
 const int BUFFER_SIZE = 65;
 String consoleBuffer;
 
-struct EFFECT_INFOS
-{
-    const char *name;
-    EffectCallback callback;
-};
-
-const int EFFECT_COUNT = 6;
-EFFECT_INFOS effectInfos[EFFECT_COUNT] = {
-    (EFFECT_INFOS){"led-test", &effectTestLEDs},
-    (EFFECT_INFOS){"strobe", &effectStrobe},
-    (EFFECT_INFOS){"rainbow-strobe", &effectRainbowStrobe},
-    (EFFECT_INFOS){"police", &effectPolice},
-    (EFFECT_INFOS){"off", &effectOff},
-    (EFFECT_INFOS){"solid-white", &effectSolidWhite},
-};
-
 void initConsole()
 {
     consoleBuffer = String("");
@@ -114,6 +98,9 @@ void processCommand()
     else if (consoleBuffer.equals("debug"))
     {
         debug = !debug;
+    } else if(consoleBuffer.equals("effect-list"))
+    {
+        commandPrintEffectList();
     }
 }
 
@@ -170,35 +157,34 @@ void commandReboot()
 void commandSetEffect()
 {
     String effectName = consoleBuffer.substring(strlen("effect "));
+    Effect *effect = nullptr;
 
-    bool found = false;
-    for (auto &effectInfo : effectInfos)
-    {
-        if (String(effectInfo.name).equals(effectName))
+    if(!effectName.equals("off")) {
+        for(int i = 0; i < effects->length; i++)
         {
-            setCurrentEffect(effectInfo.callback);
-            found = true;
-            break;
+            effect = i == 0 ? effects->first : effect->next;
+
+            if(effect != nullptr && effect->name.equals(effectName))
+            {
+                break;
+            }
         }
     }
 
-    if (!found)
+    setCurrentEffect(effect);
+
+    if(effect == nullptr)
     {
-        Serial.print("Effect '");
-        Serial.print(effectName);
-        Serial.println("' not found!");
-    }
-    else
+        Serial.println("Effect '" + effectName + "' not found!");
+    } else
     {
-        Serial.print("Effect set to '");
-        Serial.print(effectName);
-        Serial.println("'!");
+        Serial.print("Effect set to '" + effectName + "'!");
     }
 }
 
 void commandSetBrightness()
 {
-    long brightness = consoleBuffer.substring(strlen("brightness ")).toInt();
+    int brightness = consoleBuffer.substring(strlen("brightness ")).toInt();
     Serial.println(brightness);
 
     if (brightness)
@@ -223,4 +209,20 @@ void commandSetBrightness()
     Serial.print("Brightness changed to: ");
     Serial.print(brightness);
     Serial.println('%');
+}
+
+void commandPrintEffectList()
+{
+    Serial.println("Known effects: ");
+
+    Effect *effect = nullptr;
+    for(int i = 0; i < effects->length; i++)
+    {
+        effect = i == 0 ? effects->first : effect->next;
+
+        if(effect != nullptr)
+        {
+            Serial.println("\t> " + effect->name);
+        }
+    }
 }

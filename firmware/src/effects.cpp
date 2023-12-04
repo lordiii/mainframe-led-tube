@@ -4,6 +4,8 @@
 
 #include <OctoWS2811.h>
 
+#include <utility>
+
 // Setup LEDs
 const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
 DMAMEM int displayMemory[LED_PER_STRIP * 6];
@@ -16,10 +18,37 @@ void initOctoWS2811() {
 
     state = (EffectState *) malloc(sizeof(EffectState));
 
-    state->callback = nullptr;
+    state->current = nullptr;
     state->effectData = nullptr;
     state->lastFrameChange = 0;
     state->brightness = 0.75f;
+
+    effects = (EffectList *) malloc(sizeof(EffectList));
+    effects->length = 0;
+    effects->first = nullptr;
+    effects->last = nullptr;
+}
+
+void registerEffect(String name, EffectCallback callback)
+{
+    Effect *effect = (Effect*) malloc(sizeof(Effect));
+
+    effect->name = std::move(name);
+    effect->callback = callback;
+    effect->previous = effects->last;
+    effect->next = nullptr;
+
+    if(effects->length == 0)
+    {
+        effects->first = effect;
+        effects->last = effect;
+    } else
+    {
+        effects->last->next = effect;
+        effects->last = effect;
+    }
+
+    effects->length++;
 }
 
 void setBrightness(float value) {
@@ -31,13 +60,13 @@ void setBrightness(float value) {
     }
 }
 
-void setCurrentEffect(EffectCallback callback)
+void setCurrentEffect(Effect *effect)
 {
     noInterrupts();
     state->lastFrameChange = 0;
-    state->callback = callback;
+    state->current = effect;
 
-    if(state->callback)
+    if(state == nullptr)
     {
         fillLEDs(0x000000);
     }
@@ -48,9 +77,9 @@ void renderFrame()
 {
     bool updated = false;
 
-    if(state->callback != nullptr) {
+    if(state->current != nullptr) {
         unsigned long delta = millis() - state->lastFrameChange;
-        updated = state->callback(delta);
+        updated = state->current->callback(delta);
     }
 
     if (updated)
@@ -139,18 +168,6 @@ bool effectTestLEDs(unsigned long delta)
         }
 
         fillLEDs(lastColor);
-
-        return true;
-    }
-
-    return false;
-}
-
-bool effectOff(unsigned long delta)
-{
-    if (delta > 10000)
-    {
-        fillLEDs(0x000000);
 
         return true;
     }
