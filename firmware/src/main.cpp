@@ -12,12 +12,12 @@
 #include <Adafruit_ST7735.h>
 
 // Create Current Sensor Objects
-INA226 sensor1(CURRENT_SENSOR_1_ADDRESS);
-INA226 sensor2(CURRENT_SENSOR_2_ADDRESS);
-INA226 sensor3(CURRENT_SENSOR_3_ADDRESS);
+INA226 currentSensor1(CURRENT_SENSOR_1_ADDRESS);
+INA226 currentSensor2(CURRENT_SENSOR_2_ADDRESS);
+INA226 currentSensor3(CURRENT_SENSOR_3_ADDRESS);
 
 OneWire oneWire(24);
-DallasTemperature sensors(&oneWire);
+DallasTemperature tempSensors(&oneWire);
 const unsigned char tempProbeTop[8] = TEMPERATURE_SENSOR_TOP_ADDRESS;
 const unsigned char tempProbeCenter[8] = TEMPERATURE_SENSOR_CENTER_ADDRESS;
 const unsigned char tempProbeBottom[8] = TEMPERATURE_SENSOR_BOTTOM_ADDRESS;
@@ -39,6 +39,8 @@ void setup()
     pinMode(13, OUTPUT);
     digitalWrite(13, HIGH);
 
+    SD.begin(BUILTIN_SDCARD);
+
     Serial.begin(115200);
 
     pinMode(PIN_PW_ON, OUTPUT);
@@ -59,17 +61,17 @@ void setup()
     sensorValues->currentLine3 = 0.0f;
 
     Wire.begin();
-    sensor1.begin();
-    sensor1.setMaxCurrentShunt(10, 0.006);
-    sensor1.setAverage(3);
+    currentSensor1.begin();
+    currentSensor1.setMaxCurrentShunt(10, 0.006);
+    currentSensor1.setAverage(3);
 
-    sensor2.begin();
-    sensor2.setMaxCurrentShunt(10, 0.006);
-    sensor2.setAverage(3);
+    currentSensor2.begin();
+    currentSensor2.setMaxCurrentShunt(10, 0.006);
+    currentSensor2.setAverage(3);
 
-    sensor3.begin();
-    sensor3.setMaxCurrentShunt(10, 0.006);
-    sensor3.setAverage(3);
+    currentSensor3.begin();
+    currentSensor3.setMaxCurrentShunt(10, 0.006);
+    currentSensor3.setAverage(3);
 
     initConsole();
     initWebServer();
@@ -97,14 +99,14 @@ void loop()
         // Read Temperature Values
         if (toggleTemperatureReadWrite)
         {
-            sensors.requestTemperatures();
+            tempSensors.requestTemperatures();
             toggleTemperatureReadWrite = !toggleTemperatureReadWrite;
         }
         else
         {
-            sensorValues->temperatureTop = sensors.getTempC(tempProbeTop);
-            sensorValues->temperatureCenter = sensors.getTempC(tempProbeCenter);
-            sensorValues->temperatureBottom = sensors.getTempC(tempProbeBottom);
+            fetchTemperatureValue(tempProbeTop, TOP, &sensorValues->temperatureTop);
+            fetchTemperatureValue(tempProbeCenter, CENTER, &sensorValues->temperatureCenter);
+            fetchTemperatureValue(tempProbeBottom, BOTTOM, &sensorValues->temperatureBottom);
 
             toggleTemperatureReadWrite = !toggleTemperatureReadWrite;
         }
@@ -121,15 +123,15 @@ void loop()
 
     if ((time - taskReadCurrent) > 100)
     {
-        fetchCurrentValue(sensor1, TOP, &sensorValues->currentLine1);
-        fetchCurrentValue(sensor2, CENTER, &sensorValues->currentLine2);
-        fetchCurrentValue(sensor3, BOTTOM, &sensorValues->currentLine3);
+        fetchCurrentValue(currentSensor1, TOP, &sensorValues->currentLine1);
+        fetchCurrentValue(currentSensor2, CENTER, &sensorValues->currentLine2);
+        fetchCurrentValue(currentSensor3, BOTTOM, &sensorValues->currentLine3);
 
-        fetchBusVoltageValue(sensor1, TOP, &sensorValues->busVoltageLine1);
-        fetchBusVoltageValue(sensor2, CENTER, &sensorValues->busVoltageLine2);
-        fetchBusVoltageValue(sensor3, BOTTOM, &sensorValues->busVoltageLine3);
+        fetchBusVoltageValue(currentSensor1, TOP, &sensorValues->busVoltageLine1);
+        fetchBusVoltageValue(currentSensor2, CENTER, &sensorValues->busVoltageLine2);
+        fetchBusVoltageValue(currentSensor3, BOTTOM, &sensorValues->busVoltageLine3);
 
-        taskReadCurrent = 0;
+        taskReadCurrent = time;
     }
 
     processConsoleData();
@@ -155,6 +157,17 @@ void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue)
     {
         *oldvalue = value;
         renderCurrentValue(section, value);
+    }
+}
+
+void fetchTemperatureValue(const uint8_t * sensor, TUBE_SECTION section, float *oldvalue)
+{
+    float value = round(tempSensors.getTempC(sensor) * 100.0f) / 100.0f;
+
+    if (*oldvalue != value)
+    {
+        *oldvalue = value;
+        renderTemperatureValue(section, value);
     }
 }
 
@@ -185,11 +198,11 @@ INA226 getCurrentSensor(int id)
     switch (id)
     {
     case 1:
-        return sensor1;
+        return currentSensor1;
     case 2:
-        return sensor2;
+        return currentSensor2;
     case 3:
     default:
-        return sensor3;
+        return currentSensor3;
     }
 }

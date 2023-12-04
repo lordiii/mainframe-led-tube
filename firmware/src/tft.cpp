@@ -1,6 +1,7 @@
 #include <tft.h>
 
 #include <Adafruit_ST7735.h>
+#include <SD.h>
 
 // Screen
 #define RST 40
@@ -10,7 +11,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(&SPI1, CS1, CS2, RST); // SPI, CS, DC, RST
 
 #define RECT_OFFSET 5
 #define RECT_HEIGHT 150
-#define RECT_WIDTH 60
+#define RECT_WIDTH 70
 
 #define RECT_TOP_START_Y (RECT_OFFSET)
 #define RECT_TOP_START_X (RECT_OFFSET)
@@ -26,10 +27,10 @@ void initTFT()
     tft.initR(INITR_BLACKTAB);
     tft.fillScreen(ST7735_BLACK);
 
-    tft.drawRect(RECT_OFFSET, RECT_OFFSET, RECT_WIDTH, RECT_HEIGHT, 0xFFFF);
+    tft.drawRect(RECT_OFFSET, RECT_OFFSET, RECT_WIDTH, RECT_HEIGHT, ST7735_WHITE);
 
-    tft.drawLine(RECT_OFFSET, RECT_TOP_START_Y + (RECT_HEIGHT / 3), (RECT_TOP_START_X + RECT_WIDTH) - 1, RECT_TOP_START_Y+ (RECT_HEIGHT / 3), 0xFFFF);
-    tft.drawLine(RECT_OFFSET, RECT_CENTER_START_Y + (RECT_HEIGHT / 3), (RECT_CENTER_START_X + RECT_WIDTH) - 1, RECT_CENTER_START_Y + (RECT_HEIGHT / 3), 0xFFFF);
+    tft.drawLine(RECT_OFFSET, RECT_TOP_START_Y + (RECT_HEIGHT / 3), (RECT_TOP_START_X + RECT_WIDTH) - 1, RECT_TOP_START_Y+ (RECT_HEIGHT / 3), ST7735_WHITE);
+    tft.drawLine(RECT_OFFSET, RECT_CENTER_START_Y + (RECT_HEIGHT / 3), (RECT_CENTER_START_X + RECT_WIDTH) - 1, RECT_CENTER_START_Y + (RECT_HEIGHT / 3), ST7735_WHITE);
 
     renderCurrentValue(TOP, 0);
     renderVoltageValue(TOP, 0);
@@ -66,8 +67,10 @@ void renderCurrentValue(TUBE_SECTION section, float value)
 
     tft.setCursor(xy.X + 10, xy.Y + 10);
 
-    tft.print(value, 3);
-    tft.println("A");
+    tft.setFont();
+    tft.setTextColor(ST7735_YELLOW);
+    tft.print(value, 2);
+    tft.print("A");
 }
 
 void renderVoltageValue(TUBE_SECTION section, float value)
@@ -77,8 +80,9 @@ void renderVoltageValue(TUBE_SECTION section, float value)
 
     tft.setCursor(xy.X + 10, xy.Y + 20);
     
-    tft.print(value, 3);
-    tft.println("V");
+    tft.setTextColor(ST7735_CYAN);
+    tft.print(value, 2);
+    tft.print("V");
 }
 
 void renderTemperatureValue(TUBE_SECTION section, float value)
@@ -88,6 +92,9 @@ void renderTemperatureValue(TUBE_SECTION section, float value)
     
     tft.setCursor(xy.X + 10, xy.Y + 30);
 
-    tft.print(value, 3);
-    tft.println("C");
+    tft.setTextColor(ST7735_RED);
+    tft.print(value, 2);
+    tft.drawCircle(tft.getCursorX() + 1, tft.getCursorY() + 1, 1, ST7735_RED);
+    tft.setCursor(tft.getCursorX() + 4, tft.getCursorY());
+    tft.print("C");
 }
