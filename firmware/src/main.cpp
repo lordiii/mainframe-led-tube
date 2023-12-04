@@ -10,6 +10,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SD.h>
+#include <Adafruit_ST7735.h>
 
 // Create Current Sensor Objects
 INA226 currentSensor1(CURRENT_SENSOR_1_ADDRESS);
@@ -34,12 +35,20 @@ unsigned long taskReadCurrent = 0;
 // Sensor Values
 SensorValues *sensorValues;
 
+// Screen
+#define RST 40
+#define CS1 35
+#define CS2 36
+Adafruit_ST7735 tft = Adafruit_ST7735(&SPI1, CS1, CS2, RST); // SPI, CS, DC, RST
+
 void setup()
 {
     pinMode(13, OUTPUT);
     digitalWrite(13, HIGH);
 
     Serial.begin(115200);
+
+    tft.initR(INITR_GREENTAB);
 
     pinMode(PIN_PW_ON, OUTPUT);
     pinMode(PIN_PS_GOOD, INPUT);
@@ -62,16 +71,39 @@ void setup()
     Wire.begin();
     currentSensor1.begin();
     currentSensor1.setMaxCurrentShunt(10, 0.006);
+    currentSensor1.setAverage(2);
 
     currentSensor2.begin();
     currentSensor2.setMaxCurrentShunt(10, 0.006);
+    currentSensor2.setAverage(2);
 
     currentSensor3.begin();
     currentSensor3.setMaxCurrentShunt(10, 0.006);
+    currentSensor3.setAverage(2);
 
     initConsole();
     initWebServer();
     initLeds();
+    Serial.println("test");
+}
+
+void testtriangles()
+{
+    tft.fillScreen(ST7735_BLACK);
+    int color = 0xF800;
+    int t;
+    int w = 63;
+    int x = 159;
+    int y = 0;
+    int z = 127;
+    for (t = 0; t <= 15; t += 1)
+    {
+        tft.drawTriangle(w, y, y, x, z, x, color);
+        x -= 4;
+        y += 4;
+        z -= 4;
+        color += 100;
+    }
 }
 
 bool toggleTemperatureReadWrite = false;
@@ -101,9 +133,42 @@ void loop()
         }
     }
 
-    if ((time - taskRenderScreen) > 2000)
+    if ((time - taskRenderScreen) > 100)
     {
-        taskRenderScreen = time;
+        tft.fillScreen(ST7735_BLACK);
+
+        tft.setCursor(0, 0);
+        tft.setTextColor(ST7735_WHITE);
+        tft.setTextWrap(true);
+
+        tft.print("Top: ");
+        tft.print(sensorValues->temperatureTop);
+        tft.println("°C");
+
+        tft.print("Center: ");
+        tft.print(sensorValues->temperatureCenter);
+        tft.println("°C");
+
+        tft.print("Bottom: ");
+        tft.print(sensorValues->temperatureBottom);
+        tft.println("°C");
+
+        tft.println();
+        tft.println();
+
+        tft.print("Top: ");
+        tft.print(sensorValues->currentLine1, 4);
+        tft.println("A");
+
+        tft.print("Center: ");
+        tft.print(sensorValues->currentLine2, 4);
+        tft.println("A");
+
+        tft.print("Bottom: ");
+        tft.print(sensorValues->currentLine3, 4);
+        tft.println("A");
+
+        taskRenderScreen = millis();
     }
 
     if (
@@ -115,7 +180,7 @@ void loop()
         activityLedState = !activityLedState;
     }
 
-    if ((time - taskRenderScreen) > 100)
+    if ((time - taskReadCurrent) > 100)
     {
         sensorValues->currentLine1 = currentSensor1.getCurrent();
         sensorValues->currentLine2 = currentSensor2.getCurrent();
