@@ -41,7 +41,7 @@ unsigned int calculatePixelId(unsigned int ring, unsigned int pixel)
 
 void setPixelColor(unsigned int ring, unsigned int pixel, int color)
 {
-    leds.setPixel(calculatePixelId(ring, pixel), color);
+    leds.setPixel(calculatePixelId(ring, pixel), applyBrightness(color));
 }
 
 void fadePixelToBlack(unsigned int ring, unsigned int pixel, unsigned char strength)
@@ -57,7 +57,7 @@ void fadeRingToBlack(unsigned int ring, unsigned char strength)
     }
 }
 
-void fadeAllToBlack(unsigned char strength)
+void fadeAllToBlack()
 {
     for(int i = 0 ; i < LED_TOTAL_RINGS; i++)
     {

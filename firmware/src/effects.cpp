@@ -15,8 +15,9 @@ int drawingMemory[LED_PER_STRIP * 6];
 OctoWS2811 leds = OctoWS2811(LED_PER_STRIP, displayMemory, drawingMemory, LED_CONFIGURATION, LED_STRIP_AMOUNT, pinList);
 EffectState *state = new EffectState;
 
-const int effectCount = 6;
+const int effectCount = 7;
 Effect effects[effectCount] = {
+    {"off", &effectOff},
     {"test-led", &effectTestLEDs},
     {"strobe", &effectStrobe},
     {"rainbow-strobe", &effectRainbowStrobe},
@@ -25,20 +26,20 @@ Effect effects[effectCount] = {
     {"beam", &effectBeam}
 };
 
-void initOctoWS2811() {
+void initOctoWS2811()
+{
     leds.begin();
     leds.show();
 
-    state->current = nullptr;
-    state->effectData = nullptr;
     state->lastFrameChange = 0;
     state->brightness = 0.75f;
 }
 
-void setBrightness(float value) {
+void setBrightness(float value)
+{
     state->brightness = value;
 
-    for(int i = 0; i < leds.numPixels(); i++)
+    for (int i = 0; i < leds.numPixels(); i++)
     {
         leds.setPixel(i, applyBrightness(leds.getPixel(i)));
     }
@@ -50,7 +51,12 @@ void setCurrentEffect(Effect *effect)
     state->lastFrameChange = 0;
     state->current = effect;
 
-    if(state == nullptr)
+    if (state->current != nullptr)
+    {
+        state->current->resetData();
+    }
+
+    if (state == nullptr)
     {
         fillLEDs(0x000000);
     }
@@ -61,7 +67,8 @@ void renderFrame()
 {
     bool updated = false;
 
-    if(state->current != nullptr) {
+    if (state->current != nullptr)
+    {
         unsigned long delta = millis() - state->lastFrameChange;
         updated = state->current->callback(delta);
     }
@@ -74,84 +81,32 @@ void renderFrame()
     leds.show();
 }
 
-bool wasOn = false;
-bool effectStrobe(unsigned long delta)
-{
-    if (delta > 5 && !wasOn)
-    {
-        fillLEDs(0xFFFFFF);
-        wasOn = true;
-
-        return true;
-    }
-
-    if (delta > 50 && wasOn)
-    {
-        fillLEDs(0x000000);
-        wasOn = false;
-
-        return true;
-    }
-
-    return false;
-}
-
-int lastColor = BLUE;
-bool effectRainbowStrobe(unsigned long delta)
-{
-    if (delta > 5 && !wasOn)
-    {
-        wasOn = true;
-
-        switch (lastColor)
-        {
-        case RED:
-            lastColor = GREEN;
-            break;
-        case GREEN:
-            lastColor = BLUE;
-            break;
-        case BLUE:
-        default:
-            lastColor = RED;
-            break;
-        }
-
-        fillLEDs(lastColor);
-
-        return true;
-    }
-
-    if (delta > 25 && wasOn)
-    {
-        fillLEDs(0x000000);
-        wasOn = false;
-
-        return true;
-    }
-
-    return false;
-}
-
+//
+//
+// LED Test Effects
+//
+//
 bool effectTestLEDs(unsigned long delta)
 {
+    EffectTestAll *data = &(state->data->testAll);
+
     if (delta > 250)
     {
-        switch (lastColor)
+        switch (data->lastColor)
         {
         case RED:
-            lastColor = GREEN;
+            data->lastColor = GREEN;
             break;
         case GREEN:
-            lastColor = BLUE;
+            data->lastColor = BLUE;
             break;
         case BLUE:
         default:
-            lastColor = RED;
+            data->lastColor = RED;
             break;
         }
 
-        fillLEDs(lastColor);
+        fillLEDs(data->lastColor);
 
         return true;
     }
@@ -159,38 +114,105 @@ bool effectTestLEDs(unsigned long delta)
     return false;
 }
 
-int blinkTimes = 0;
+//
+//
+// Strobe Effects
+//
+//
+bool effectStrobe(unsigned long delta)
+{
+    EffectStrobe *data = &(state->data->strobe);
+
+    if (delta > 5 && !data->toggle)
+    {
+        fillLEDs(0xFFFFFF);
+        data->toggle = true;
+
+        return true;
+    }
+
+    if (delta > 50 && data->toggle)
+    {
+        fillLEDs(0x000000);
+        data->toggle = false;
+
+        return true;
+    }
+
+    return false;
+}
+
+bool effectRainbowStrobe(unsigned long delta)
+{
+    EffectRainbowStrobe *data = &(state->data->rainbowStrobe);
+
+    if (delta > 5 && !data->toggle)
+    {
+        data->toggle = true;
+
+        switch (data->lastColor)
+        {
+        case RED:
+            data->lastColor = GREEN;
+            break;
+        case GREEN:
+            data->lastColor = BLUE;
+            break;
+        case BLUE:
+        default:
+            data->lastColor = RED;
+            break;
+        }
+
+        fillLEDs(data->lastColor);
+
+        return true;
+    }
+
+    if (delta > 25 && data->toggle)
+    {
+        fillLEDs(0x000000);
+        data->toggle = false;
+
+        return true;
+    }
+
+    return false;
+}
+
 bool effectPolice(unsigned long delta)
 {
-    if (delta > 25 && blinkTimes >= 2)
+    EffectPolice *data = &(state->data->police);
+
+    if (delta > 25 && data->blinkTimes >= 2)
     {
-        if (lastColor == BLUE)
+        if (data->lastColor == BLUE)
         {
-            lastColor = RED;
+            data->lastColor = RED;
         }
         else
         {
-            lastColor = BLUE;
+            data->lastColor = BLUE;
         }
 
         fillLEDs(0x000000);
 
-        blinkTimes = 0;
+        data->blinkTimes = 0;
         return true;
     }
 
-    if (delta > 50 && blinkTimes < 2)
+    if (delta > 50 && data->blinkTimes < 2)
     {
-        if (wasOn)
+        if (data->toggle)
         {
-            wasOn = false;
-            blinkTimes++;
+            data->toggle = false;
+            data->blinkTimes++;
             fillLEDs(0x000000);
         }
         else
         {
-            wasOn = true;
-            fillLEDs(lastColor);
+            data->toggle = true;
+            fillLEDs(data->lastColor);
         }
 
         return true;
@@ -199,23 +221,27 @@ bool effectPolice(unsigned long delta)
     return false;
 }
 
+//
+//
+// Miscellanous
+//
+//
 bool effectSolidWhite(unsigned long delta)
 {
-    if (delta > 10000)
-    {
-        fillLEDs(0xFFFFFF);
-
-        return true;
-    }
-
-    return false;
+    fillLEDs(0xFFFFFF);
+    return true;
 }
 
+bool effectOff(unsigned long delta)
+{
+    fillLEDs(0);
+    return true;
+}
 
 unsigned int lastRing = 0;
 bool effectBeam(unsigned long delta)
 {
-    if(delta > 30)
+    if (delta > 30)
     {
         setRingColor(lastRing, 0xFFFFFF);
         lastRing++;
