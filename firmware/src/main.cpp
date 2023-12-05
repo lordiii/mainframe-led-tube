@@ -77,13 +77,6 @@ void setup()
     initWebServer();
     initOctoWS2811();
     initTFT();
-
-    registerEffect("test-led", &effectTestLEDs);
-    registerEffect("strobe", &effectStrobe);
-    registerEffect("rainbow-strobe", &effectRainbowStrobe);
-    registerEffect("police", &effectPolice);
-    registerEffect("solid-white", &effectSolidWhite);
-    registerEffect("beam", &effectBeam);
 }
 
 bool toggleTemperatureReadWrite = false;

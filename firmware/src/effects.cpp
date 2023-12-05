@@ -15,8 +15,15 @@ int drawingMemory[LED_PER_STRIP * 6];
 OctoWS2811 leds = OctoWS2811(LED_PER_STRIP, displayMemory, drawingMemory, LED_CONFIGURATION, LED_STRIP_AMOUNT, pinList);
 EffectState *state = new EffectState;
 
-int effectCount = 0;
-Effect **effects = (Effect **)malloc(256);
+const int effectCount = 6;
+Effect effects[effectCount] = {
+    {"test-led", &effectTestLEDs},
+    {"strobe", &effectStrobe},
+    {"rainbow-strobe", &effectRainbowStrobe},
+    {"police", &effectPolice},
+    {"solid-white", &effectSolidWhite},
+    {"beam", &effectBeam}
+};
 
 void initOctoWS2811() {
     leds.begin();
@@ -26,16 +33,6 @@ void initOctoWS2811() {
     state->effectData = nullptr;
     state->lastFrameChange = 0;
     state->brightness = 0.75f;
-}
-
-void registerEffect(String name, EffectCallback callback)
-{
-    Effect *effect = new Effect;
-    effect->callback = callback;
-    effect->name = name;
-
-    effects[effectCount] = effect;
-    effectCount++;
 }
 
 void setBrightness(float value) {

@@ -6,7 +6,7 @@
 #include <SD.h>
 
 const size_t MAX_CHUNK_SIZE = 1024;
-char *buffer = (char *)malloc(MAX_CHUNK_SIZE);
+char buffer[MAX_CHUNK_SIZE];
 
 EthernetWebServer server(80);
 

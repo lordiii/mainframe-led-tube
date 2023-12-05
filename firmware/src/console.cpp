@@ -164,12 +164,12 @@ void commandReboot()
 void commandSetEffect()
 {
     String effectName = consoleBuffer.substring(strlen("effect "));
+    
     Effect *effect = nullptr;
-
     if(!effectName.equals("off")) {
         for(int i = 0; i < effectCount; i++)
         {
-            effect = effects[i];
+            effect = &effects[i];
 
             if(effect->name.equals(effectName))
             {
@@ -268,6 +268,6 @@ void commandPrintEffectList()
 
     for(int i = 0; i < effectCount; i++)
     {
-        Serial.println("\t> " + effects[i]->name);
+        Serial.println("\t> " + effects[i].name);
     }
 }

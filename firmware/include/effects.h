@@ -19,11 +19,10 @@ struct EffectState
 extern OctoWS2811 leds;
 extern EffectState *state;
 
-extern Effect **effects;
-extern int effectCount;
+extern Effect effects[];
+extern const int effectCount;
 
 void initOctoWS2811();
-void registerEffect(String name, EffectCallback callback);
 void renderFrame();
 void setCurrentEffect(Effect *effect);
 void setBrightness(float value);
