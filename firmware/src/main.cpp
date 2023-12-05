@@ -11,10 +11,10 @@
 #include <SD.h>
 #include <Adafruit_ST7735.h>
 
-// Create Current Sensor Objects
-INA226 currentSensor1(CURRENT_SENSOR_1_ADDRESS);
-INA226 currentSensor2(CURRENT_SENSOR_2_ADDRESS);
-INA226 currentSensor3(CURRENT_SENSOR_3_ADDRESS);
+// Create Sensor Objects
+INA226 currentSensorTop(CURRENT_SENSOR_TOP_ADDRESS);
+INA226 currentSensorCenter(CURRENT_SENSOR_CENTER_ADDRESS);
+INA226 currentSensorBottom(CURRENT_SENSOR_BOTTOM_ADDRESS);
 
 OneWire oneWire(24);
 DallasTemperature tempSensors(&oneWire);
@@ -61,17 +61,17 @@ void setup()
     sensorValues->currentLine3 = 0.0f;
 
     Wire.begin();
-    currentSensor1.begin();
-    currentSensor1.setMaxCurrentShunt(10, 0.006);
-    currentSensor1.setAverage(3);
+    currentSensorBottom.begin();
+    currentSensorBottom.setMaxCurrentShunt(10, 0.006);
+    currentSensorBottom.setAverage(3);
 
-    currentSensor2.begin();
-    currentSensor2.setMaxCurrentShunt(10, 0.006);
-    currentSensor2.setAverage(3);
+    currentSensorCenter.begin();
+    currentSensorCenter.setMaxCurrentShunt(10, 0.006);
+    currentSensorCenter.setAverage(3);
 
-    currentSensor3.begin();
-    currentSensor3.setMaxCurrentShunt(10, 0.006);
-    currentSensor3.setAverage(3);
+    currentSensorTop.begin();
+    currentSensorTop.setMaxCurrentShunt(10, 0.006);
+    currentSensorTop.setAverage(3);
 
     initConsole();
     initWebServer();
@@ -123,13 +123,13 @@ void loop()
 
     if ((time - taskReadCurrent) > 100)
     {
-        fetchCurrentValue(currentSensor1, TOP, &sensorValues->currentLine1);
-        fetchCurrentValue(currentSensor2, CENTER, &sensorValues->currentLine2);
-        fetchCurrentValue(currentSensor3, BOTTOM, &sensorValues->currentLine3);
+        fetchCurrentValue(currentSensorTop, TOP, &sensorValues->currentLine3);
+        fetchCurrentValue(currentSensorCenter, CENTER, &sensorValues->currentLine2);
+        fetchCurrentValue(currentSensorBottom, BOTTOM, &sensorValues->currentLine1);
 
-        fetchBusVoltageValue(currentSensor1, TOP, &sensorValues->busVoltageLine1);
-        fetchBusVoltageValue(currentSensor2, CENTER, &sensorValues->busVoltageLine2);
-        fetchBusVoltageValue(currentSensor3, BOTTOM, &sensorValues->busVoltageLine3);
+        fetchBusVoltageValue(currentSensorTop, TOP, &sensorValues->busVoltageLine3);
+        fetchBusVoltageValue(currentSensorCenter, CENTER, &sensorValues->busVoltageLine2);
+        fetchBusVoltageValue(currentSensorBottom, BOTTOM, &sensorValues->busVoltageLine1);
 
         taskReadCurrent = time;
     }
@@ -198,11 +198,11 @@ INA226 getCurrentSensor(int id)
     switch (id)
     {
     case 1:
-        return currentSensor1;
+        return currentSensorBottom;
     case 2:
-        return currentSensor2;
+        return currentSensorCenter;
     case 3:
     default:
-        return currentSensor3;
+        return currentSensorTop;
     }
 }
