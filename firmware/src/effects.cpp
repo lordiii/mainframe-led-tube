@@ -24,8 +24,7 @@ Effect effects[effectCount] = {
     {"police", &effectPolice},
     {"solid-white", &effectSolidWhite},
     {"beam", &effectBeam},
-    {"gol", &effectGOL, &initializeGOLData}
-};
+    {"gol", &effectGOL, &initializeGOLData}};
 
 void initOctoWS2811()
 {
@@ -53,6 +52,8 @@ void setCurrentEffect(Effect *effect)
     state->current = effect;
 
     memset(state->data, 0, sizeof(EffectData));
+
+    applyBrightness(0);
 
     if (state->current != nullptr)
     {
@@ -84,10 +85,10 @@ void renderFrame()
             state->lastFrameChange = millis();
         }
 
-        leds.show();
-
         state->singleStep = false;
     }
+
+    leds.show();
 }
 
 //
@@ -272,16 +273,65 @@ bool effectBeam(unsigned long delta)
 // Game of life
 //
 //
+void copperhead(int centerRing, int centerPixel)
+{
+    EffectGOL *data = &state->data->gol;
+
+    data->state[calculatePixelId(centerRing + 1, centerPixel)] = true;
+    data->state[calculatePixelId(centerRing, centerPixel)] = true;
+    data->state[calculatePixelId(centerRing - 1, centerPixel)] = true;
+    data->state[calculatePixelId(centerRing - 2, centerPixel)] = true;
+
+    data->state[calculatePixelId(centerRing + 1, centerPixel - 2)] = true;
+    data->state[calculatePixelId(centerRing - 2, centerPixel - 2)] = true;
+
+    data->state[calculatePixelId(centerRing + 2, centerPixel - 3)] = true;
+    data->state[calculatePixelId(centerRing, centerPixel - 3)] = true;
+    data->state[calculatePixelId(centerRing - 1, centerPixel - 3)] = true;
+    data->state[calculatePixelId(centerRing - 3, centerPixel - 3)] = true;
+
+    data->state[calculatePixelId(centerRing + 2, centerPixel - 4)] = true;
+    data->state[calculatePixelId(centerRing - 3, centerPixel - 4)] = true;
+
+    data->state[calculatePixelId(centerRing + 2, centerPixel - 6)] = true;
+    data->state[calculatePixelId(centerRing - 3, centerPixel - 6)] = true;
+
+    data->state[calculatePixelId(centerRing + 2, centerPixel - 7)] = true;
+    data->state[calculatePixelId(centerRing + 1, centerPixel - 7)] = true;
+    data->state[calculatePixelId(centerRing - 2, centerPixel - 7)] = true;
+    data->state[calculatePixelId(centerRing - 3, centerPixel - 7)] = true;
+
+    data->state[calculatePixelId(centerRing + 2, centerPixel - 8)] = true;
+    data->state[calculatePixelId(centerRing + 1, centerPixel - 8)] = true;
+    data->state[calculatePixelId(centerRing, centerPixel - 8)] = true;
+    data->state[calculatePixelId(centerRing - 1, centerPixel - 8)] = true;
+    data->state[calculatePixelId(centerRing - 2, centerPixel - 8)] = true;
+    data->state[calculatePixelId(centerRing - 3, centerPixel - 8)] = true;
+
+    data->state[calculatePixelId(centerRing + 1, centerPixel - 9)] = true;
+    data->state[calculatePixelId(centerRing - 2, centerPixel - 9)] = true;
+
+    data->state[calculatePixelId(centerRing, centerPixel - 10)] = true;
+    data->state[calculatePixelId(centerRing - 1, centerPixel - 10)] = true;
+
+    data->state[calculatePixelId(centerRing, centerPixel - 11)] = true;
+    data->state[calculatePixelId(centerRing - 1, centerPixel - 11)] = true;
+}
+
 void initializeGOLData()
 {
     EffectGOL *data = &state->data->gol;
-    randomSeed(micros());
 
-    for(bool & i : data->state)
+    copperhead(30, 15);
+    copperhead(10, 0);
+    copperhead(20, 10);
+    copperhead(50, 22);
+
+    for (int i = 0; i < LED_TOTAL_RINGS; i++)
     {
-        if(random(0, 5) == 0)
+        for (int j = 0; j < LED_PER_RING; j++)
         {
-            i = true;
+            setPixelColor(i, j, data->state[calculatePixelId(i, j)] ? 0xFFFFFF : 0x000000);
         }
     }
 }
@@ -289,68 +339,71 @@ void initializeGOLData()
 bool calculateGOLCell(int ring, int pixel)
 {
     int cnt = 0;
+    bool populated = getPixelColor(ring, pixel) > 0;
 
     // Top Left
-    if (leds.getPixel(calculatePixelId(ring + 1, pixel - 1)) > 0) {
+    if (getPixelColor(ring + 1, pixel - 1) > 0)
+    {
         cnt++;
     }
     // Top Center
-    if (leds.getPixel(calculatePixelId(ring + 1, pixel)) > 0) {
+    if (getPixelColor(ring + 1, pixel) > 0)
+    {
         cnt++;
     }
     // Top Right
-    if (leds.getPixel(calculatePixelId(ring + 1, pixel + 1)) > 0) {
-        cnt++;
+    if (getPixelColor(ring + 1, pixel + 1) > 0)
+    {
+         cnt++;
     }
     // Center Left
-    if (leds.getPixel(calculatePixelId(ring, pixel - 1)) > 0) {
+    if (getPixelColor(ring, pixel - 1) > 0)
+    {
         cnt++;
     }
     // Center Right
-    if (leds.getPixel(calculatePixelId(ring, pixel - 1)) > 0) {
+    if (getPixelColor(ring, pixel + 1) > 0)
+    {
         cnt++;
     }
     // Bottom Left
-    if (leds.getPixel(calculatePixelId(ring - 1, pixel - 1)) > 0) {
+    if (getPixelColor(ring - 1, pixel - 1) > 0)
+    {
         cnt++;
     }
     // Bottom Center
-    if (leds.getPixel(calculatePixelId(ring - 1, pixel)) > 0) {
+    if (getPixelColor(ring - 1, pixel) > 0)
+    {
         cnt++;
     }
     // Bottom Right
-    if (leds.getPixel(calculatePixelId(ring - 1, pixel + 1)) > 0) {
+    if (getPixelColor(ring - 1, pixel + 1) > 0)
+    {
         cnt++;
     }
 
-    if(cnt <= 1 || cnt >= 4)
-    {
-        return false;
-    } else if(cnt == 2 || cnt == 3)
-    {
-        return true;
-    } else {
-        return false;
-    }
+    return ((cnt == 2 && populated) || cnt == 3);
 }
 
 bool effectGOL(unsigned long delta)
 {
-    if(delta > 100) {
+    if (delta > 10)
+    {
         EffectGOL *data = &state->data->gol;
 
-        for(int i = 0; i < sizeof(data->state); i++)
+        for (int i = 0; i < LED_TOTAL_RINGS; i++)
         {
-            data->state[i] = calculateGOLCell(i / LED_PER_RING, i % LED_PER_RING);
+            for (int j = 0; j < LED_PER_RING; j++)
+            {
+                data->state[calculatePixelId(i, j)] = calculateGOLCell(i, j);
+            }
         }
 
-        for(bool i : data->state)
+        for (int i = 0; i < LED_TOTAL_RINGS; i++)
         {
-            if(i)
+            for (int j = 0; j < LED_PER_RING; j++)
             {
-                setPixelColor(i / LED_PER_RING, i % LED_PER_RING, 0xFFFFFF);
-            } else {
-                setPixelColor(i / LED_PER_RING, i % LED_PER_RING, 0x000000);
+                setPixelColor(i, j, data->state[calculatePixelId(i, j)] ? 0xFFFFFF : 0x000000);
             }
         }
 

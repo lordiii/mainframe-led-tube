@@ -50,7 +50,7 @@ void setup()
 
     qindesign::network::Ethernet.begin();
 
-    taskRenderLeds.begin(renderFrame, 10000);
+    taskRenderLeds.begin(renderFrame, 12621);
 
     sensorValues->temperatureTop = 0.0f;
     sensorValues->temperatureCenter = 0.0f;

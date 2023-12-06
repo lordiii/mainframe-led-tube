@@ -12,3 +12,4 @@ void fadePixelToBlack( int ring,  int pixel);
 void fadeRingToBlack( int ring, float strength);
 void fadeAllToBlack();
 void setRingColor( int ring, int color);
+int getPixelColor(int ring, int pixel);

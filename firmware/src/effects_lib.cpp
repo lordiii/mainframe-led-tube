@@ -31,17 +31,15 @@ int fadePixelByAmount(int color, float amount)
     return (r << 16) | (g << 8) | b;
 }
 
+int getPixelColor(int ring, int pixel)
+{
+    return leds.getPixel(calculatePixelId(ring, pixel));
+}
+
 int calculatePixelId(int ring, int pixel)
 {
-    if(ring < 0)
-    {
-        ring *= -1;
-    }
-
-    if(pixel < 0)
-    {
-        pixel *= -1;
-    }
+    ring = abs(ring);
+    pixel = (pixel > 0) ? pixel : LED_PER_RING + pixel;
 
     pixel = pixel % LED_PER_RING;
     ring = ring % LED_TOTAL_RINGS;
