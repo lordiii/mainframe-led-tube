@@ -1,4 +1,5 @@
 #include <OctoWS2811.h>
+#include <globals.h>
 
 typedef bool (*EffectCallback)(unsigned long);
 
@@ -34,7 +35,12 @@ struct EffectPolice
 
 struct EffectBeam
 {
-    unsigned int lastRing;
+    int lastRing;
+};
+
+struct EffectGOL
+{
+    bool state[LED_TOTAL_RINGS * LED_PER_RING];
 };
 
 union EffectData
@@ -44,6 +50,7 @@ union EffectData
     EffectRainbowStrobe rainbowStrobe;
     EffectPolice police;
     EffectBeam beam;
+    EffectGOL gol;
 };
 
 struct EffectState
@@ -75,3 +82,8 @@ bool effectRainbowStrobe(unsigned long delta);
 bool effectPolice(unsigned long delta);
 bool effectSolidWhite(unsigned long delta);
 bool effectBeam(unsigned long delta);
+
+// Game of life
+void initializeGOLData();
+bool calculateGOLCell(int ring, int pixel);
+bool effectGOL(unsigned long delta);

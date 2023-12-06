@@ -15,7 +15,7 @@ int drawingMemory[LED_PER_STRIP * 6];
 OctoWS2811 leds = OctoWS2811(LED_PER_STRIP, displayMemory, drawingMemory, LED_CONFIGURATION, LED_STRIP_AMOUNT, pinList);
 EffectState *state = new EffectState;
 
-const int effectCount = 7;
+const int effectCount = 8;
 Effect effects[effectCount] = {
     {"off", &effectOff},
     {"test-led", &effectTestLEDs},
@@ -23,7 +23,8 @@ Effect effects[effectCount] = {
     {"rainbow-strobe", &effectRainbowStrobe},
     {"police", &effectPolice},
     {"solid-white", &effectSolidWhite},
-    {"beam", &effectBeam}
+    {"beam", &effectBeam},
+    {"gol", &effectGOL, &initializeGOLData}
 };
 
 void initOctoWS2811()
@@ -96,7 +97,7 @@ void renderFrame()
 //
 bool effectTestLEDs(unsigned long delta)
 {
-    EffectTestAll *data = &(state->data->testAll);
+    EffectTestAll *data = &state->data->testAll;
 
     if (delta > 250)
     {
@@ -129,7 +130,7 @@ bool effectTestLEDs(unsigned long delta)
 //
 bool effectStrobe(unsigned long delta)
 {
-    EffectStrobe *data = &(state->data->strobe);
+    EffectStrobe *data = &state->data->strobe;
 
     if (delta > 5 && !data->toggle)
     {
@@ -152,7 +153,7 @@ bool effectStrobe(unsigned long delta)
 
 bool effectRainbowStrobe(unsigned long delta)
 {
-    EffectRainbowStrobe *data = &(state->data->rainbowStrobe);
+    EffectRainbowStrobe *data = &state->data->rainbowStrobe;
 
     if (delta > 5 && !data->toggle)
     {
@@ -190,7 +191,7 @@ bool effectRainbowStrobe(unsigned long delta)
 
 bool effectPolice(unsigned long delta)
 {
-    EffectPolice *data = &(state->data->police);
+    EffectPolice *data = &state->data->police;
 
     if (delta > 25 && data->blinkTimes >= 2)
     {
@@ -248,7 +249,7 @@ bool effectOff(unsigned long delta)
 
 bool effectBeam(unsigned long delta)
 {
-    EffectBeam *data = &(state->data->beam);
+    EffectBeam *data = &state->data->beam;
 
     if (delta > 30)
     {
@@ -259,6 +260,99 @@ bool effectBeam(unsigned long delta)
 
         setRingColor(data->lastRing, 0xFFFFFF);
         data->lastRing++;
+
+        return true;
+    }
+
+    return false;
+}
+
+//
+//
+// Game of life
+//
+//
+void initializeGOLData()
+{
+    EffectGOL *data = &state->data->gol;
+    randomSeed(micros());
+
+    for(bool & i : data->state)
+    {
+        if(random(0, 5) == 0)
+        {
+            i = true;
+        }
+    }
+}
+
+bool calculateGOLCell(int ring, int pixel)
+{
+    int cnt = 0;
+
+    // Top Left
+    if (leds.getPixel(calculatePixelId(ring + 1, pixel - 1)) > 0) {
+        cnt++;
+    }
+    // Top Center
+    if (leds.getPixel(calculatePixelId(ring + 1, pixel)) > 0) {
+        cnt++;
+    }
+    // Top Right
+    if (leds.getPixel(calculatePixelId(ring + 1, pixel + 1)) > 0) {
+        cnt++;
+    }
+    // Center Left
+    if (leds.getPixel(calculatePixelId(ring, pixel - 1)) > 0) {
+        cnt++;
+    }
+    // Center Right
+    if (leds.getPixel(calculatePixelId(ring, pixel - 1)) > 0) {
+        cnt++;
+    }
+    // Bottom Left
+    if (leds.getPixel(calculatePixelId(ring - 1, pixel - 1)) > 0) {
+        cnt++;
+    }
+    // Bottom Center
+    if (leds.getPixel(calculatePixelId(ring - 1, pixel)) > 0) {
+        cnt++;
+    }
+    // Bottom Right
+    if (leds.getPixel(calculatePixelId(ring - 1, pixel + 1)) > 0) {
+        cnt++;
+    }
+
+    if(cnt <= 1 || cnt >= 4)
+    {
+        return false;
+    } else if(cnt == 2 || cnt == 3)
+    {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool effectGOL(unsigned long delta)
+{
+    if(delta > 100) {
+        EffectGOL *data = &state->data->gol;
+
+        for(int i = 0; i < sizeof(data->state); i++)
+        {
+            data->state[i] = calculateGOLCell(i / LED_PER_RING, i % LED_PER_RING);
+        }
+
+        for(bool i : data->state)
+        {
+            if(i)
+            {
+                setPixelColor(i / LED_PER_RING, i % LED_PER_RING, 0xFFFFFF);
+            } else {
+                setPixelColor(i / LED_PER_RING, i % LED_PER_RING, 0x000000);
+            }
+        }
 
         return true;
     }
