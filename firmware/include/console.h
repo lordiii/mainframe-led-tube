@@ -14,3 +14,6 @@ void commandPrintCurrent();
 void commandSensorStatus();
 void commandTogglePowerSupply();
 void commandPrintEffectList();
+void commandToggleHalt();
+void commandExecuteNext();
+void commandSlowExecution();

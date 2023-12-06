@@ -32,12 +32,18 @@ struct EffectPolice
     int blinkTimes;
 };
 
+struct EffectBeam
+{
+    unsigned int lastRing;
+};
+
 union EffectData
 {
     EffectTestAll testAll;
     EffectStrobe strobe;
     EffectRainbowStrobe rainbowStrobe;
     EffectPolice police;
+    EffectBeam beam;
 };
 
 struct EffectState
@@ -45,7 +51,10 @@ struct EffectState
     Effect* current = nullptr;
     EffectData* data = new EffectData;
     unsigned int lastFrameChange = 0;
+    unsigned int slowRate = 0;
     float brightness = 0.75f;
+    bool halt = false;
+    bool singleStep = false;
 };
 
 extern OctoWS2811 leds;

@@ -51,6 +51,8 @@ void setCurrentEffect(Effect *effect)
     state->lastFrameChange = 0;
     state->current = effect;
 
+    memset(state->data, 0, sizeof(EffectData));
+
     if (state->current != nullptr)
     {
         state->current->resetData();
@@ -65,20 +67,26 @@ void setCurrentEffect(Effect *effect)
 
 void renderFrame()
 {
-    bool updated = false;
+    unsigned long delta = millis() - state->lastFrameChange;
 
-    if (state->current != nullptr)
+    if ((!state->halt && state->slowRate == 0) || state->singleStep || (state->slowRate != 0 && delta > state->slowRate && !state->halt))
     {
-        unsigned long delta = millis() - state->lastFrameChange;
-        updated = state->current->callback(delta);
-    }
+        bool updated = false;
 
-    if (updated)
-    {
-        state->lastFrameChange = millis();
-    }
+        if (state->current != nullptr)
+        {
+            updated = state->current->callback(delta);
+        }
 
-    leds.show();
+        if (updated)
+        {
+            state->lastFrameChange = millis();
+        }
+
+        leds.show();
+
+        state->singleStep = false;
+    }
 }
 
 //
@@ -238,13 +246,19 @@ bool effectOff(unsigned long delta)
     return true;
 }
 
-unsigned int lastRing = 0;
 bool effectBeam(unsigned long delta)
 {
+    EffectBeam *data = &(state->data->beam);
+
     if (delta > 30)
     {
-        setRingColor(lastRing, 0xFFFFFF);
-        lastRing++;
+        for (int i = 1; i <= 12; i++)
+        {
+            fadeRingToBlack(data->lastRing - i, 0.9f);
+        }
+
+        setRingColor(data->lastRing, 0xFFFFFF);
+        data->lastRing++;
 
         return true;
     }

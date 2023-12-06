@@ -106,6 +106,15 @@ void processCommand()
     else if (consoleBuffer.startsWith("power "))
     {
         commandTogglePowerSupply();
+    } else if (consoleBuffer.equals("halt") || consoleBuffer.equals("h"))
+    {
+        commandToggleHalt();
+    } else if (consoleBuffer.equals("next") || consoleBuffer.equals("n"))
+    {
+        commandExecuteNext();
+    } else if (consoleBuffer.startsWith("slow ")) 
+    {
+        state->slowRate = consoleBuffer.substring(strlen("slow ")).toInt();
     } else {
         Serial.println("Command not found...");
     }
@@ -267,5 +276,36 @@ void commandPrintEffectList()
     for(int i = 0; i < effectCount; i++)
     {
         Serial.println("\t> " + effects[i].name);
+    }
+}
+
+void commandToggleHalt()
+{
+    state->halt = !state->halt;
+
+    if(state->halt)
+    {
+        Serial.println("Halt Enabled!");
+    } else {
+        Serial.println("Halt Disabled!");
+    }
+}
+
+void commandExecuteNext()
+{
+    state->singleStep = true;
+}
+
+void commandSlowExecution()
+{
+    if(state->slowRate != 0)
+    {
+        state->slowRate = 0;
+        Serial.println("Disabled animation slowing!");
+    } else {
+        ;
+        Serial.print("Set animation slowing to ");
+        Serial.print(state->slowRate);
+        Serial.println("ms");
     }
 }
