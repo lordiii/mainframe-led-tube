@@ -3,7 +3,7 @@
 
 #include <OctoWS2811.h>
 #include <globals.h>
-#include "games/tetris.h"
+#include "games/games.h"
 
 typedef bool (*EffectCallback)(unsigned long);
 
@@ -61,14 +61,6 @@ bool effectSolidWhite(unsigned long delta);
 bool effectBeam(unsigned long delta);
 
 // Game of life
-struct EffectGOL
-{
-    bool state[LED_TOTAL_RINGS * LED_PER_RING];
-};
-
-void initializeGOLData();
-bool calculateGOLCell(int ring, int pixel);
-bool effectGOL(unsigned long delta);
 
 // Data Union
 union EffectData
