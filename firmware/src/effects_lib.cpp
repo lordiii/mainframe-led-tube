@@ -47,6 +47,11 @@ int calculatePixelId(int ring, int pixel)
     return (ring * LED_PER_RING) + pixel;
 }
 
+void setPixelColor(int ring, int pixel, int r, int g, int b)
+{
+    leds.setPixel(calculatePixelId(ring, pixel), r, g, b);
+}
+
 void setPixelColor(int ring, int pixel, int color)
 {
     leds.setPixel(calculatePixelId(ring, pixel), applyBrightness(color));
@@ -81,4 +86,14 @@ void fadeAllToBlack()
     {
         fadeRingToBlack(i, 0.9f);
     }
+}
+
+int randomColor()
+{
+    uint8_t r = random(0, 256);
+    uint8_t g = random(0, 256);
+    uint8_t b = random(0, 256);
+
+    int color = (random(0, 256) << 16) | (g << 8) | b;
+    return color == 0 ? randomColor() : color;
 }
