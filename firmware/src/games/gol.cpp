@@ -2,7 +2,6 @@
 #include <effects_lib.h>
 #include "gol.h"
 
-
 void addCopperhead(int centerRing, int centerPixel)
 {
     EffectGOL *data = &state->data->gol;
@@ -48,7 +47,7 @@ void addCopperhead(int centerRing, int centerPixel)
     data->state[calculatePixelId(centerRing - 1, centerPixel - 11)] = true;
 }
 
-void initializedata()
+void initializeGOLData()
 {
     EffectGOL *data = &state->data->gol;
 

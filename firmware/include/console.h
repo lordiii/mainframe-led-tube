@@ -1,3 +1,6 @@
+#ifndef FIRMWARE_CONSOLE_H
+#define FIRMWARE_CONSOLE_H
+
 #include <OctoWS2811.h>
 
 void processConsoleData();
@@ -17,3 +20,5 @@ void commandPrintEffectList();
 void commandToggleHalt();
 void commandExecuteNext();
 void commandSlowExecution();
+
+#endif

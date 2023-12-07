@@ -1,3 +1,6 @@
+#ifndef FIRMWARE_MAIN_H
+#define FIRMWARE_MAIN_H
+
 #include <SD.h>
 #include <QNEthernet.h>
 #include <INA226.h>
@@ -30,3 +33,5 @@ INA226 getCurrentSensor(int id);
 void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
 void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
 void fetchTemperatureValue(const uint8_t * sensor, TUBE_SECTION section, float *oldvalue);
+
+#endif

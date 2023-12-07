@@ -1,3 +1,6 @@
+#ifndef FIRMWARE_TFT_H
+#define FIRMWARE_TFT_H
+
 enum TUBE_SECTION
 {
     TOP,
@@ -16,3 +19,5 @@ XY getStartPosition(TUBE_SECTION section);
 void renderCurrentValue(TUBE_SECTION section, float value);
 void renderVoltageValue(TUBE_SECTION section, float value);
 void renderTemperatureValue(TUBE_SECTION section, float value);
+
+#endif
