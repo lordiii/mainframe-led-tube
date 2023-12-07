@@ -1,5 +1,9 @@
+#ifndef FIRMWARE_EFFECTS_H
+#define FIRMWARE_EFFECTS_H
+
 #include <OctoWS2811.h>
 #include <globals.h>
+#include "games/tetris.h"
 
 typedef bool (*EffectCallback)(unsigned long);
 
@@ -66,26 +70,6 @@ void initializeGOLData();
 bool calculateGOLCell(int ring, int pixel);
 bool effectGOL(unsigned long delta);
 
-// Tetris
-struct  Shape
-{
-    uint8_t array[3][4];
-    int ring;
-    int pixel;
-    bool placed = false;
-    int currentColor;
-};
-
-struct EffectTetris
-{
-    uint8_t game[LED_TOTAL_RINGS][LED_PER_RING];
-    Shape *currentShape;
-};
-
-bool effectTetris(unsigned long delta);
-void initializeTetris();
-
-
 // Data Union
 union EffectData
 {
@@ -110,3 +94,5 @@ struct EffectState
 };
 
 extern EffectState *state;
+
+#endif

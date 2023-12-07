@@ -94,6 +94,6 @@ int randomColor()
     uint8_t g = random(0, 256);
     uint8_t b = random(0, 256);
 
-    int color = (random(0, 256) << 16) | (g << 8) | b;
+    int color = (r << 16) | (g << 8) | b;
     return color == 0 ? randomColor() : color;
 }

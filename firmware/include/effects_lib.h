@@ -1,3 +1,6 @@
+#ifndef FIRMWARE_EFFECTS_LIB_H
+#define FIRMWARE_EFFECTS_LIB_H
+
 // Color Constants
 #define RED 0xFF0000
 #define GREEN 0x00FF00
@@ -15,3 +18,5 @@ void setRingColor( int ring, int color);
 int getPixelColor(int ring, int pixel);
 void setPixelColor(int ring, int pixel, int r, int g, int b);
 int randomColor();
+
+#endif

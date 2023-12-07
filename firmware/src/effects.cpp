@@ -1,8 +1,9 @@
-#include "effects.h"
-#include "globals.h"
-#include "effects_lib.h"
-
+#include <effects.h>
+#include <globals.h>
+#include <effects_lib.h>
 #include <OctoWS2811.h>
+
+#include "games/tetris.h"
 
 #define LED_STRIP_AMOUNT (LED_TOTAL_RINGS / LED_RINGS_PER_SEGMENT)
 #define LED_PER_STRIP (LED_PER_RING * LED_RINGS_PER_SEGMENT)
@@ -25,7 +26,7 @@ Effect effects[effectCount] = {
     {"solid-white", &effectSolidWhite},
     {"beam", &effectBeam},
     {"gol", &effectGOL, &initializeGOLData},
-    {"tetris", &effectTetris, &initializeTetris}    
+    {"tetris", &effectTetris, &initializeTetris}
 };
 
 void initOctoWS2811()
@@ -421,84 +422,23 @@ bool effectGOL(unsigned long delta)
 // Tetris
 //
 //
-const uint8_t TETRONIMOS[5][3][4] = {
-    {{1, 1, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}},
-    {{1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0}},
-    {{1, 1, 1, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}},
-    {{0, 1, 0, 0}, {1, 1, 1, 0}, {0, 0, 0, 0}},
-    {{1, 1, 0, 0}, {0, 1, 1, 0}, {0, 0, 0, 0}}
-
-};
-
-void initializeTetris()
-{
-    EffectTetris *data = &state->data->tetris;
-    data->currentShape = new Shape;
-    data->currentShape->placed = true;
-}
-
-void renderShape(Shape *shape, int color)
-{
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 4; j++)
-        {
-            if (shape->array[i][j] == 1)
-            {
-                setPixelColor(shape->ring + i, shape->pixel + j, color);
-            }
-        }
-    }
-}
-
-bool detectCollision(Shape *shape)
-{
-    for (int x = 0; x < 4; x++)
-    {
-        for (int y = 0; y < 3; y++)
-        {
-            if(shape->array[y][x] == 1) {
-                if(getPixelColor((shape->ring - 1) - y, shape->pixel + x) > 0)
-                {
-                    return y;
-                }
-                
-                break;
-            }
-        }
-    }
-
-    return 0;
-}  
-
 bool effectTetris(unsigned long delta)
 {
     EffectTetris *data = &state->data->tetris;
-    if(delta > 10)
+
+    const int interval = 100;
+
+    if(delta > interval || data->movement != NONE)
     {
-        randomSeed(micros());
-        
+
         if(data->currentShape->placed)
         {
-            uint8_t shapeID = random(0, 6);
-            memcpy(data->currentShape->array, TETRONIMOS[shapeID], sizeof(TETRONIMOS[shapeID]));
-
-            data->currentShape->ring = LED_TOTAL_RINGS - 4;
-            data->currentShape->pixel = random(0, LED_PER_RING * 10);
-            data->currentShape->placed = false;
-            data->currentShape->currentColor = randomColor();
+            addTetrisShape();
         }
         else
         {
             renderShape(data->currentShape, 0);
-
-            data->currentShape->ring -= detectCollision(data->currentShape) + 1;
-
-            if(data->currentShape->ring <= 0)
-            {
-                data->currentShape->ring = 0;
-                data->currentShape->placed = true;
-            }
+            processMovement(delta > interval);
         }
 
         renderShape(data->currentShape, data->currentShape->currentColor);

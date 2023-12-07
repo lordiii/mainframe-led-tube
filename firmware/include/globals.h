@@ -1,3 +1,6 @@
+#ifndef FIRMWARE_GLOBALS_H
+#define FIRMWARE_GLOBALS_H
+
 #define LED_TOTAL_RINGS 60
 #define LED_PER_RING 32
 #define LED_RINGS_PER_SEGMENT 10
@@ -14,3 +17,5 @@
 
 #include <QNEthernet.h>
 using namespace qindesign::network;
+
+#endif
