@@ -74,9 +74,18 @@ union EffectData
     EffectTetris tetris;
 };
 
+enum Movement
+{
+    NONE,
+    DOWN,
+    LEFT = -1,
+    RIGHT = 1,
+};
+
 struct EffectState
 {
     Effect* current = nullptr;
+    Movement movement;
     EffectData* data = new EffectData;
     unsigned int lastFrameChange = 0;
     unsigned int slowRate = 0;

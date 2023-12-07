@@ -7,14 +7,6 @@
 
 #include "effects.h"
 
-enum TetrisMovement
-{
-    NONE,
-    DOWN,
-    LEFT = -1,
-    RIGHT = 1,
-};
-
 struct CollisionBox
 {
     int left;
@@ -36,7 +28,6 @@ struct Shape
 struct EffectTetris
 {
     Shape *currentShape;
-    TetrisMovement movement;
 };
 
 bool effectTetris(unsigned long delta);

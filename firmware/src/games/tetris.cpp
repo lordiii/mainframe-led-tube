@@ -108,8 +108,8 @@ void processMovement(bool forceMovement)
 {
     EffectTetris *data = &state->data->tetris;
 
-    int downForce = data->movement == NONE || data->movement == DOWN || forceMovement;
-    int sideForce = data->movement == LEFT || data->movement == RIGHT ? data->movement : 0;
+    int downForce = state->movement == NONE || state->movement == DOWN || forceMovement;
+    int sideForce = state->movement == LEFT || state->movement == RIGHT ? state->movement : 0;
 
     bool collidesDown;
     if (downForce > 0) {

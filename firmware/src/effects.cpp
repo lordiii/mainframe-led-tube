@@ -315,7 +315,7 @@ bool effectTetris(unsigned long delta)
 
     const int interval = 100;
 
-    if(delta > interval || data->movement != NONE)
+    if(delta > interval || state->movement != NONE)
     {
 
         if(data->currentShape->placed)
