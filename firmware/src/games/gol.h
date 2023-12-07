@@ -1,7 +1,3 @@
-//
-// Created by gregor on 12/7/23.
-//
-
 #ifndef FIRMWARE_GOL_H
 #define FIRMWARE_GOL_H
 

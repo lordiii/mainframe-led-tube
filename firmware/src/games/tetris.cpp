@@ -38,10 +38,15 @@ void renderShape(Shape *shape, int color)
 
 bool detectDownCollision(Shape *shape)
 {
-    for (int x = 0; x < 4; x++)
-    {
-        if (shape->array[shape->colission.bottom][x] == 1 && getPixelColor(shape->ring - 1, shape->pixel + x) > 0) {
-            return true;
+    for(int y = 0; y < 3; y++) {
+        for (int x = 0; x < 4; x++)
+        {
+            if (shape->array[y][x] == 1) {
+                if(getPixelColor(shape->ring - 1 + y, shape->pixel + x) > 0)
+                {
+                    return true;
+                }
+            }
         }
     }
 
@@ -50,19 +55,21 @@ bool detectDownCollision(Shape *shape)
 
 bool detectSideCollision(Shape *shape, int sideforce)
 {
-    int *index = sideforce > 0 ? &shape->colission.right : &shape->colission.left;
-
-    for (int x = 0; x < 3; x++)
+    for (int x = 0; x < 4; x++)
     {
-        if(shape->array[*index][x] == 1 && getPixelColor(shape->ring + x, shape->pixel + sideforce) > 0) {
-            return sideforce;
+        for(int y = 0; y < 3; y++)
+        {
+            if (shape->array[y][x] == 1) {
+                if(getPixelColor(shape->ring + y, shape->pixel + x + sideforce) > 0)
+                {
+                    return true;
+                }
+            }
         }
     }
 
-    return 0;
+    return false;
 }
-
-
 
 void addTetrisShape()
 {
@@ -75,33 +82,6 @@ void addTetrisShape()
     data->currentShape->pixel = random(0, LED_PER_RING);
     data->currentShape->placed = false;
     data->currentShape->currentColor = randomColor();
-
-    int *bottom = &data->currentShape->colission.bottom;
-    for (*bottom = 0; *bottom < 3; *bottom += 1) {
-        for (int i = 0; i < 4; i++) {
-            if (data->currentShape->array[*bottom][i] == 1) {
-                break;
-            }
-        }
-    }
-
-    int *left = &data->currentShape->colission.left;
-    for (*left = 0; *left < 4; *left += 1) {
-        for (int i = 0; i < 3; i++) {
-            if (data->currentShape->array[*left][i] == 1) {
-                break;
-            }
-        }
-    }
-
-    int *right = &data->currentShape->colission.right;
-    for (*right = 0; *right < 4; *right += 1) {
-        for (int i = 0; i < 3; i++) {
-            if (data->currentShape->array[*right][i] == 1) {
-                break;
-            }
-        }
-    }
 }
 
 void processMovement(bool forceMovement)
@@ -139,3 +119,38 @@ void processMovement(bool forceMovement)
     }
 }
 
+void eliminateRings()
+{
+    int total = 0;
+
+    for(int i = 0; i < LED_TOTAL_RINGS; i++) {
+        bool match = true;
+
+        for(int pixel = 0; pixel < LED_PER_RING; pixel++) {
+            if(getPixelColor(0, pixel) > 0)
+            {
+                match = false;
+                break;
+            }
+        }
+
+        if(match)
+        {
+            total++;
+
+            for(int ring = 0; ring < (LED_TOTAL_RINGS - 1); ring++) {
+                for(int pixel = 0; pixel < LED_PER_RING; pixel++) {
+                    setPixelColor(ring, pixel, getPixelColor(ring + 1, pixel));
+                 }
+            }
+
+            for(int pixel = 0; pixel < LED_PER_RING; pixel++) {
+                setPixelColor(LED_TOTAL_RINGS, pixel, 0);
+            }
+        } else {
+            break;
+        }
+    }
+
+    state->data->tetris.score += ((total * 10) * total);
+}

@@ -311,26 +311,24 @@ bool effectGOL(unsigned long delta)
 //
 bool effectTetris(unsigned long delta)
 {
+    const bool forceMovement = delta > 100;
     EffectTetris *data = &state->data->tetris;
 
-    const int interval = 100;
-
-    if(delta > interval || state->movement != NONE)
+    if(data->currentShape->placed)
     {
+        addTetrisShape();
+        eliminateRings();
+    }
+    else
+    {
+        renderShape(data->currentShape, 0);
 
-        if(data->currentShape->placed)
-        {
-            addTetrisShape();
+        if(forceMovement || state->movement != NONE) {
+            processMovement(forceMovement);
         }
-        else
-        {
-            renderShape(data->currentShape, 0);
-            processMovement(delta > interval);
-        }
-
-        renderShape(data->currentShape, data->currentShape->currentColor);
-        return true;
     }
 
-    return false;
+    renderShape(data->currentShape, data->currentShape->currentColor);
+
+    return true;
 }
