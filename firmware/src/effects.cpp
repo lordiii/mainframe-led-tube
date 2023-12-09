@@ -26,8 +26,7 @@ Effect effects[effectCount] = {
     {"solid-white", &effectSolidWhite},
     {"beam", &effectBeam},
     {"gol", &effectGOL, &initializeGOLData},
-    {"tetris", &effectTetris, &initializeTetris}
-};
+    {"tetris", &effectTetris, &initializeTetris, true}};
 
 void initOctoWS2811()
 {
@@ -35,7 +34,7 @@ void initOctoWS2811()
     leds.show();
 
     state->lastFrameChange = 0;
-    state->brightness = 0.75f;
+    state->brightness = 0.25f;
 }
 
 void setBrightness(float value)
@@ -51,22 +50,19 @@ void setBrightness(float value)
 void setCurrentEffect(Effect *effect)
 {
     noInterrupts();
+
+    // Reset State
     state->lastFrameChange = 0;
     state->current = effect;
-
     memset(state->data, 0, sizeof(EffectData));
 
-    applyBrightness(0);
-
+    // Clear display
+    fillLEDs(0x000000);
     if (state->current != nullptr)
     {
         state->current->resetData();
     }
 
-    if (state == nullptr)
-    {
-        fillLEDs(0x000000);
-    }
     interrupts();
 }
 
@@ -119,7 +115,7 @@ bool effectTestLEDs(unsigned long delta)
             break;
         }
 
-        fillLEDs(data->lastColor);
+        fillLEDs(applyBrightness(data->lastColor));
 
         return true;
     }
@@ -257,12 +253,9 @@ bool effectBeam(unsigned long delta)
 
     if (delta > 30)
     {
-        for (int i = 1; i <= 12; i++)
-        {
-            fadeRingToBlack(data->lastRing - i, 0.9f);
-        }
+        fadeAllToBlack(100);
 
-        setRingColor(data->lastRing, 0xFFFFFF);
+        setRingColor(data->lastRing, 0xFF00FF);
         data->lastRing++;
 
         return true;
@@ -311,24 +304,97 @@ bool effectGOL(unsigned long delta)
 //
 bool effectTetris(unsigned long delta)
 {
-    const bool forceMovement = delta > 100;
+    const bool forceMovement = delta > 500;
     EffectTetris *data = &state->data->tetris;
 
-    if(data->currentShape->placed)
+    switch (data->state)
     {
-        addTetrisShape();
-        eliminateRings();
-    }
-    else
+    case RUNNING:
     {
-        renderShape(data->currentShape, 0);
-
-        if(forceMovement || state->movement != NONE) {
-            processMovement(forceMovement);
+        if (data->shape->placed)
+        {
+            addTetrisShape();
+            eliminateRings();
         }
+        else
+        {
+            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
+
+            if(data->rotate)
+            {
+                rotateShape(data->shape);
+                data->rotate = false;
+            }
+
+            if (forceMovement || state->movement != NONE)
+            {
+
+                processMovement(forceMovement);
+            }
+        }
+
+        if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color))
+        {
+            data->state = ENDING;
+        }
+
+        state->movement = NONE;
+
+        return forceMovement;
+    }
+    case ENDING:
+    {
+        if (delta > 62)
+        {
+            setRingColor(LED_TOTAL_RINGS - data->lastEndAnimationRing, 0xFF0000);
+            setRingColor(data->lastEndAnimationRing, 0xFF0000);
+            data->lastEndAnimationRing++;
+
+            if (data->lastEndAnimationRing >= LED_TOTAL_RINGS)
+            {
+                data->state = WAITING;
+            }
+            return true;
+        }
+        break;
+    }
+    case WAITING:
+    {
+        bool startNew = getPixelColor(0, 0) == 0;
+
+        if (startNew && delta > 1000)
+        {
+            initializeTetris();
+            data->state = RUNNING;
+            return true;
+        }
+        else if (delta > 10 && !startNew)
+        {
+            fadeAllToBlack(255);
+            return true;
+        }
+
+        break;
+    }
+    case ROTATE_CLOCKWISE:
+    {
+        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
+        rotateFrame(true);
+        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color);
+
+        data->state = RUNNING;
+        return true;
+    }
+    case ROTATE_COUNTER_CLOCKWISE:
+    {
+        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
+        rotateFrame(false);
+        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color);
+
+        data->state = RUNNING;
+        return true;
+    }
     }
 
-    renderShape(data->currentShape, data->currentShape->currentColor);
-
-    return true;
+    return false;
 }

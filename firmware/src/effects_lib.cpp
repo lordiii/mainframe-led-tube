@@ -1,6 +1,7 @@
 #include "effects_lib.h"
 #include "globals.h"
 #include "effects.h"
+#include <Arduino.h>
 
 int applyBrightness(int color)
 {
@@ -54,7 +55,7 @@ void setPixelColor(int ring, int pixel, int r, int g, int b)
 
 void setPixelColor(int ring, int pixel, int color)
 {
-    leds.setPixel(calculatePixelId(ring, pixel), applyBrightness(color));
+    leds.setPixel(calculatePixelId(ring, pixel), color);
 }
 
 void setRingColor(int ring, int color)
@@ -65,26 +66,34 @@ void setRingColor(int ring, int color)
     }
 }
 
-void fadePixelToBlack(int ring, int pixel, float strength)
+void fadePixelToBlack(int ring, int pixel, uint8_t scale)
 {
-    int color = leds.getPixel(calculatePixelId(ring, pixel));
+    int color = getPixelColor(ring, pixel);
 
-    setPixelColor(ring, pixel, fadePixelByAmount(color, strength));
+    uint8_t r = color >> 16;
+    uint8_t g = color >> 8;
+    uint8_t b = color;
+
+    r = (((uint16_t)r) * scale) >> 8;
+    g = (((uint16_t)g) * scale) >> 8;
+    b = (((uint16_t)b) * scale) >> 8;
+
+    setPixelColor(ring, pixel, r, g, b);
 }
 
-void fadeRingToBlack(int ring, float strength)
+void fadeRingToBlack(int ring, uint8_t scale)
 {
     for(int i = 0; i < LED_PER_RING; i++)
     {
-        fadePixelToBlack(ring, i, strength);
+        fadePixelToBlack(ring, i, scale);
     }
 }
 
-void fadeAllToBlack()
+void fadeAllToBlack(uint8_t scale)
 {
     for(int i = 0 ; i < LED_TOTAL_RINGS; i++)
     {
-        fadeRingToBlack(i, 0.9f);
+        fadeRingToBlack(i, scale);
     }
 }
 

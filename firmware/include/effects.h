@@ -12,6 +12,7 @@ struct Effect
     String name = "";
     EffectCallback callback = nullptr;
     void (*resetData)() = []() {};
+    bool requiresListen = false;
 };
 
 struct EffectStrobe
@@ -76,8 +77,8 @@ union EffectData
 
 enum Movement
 {
-    NONE,
-    DOWN,
+    NONE = 0,
+    DOWN = 2,
     LEFT = -1,
     RIGHT = 1,
 };
@@ -85,7 +86,7 @@ enum Movement
 struct EffectState
 {
     Effect* current = nullptr;
-    Movement movement;
+    Movement movement = NONE;
     EffectData* data = new EffectData;
     unsigned int lastFrameChange = 0;
     unsigned int slowRate = 0;
