@@ -63,14 +63,17 @@ void setup()
     sensorValues->currentLine3 = 0.0f;
 
     Wire.begin();
+    currentSensorBottom.reset();
     currentSensorBottom.begin();
     currentSensorBottom.setMaxCurrentShunt(10, 0.006);
     currentSensorBottom.setAverage(3);
 
+    currentSensorCenter.reset();
     currentSensorCenter.begin();
     currentSensorCenter.setMaxCurrentShunt(10, 0.006);
     currentSensorCenter.setAverage(3);
 
+    currentSensorTop.reset();
     currentSensorTop.begin();
     currentSensorTop.setMaxCurrentShunt(10, 0.006);
     currentSensorTop.setAverage(3);
@@ -81,7 +84,7 @@ void setup()
     initTFT();
 }
 
-char controllerBuffer[2] = {};
+char controllerBuffer[7] = {};
 bool toggleTemperatureReadWrite = false;
 bool activityLedState = false;
 void loop()
@@ -130,12 +133,11 @@ void loop()
         taskReadCurrent = time;
     }
 
-    if((time - taskReadControllerInput) > 15)
+    if((time - taskReadControllerInput) > 20)
     {
         memset(controllerBuffer, 0, sizeof(controllerBuffer));
         uint8_t quantity = Wire.requestFrom(0x55, sizeof(controllerBuffer));
-        size_t read = Wire.readBytes(controllerBuffer, quantity);
-
+        Wire.readBytes(controllerBuffer, quantity);
         processControllerInputs();
         Wire.begin();
 
@@ -156,22 +158,56 @@ void loop()
     }
 }
 
+void processButton(bool *value, Button type, uint8_t mask, uint8_t source)
+{
+    bool pressed = (source & mask) > 0;
+
+    if(pressed && !*value)
+    {
+        if(state->current != nullptr)
+        {
+            state->current->onButtonPress(type);
+        }
+    }
+    *value = pressed;
+}
+
 void processControllerInputs()
 {
-    controller->dpadLeft = controllerBuffer[0] & 0b001000;
-    controller->dpadRight = controllerBuffer[0] & 0b000100;
-    controller->dpadUp = controllerBuffer[0] & 0b000001;
-    controller->dpadDown = controllerBuffer[0] & 0b000010;
+    processButton(&controller->dpadLeft, DPAD_LEFT,         0b00001000, controllerBuffer[0]);
+    processButton(&controller->dpadRight, DPAD_RIGHT,       0b00000100, controllerBuffer[0]);
+    processButton(&controller->dpadDown, DPAD_DOWN,         0b00000010, controllerBuffer[0]);
+    processButton(&controller->dpadUp, DPAD_UP,             0b00000001, controllerBuffer[0]);
 
-    controller->buttonY = (controllerBuffer[1] & 0b10000000) > 0;
-    controller->buttonB = (controllerBuffer[1] & 0b01000000) > 0;
-    controller->buttonA = (controllerBuffer[1] & 0b00100000) > 0;
-    controller->buttonX = (controllerBuffer[1] & 0b00010000) > 0;
+    processButton(&controller->buttonY, BUTTON_Y,           0b10000000, controllerBuffer[1]);
+    processButton(&controller->buttonB, BUTTON_B,           0b01000000, controllerBuffer[1]);
+    processButton(&controller->buttonA, BUTTON_A,           0b00100000, controllerBuffer[1]);
+    processButton(&controller->buttonX, BUTTON_X,           0b00010000, controllerBuffer[1]);
+    processButton(&controller->shoulderL1, SHOULDER_L1,     0b00001000, controllerBuffer[1]);
+    processButton(&controller->shoulderR2, SHOULDER_R2,     0b00000100, controllerBuffer[1]);
+    processButton(&controller->shoulderR1, SHOULDER_R1,     0b00000010, controllerBuffer[1]);
+    processButton(&controller->shoulderL2, SHOULDER_L2,     0b00000001, controllerBuffer[1]);
+    
+    processButton(&controller->miscHome, MISC_HOME,         0b10000000, controllerBuffer[2]);
+    processButton(&controller->miscStart, MISC_START,       0b01000000, controllerBuffer[2]);
+    processButton(&controller->miscSelect, MISC_SELECT,     0b00100000, controllerBuffer[2]);
+    processButton(&controller->miscSystem, MISC_SYSTEM,     0b00010000, controllerBuffer[2]);
+    processButton(&controller->miscBack, MISC_BACK,         0b00001000, controllerBuffer[2]);
+    processButton(&controller->miscCapture, MISC_CAPTURE,   0b00000100, controllerBuffer[2]);
+    processButton(&controller->buttonTR, BUTTON_TR,         0b00000010, controllerBuffer[2]);
+    processButton(&controller->buttonTL, BUTTON_TL,         0b00000001, controllerBuffer[2]);
 
-    controller->shoulderL1 = controllerBuffer[1] & 0b00001000;
-    controller->shoulderL2 = controllerBuffer[1] & 0b00000100;
-    controller->shoulderR1 = controllerBuffer[1] & 0b00000010;
-    controller->shoulderR2 = controllerBuffer[1] & 0b00000001;
+    controller->breakForce = (((uint16_t)controllerBuffer[3]) << 8) | (uint16_t)controllerBuffer[4];
+    if(controller->breakForce > 0 && state->current != nullptr)
+    {
+        state->current->onAnalogButton(BREAK, controller->breakForce);
+    }
+
+    controller->throttleForce = (((uint16_t)controllerBuffer[5]) << 8) | (uint16_t)controllerBuffer[6];
+    if(controller->throttleForce > 0 && state->current != nullptr)
+    {
+        state->current->onAnalogButton(THROTTLE, controller->throttleForce);
+    }
 }
 
 void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue)

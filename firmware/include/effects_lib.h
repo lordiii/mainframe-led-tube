@@ -20,5 +20,9 @@ void setRingColor(int ring, int color);
 int getPixelColor(int ring, int pixel);
 void setPixelColor(int ring, int pixel, int r, int g, int b);
 int randomColor();
+uint8_t qsub8(uint8_t i, uint8_t j);
+uint8_t qadd8(uint8_t i, uint8_t j);
+int HeatColor(uint8_t temperature);
+uint8_t scale8_video(uint8_t i, uint8_t scale);
 
 #endif

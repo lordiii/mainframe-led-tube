@@ -17,7 +17,7 @@ int drawingMemory[LED_PER_STRIP * 6];
 OctoWS2811 leds = OctoWS2811(LED_PER_STRIP, displayMemory, drawingMemory, LED_CONFIGURATION, LED_STRIP_AMOUNT, pinList);
 EffectState *state = new EffectState;
 
-const int effectCount = 9;
+const int effectCount = 10;
 Effect effects[effectCount] = {
     {"off", &effectOff},
     {"test-led", &effectTestLEDs},
@@ -27,7 +27,8 @@ Effect effects[effectCount] = {
     {"solid-white", &effectSolidWhite},
     {"beam", &effectBeam},
     {"gol", &effectGOL, &initializeGOLData},
-    {"tetris", &effectTetris, &initializeTetris}};
+    {"tetris", &effectTetris, &initializeTetris, &onTetrisButtonPress, &onTetrisAnalogButton},
+    {"fire", &effectFire}};
 
 void initOctoWS2811()
 {
@@ -265,6 +266,57 @@ bool effectBeam(unsigned long delta)
     return false;
 }
 
+bool effectFire(unsigned long delta)
+{
+    if (delta > 50)
+    {
+        const int COOLING = 55;
+        const int SPARKING = 120;
+
+        EffectFire *data = &state->data->fire;
+
+        // Step 1.  Cool down every cell a little
+        for (int i = 0; i < LED_TOTAL_RINGS; i++)
+        {
+            for (int j = 0; j < LED_PER_RING; j++)
+            {
+                int id = calculatePixelId(i, j);
+
+                data->heat[id] = qsub8(data->heat[id], random(0, ((COOLING * 10) / (LED_TOTAL_RINGS * LED_PER_RING)) + 2));
+            }
+        }
+
+        // Step 2.  Heat from each cell drifts 'up' and diffuses a little
+        for (int k = LED_TOTAL_RINGS - 1; k >= 2; k--)
+        {
+            for (int i = 0; i < LED_PER_RING; i++)
+            {
+                data->heat[calculatePixelId(k, i)] = (data->heat[calculatePixelId(k - 1, i)] + data->heat[calculatePixelId(k - 2, i)] + data->heat[calculatePixelId(k - 2, i)]) / 3;
+            }
+        }
+
+        // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
+        if (random(0, 256) < SPARKING)
+        {
+            int y = random(0, LED_PER_RING);
+            data->heat[y] = qadd8(data->heat[y], random(160, 255));
+        }
+
+        // Step 4.  Map from heat cells to LED colors
+        for (int i = 0; i < LED_TOTAL_RINGS; i++)
+        {
+            for (int j = 0; j < LED_PER_RING; j++)
+            {
+                setPixelColor(i, j, HeatColor(data->heat[calculatePixelId(i, j)]));
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 //
 //
 // Game of life
@@ -305,27 +357,13 @@ bool effectGOL(unsigned long delta)
 //
 bool effectTetris(unsigned long delta)
 {
-    const bool forceMovement = delta > 500;
     EffectTetris *data = &state->data->tetris;
-    
+    const bool forceMovement = delta > (500 - (((uint32_t)data->score / 100) * 25));
+
     switch (data->state)
     {
     case RUNNING:
     {
-        if (controller->shoulderL1)
-        {
-            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
-            rotateFrame(true);
-            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color));
-        }
-
-        if (controller->shoulderR1)
-        {
-            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
-            rotateFrame(false);
-            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color));
-        }
-
         if (data->shape->placed)
         {
             addTetrisShape();
@@ -335,24 +373,20 @@ bool effectTetris(unsigned long delta)
         {
             renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
 
-            if((millis() - data->lastRotation) > 250 && controller->buttonX)
+            if (forceMovement || ((millis() - data->lastInput) > 100 && controller->dpadDown))
             {
-                rotateShape(data->shape);
-                data->lastRotation = millis();
-            }
-
-            if (forceMovement || ((millis() - data->lastInput) > 100 && (controller->dpadLeft || controller->dpadRight || controller->dpadDown)))
-            {
-                if(processMovement(forceMovement))
+                data->shape->ring--;
+                if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color, true))
                 {
-                    data->lastInput = millis();
+                    data->shape->ring++;
+                    data->shape->placed = true;
                 }
             }
-        }
 
-        if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color)))
-        {
-            data->state = ENDING;
+            if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color)))
+            {
+                data->state = ENDING;
+            }
         }
 
         return forceMovement;
@@ -361,8 +395,8 @@ bool effectTetris(unsigned long delta)
     {
         if (delta > 62)
         {
-            setRingColor(LED_TOTAL_RINGS - data->lastEndAnimationRing, 0xFF0000);
-            setRingColor(data->lastEndAnimationRing, 0xFF0000);
+            setRingColor(LED_TOTAL_RINGS - data->lastEndAnimationRing, applyBrightness(0xFF0000));
+            setRingColor(data->lastEndAnimationRing, applyBrightness(0xFF0000));
             data->lastEndAnimationRing++;
 
             if (data->lastEndAnimationRing >= LED_TOTAL_RINGS)
@@ -389,6 +423,54 @@ bool effectTetris(unsigned long delta)
             return true;
         }
 
+        break;
+    }
+    case RINGS:
+    {
+        if (delta > 10)
+        {
+            int done = 0;
+            for (int i = 1; i < LED_TOTAL_RINGS; i++)
+            {
+                if(data->ringStatus[i])
+                {
+                    fadeRingToBlack(i, 255);
+
+                    bool active = false;
+                    for(int j = 0; j < LED_PER_RING; j++)
+                    {
+                        if(getPixelColor(i, j) > 0)
+                        {
+                            active = true;
+                            break;
+                        }
+                    }
+
+                    if (!active)
+                    {
+                        for (int ring = i; ring < (LED_TOTAL_RINGS - 1); ring++)
+                        {
+                            for (int j = 0; j < LED_PER_RING; j++)
+                            {
+                                setPixelColor(ring, j, getPixelColor(ring + 1, j));
+                            }
+                        }
+
+                        memcpy(data->ringStatus + i, data->ringStatus + i + 1, (LED_TOTAL_RINGS - i - 1));
+                        data->ringStatus[LED_TOTAL_RINGS - 1] = false;
+                    }
+                } else {
+                    done++;
+                }
+            }
+
+            if(done >= (LED_TOTAL_RINGS - 1))
+            {
+                data->state = RUNNING;
+            }
+
+            return true;
+        }
         break;
     }
     }

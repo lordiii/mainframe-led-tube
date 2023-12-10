@@ -38,6 +38,18 @@ struct ControllerStatus
     bool shoulderL2;
     bool shoulderR1;
     bool shoulderR2;
+
+    bool miscHome;
+    bool miscStart; 
+    bool miscSelect;
+    bool miscSystem;
+    bool miscBack;
+    bool miscCapture;
+    bool buttonTR;
+    bool buttonTL; 
+
+    uint16_t breakForce;
+    uint16_t throttleForce;
 };
 
 extern SensorValues *sensorValues;

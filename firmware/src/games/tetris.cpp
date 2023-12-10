@@ -3,26 +3,23 @@
 #include <main.h>
 #include "tetris.h"
 
-#define TETRONIMO_COUNT 5
+#define TETRONIMO_COUNT 7
 const uint8_t TETRONIMOS[TETRONIMO_COUNT][TETRIS_MAX_SIZE][TETRIS_MAX_SIZE] = {
     {{1, 1, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {0, 0, 0, 0}},
     {{1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}},
     {{1, 1, 1, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}},
     {{0, 1, 0, 0}, {1, 1, 1, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}},
-    {{1, 1, 0, 0}, {0, 1, 1, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}};
-const String TETRONIMO_NAMES[TETRONIMO_COUNT] = {
-    "L",
-    "CUBE",
-    "LINE",
-    "T",
-    "S",
-};
+    {{0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}},
+    {{1, 1, 0, 0}, {0, 1, 1, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}},
+    {{1, 1, 0, 0}, {0, 1, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 0}}};
+const int TETRONIMO_COLORS[TETRONIMO_COUNT] = {0xEF476F, 0xFFFD166, 0x06D6A0, 0x118AB2, 0xFB5607, 0x8338EC, 0xFFCAD4};
 
 void initializeTetris()
 {
     EffectTetris *data = &state->data->tetris;
 
-    if(data->shape == nullptr) {
+    if (data->shape == nullptr)
+    {
         data->shape = new Shape;
         data->shape->placed = true;
     }
@@ -33,6 +30,11 @@ void initializeTetris()
     addTetrisShape();
 
     randomSeed(micros());
+
+    for (int i = 0; i < LED_PER_RING; i++)
+    {
+        setPixelColor(0, i, applyBrightness(0xFF0000));
+    }
 }
 
 bool renderShape(uint8_t shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRing, int currentPixel, int color, bool testRun)
@@ -43,12 +45,15 @@ bool renderShape(uint8_t shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRin
         {
             if (shape[ring][pixel] == 1)
             {
-                if(getPixelColor(currentRing + ring, currentPixel + pixel) == 0 || color == 0)
+                if (getPixelColor(currentRing + ring, currentPixel + pixel) == 0 || color == 0)
                 {
-                    if(!testRun) {
+                    if (!testRun)
+                    {
                         setPixelColor(currentRing + ring, currentPixel + pixel, color);
                     }
-                } else {
+                }
+                else
+                {
                     return false;
                 }
             }
@@ -58,142 +63,52 @@ bool renderShape(uint8_t shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRin
     return true;
 }
 
-bool detectDownCollision(Shape *shape)
-{
-    for (int y = 0; y < TETRIS_MAX_SIZE; y++)
-    {
-        for (int x = 0; x < TETRIS_MAX_SIZE; x++)
-        {
-            if (shape->array[y][x] == 1)
-            {
-                if (getPixelColor(shape->ring - 1 + y, shape->pixel + x) > 0)
-                {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
-bool detectSideCollision(Shape *shape, int sideforce)
-{
-    for (int x = 0; x < TETRIS_MAX_SIZE; x++)
-    {
-        for (int y = 0; y < TETRIS_MAX_SIZE; y++)
-        {
-            if (shape->array[y][x] == 1)
-            {
-                if (getPixelColor(shape->ring + y, shape->pixel + x + sideforce) > 0)
-                {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
 void addTetrisShape()
 {
     EffectTetris *data = &state->data->tetris;
 
-    uint8_t shapeID;
-    do
-    {
-        shapeID = random(0, TETRONIMO_COUNT);
-        memcpy(data->shape->array, TETRONIMOS[shapeID], sizeof(TETRONIMOS[shapeID]));
-    } while (TETRONIMO_NAMES[shapeID].equals(data->shape->name));
-
-    data->shape->name = TETRONIMO_NAMES[shapeID];
-
+    uint8_t shapeID = random(0, TETRONIMO_COUNT);
+    memcpy(data->shape->array, TETRONIMOS[shapeID], sizeof(TETRONIMOS[shapeID]));
     data->shape->ring = LED_TOTAL_RINGS - (TETRIS_MAX_SIZE + 1);
-    data->shape->pixel = random(0, LED_PER_RING);
     data->shape->placed = false;
-    data->shape->color = randomColor();
-}
-
-bool processMovement(bool forceMovement)
-{
-    EffectTetris *data = &state->data->tetris;
-
-    bool checkDown = controller->dpadDown || forceMovement;
-    int checkSide = (controller->dpadLeft || controller->dpadRight) ? (controller->dpadLeft ? -1 : 1) : 0;
-
-    bool collidesDown = false;
-    if (checkDown) {
-        collidesDown = detectDownCollision(data->shape);
-    }
-
-    bool collidesSide = false;
-    if (checkSide != 0) {
-        collidesSide = detectSideCollision(
-                data->shape,
-                controller->dpadLeft ? -1 : 1
-        );
-    }
-
-    if(collidesDown)
-    {
-        data->shape->placed = true;
-        data->shape->pixel += checkSide && !collidesSide ? checkSide : 0;
-    } else {
-        data->shape->ring -= checkDown ? 1 : 0;
-        data->shape->pixel += !collidesSide && checkSide ? checkSide : 0;
-    }
-    
-    for (int i = 0; i < TETRIS_MAX_SIZE; i++)
-    {
-        for (int j = 0; j < TETRIS_MAX_SIZE; j++)
-        {
-            if (data->shape->array[i][j] == 1 && (data->shape->ring + i) == 0)
-            {
-                data->shape->placed = true;
-                break;
-            }
-        }
-    }
-
-    return checkSide != 0;
+    data->shape->color = TETRONIMO_COLORS[shapeID];
 }
 
 void eliminateRings()
 {
+    EffectTetris *data = &state->data->tetris;
+
     int total = 0;
-    int i = 0;
-    
-    while(i < LED_TOTAL_RINGS) {
+    int i = 1;
+
+    while (i < LED_TOTAL_RINGS)
+    {
         bool match = true;
 
-        for(int pixel = 0; pixel < LED_PER_RING; pixel++) {
-            if(getPixelColor(i, pixel) == 0)
+        for (int pixel = 0; pixel < LED_PER_RING; pixel++)
+        {
+            if (getPixelColor(i, pixel) == 0)
             {
                 match = false;
                 break;
             }
         }
 
-        if(match)
+        if (match)
         {
             total++;
-
-            for(int ring = i; ring < (LED_TOTAL_RINGS - 1); ring++) {
-                for(int pixel = 0; pixel < LED_PER_RING; pixel++) {
-                    setPixelColor(ring, pixel, getPixelColor(ring + 1, pixel));
-                 }
-            }
-
-            for(int pixel = 0; pixel < LED_PER_RING; pixel++) {
-                setPixelColor((LED_TOTAL_RINGS - 1), pixel, 0);
-            }
-        } else {
-            i++;
+            data->ringStatus[i] = true;
         }
+
+        i++;
     }
 
-    state->data->tetris.score += ((total * 10) * total);
+
+    if(total > 0)
+    {
+        state->data->tetris.score += ((total * 10) * total);
+        data->state = RINGS;
+    }
 }
 
 uint8_t rotateBuffer[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE] = {};
@@ -208,20 +123,20 @@ void rotateShape(Shape *shape)
     }
 
     bool exit = false;
-    while(!exit)
+    while (!exit)
     {
         for (int i = 0; i < TETRIS_MAX_SIZE; i++)
         {
-            if(rotateBuffer[0][i] == 1)
+            if (rotateBuffer[0][i] == 1)
             {
                 exit = true;
                 break;
             }
         }
 
-        if(!exit)
+        if (!exit)
         {
-            for(int i = 0; i < (TETRIS_MAX_SIZE - 1); i++)
+            for (int i = 0; i < (TETRIS_MAX_SIZE - 1); i++)
             {
                 memcpy(rotateBuffer[i], rotateBuffer[i + 1], TETRIS_MAX_SIZE);
             }
@@ -231,20 +146,20 @@ void rotateShape(Shape *shape)
     }
 
     exit = false;
-    while(!exit)
+    while (!exit)
     {
         for (int i = 0; i < TETRIS_MAX_SIZE; i++)
         {
-            if(rotateBuffer[i][0] == 1)
+            if (rotateBuffer[i][0] == 1)
             {
                 exit = true;
                 break;
             }
         }
 
-        if(!exit)
+        if (!exit)
         {
-            for(int i = 0; i < TETRIS_MAX_SIZE; i++)
+            for (int i = 0; i < TETRIS_MAX_SIZE; i++)
             {
                 memcpy(rotateBuffer[i], rotateBuffer[i] + 1, TETRIS_MAX_SIZE - 1);
                 rotateBuffer[i][TETRIS_MAX_SIZE - 1] = 0;
@@ -252,22 +167,24 @@ void rotateShape(Shape *shape)
         }
     }
 
-
-    if(renderShape(rotateBuffer, shape->ring, shape->pixel, shape->color, true))
+    if (renderShape(rotateBuffer, shape->ring, shape->pixel, shape->color, true))
     {
         memcpy(shape->array, rotateBuffer, sizeof(rotateBuffer));
     }
 }
 
-void rotateFrame(bool clockwise)
+void rotateFrame(bool clockwise, bool moveShape)
 {
     EffectTetris *data = &state->data->tetris;
 
-    data->shape->pixel += clockwise ? -1 : 1;
+    if (moveShape)
+    {
+        data->shape->pixel += clockwise ? -1 : 1;
+    }
 
     int buffer[2];
 
-    for(int i = 0; i < LED_TOTAL_RINGS; i++)
+    for (int i = 0; i < LED_TOTAL_RINGS; i++)
     {
         buffer[0] = getPixelColor(i, 0);
 
@@ -278,5 +195,96 @@ void rotateFrame(bool clockwise)
 
             buffer[0] = buffer[1];
         }
+    }
+}
+
+void onTetrisButtonPress(Button button)
+{
+    EffectTetris *data = &state->data->tetris;
+
+    if (data->state == RUNNING)
+    {
+        state->halt = true;
+        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
+
+        switch (button)
+        {
+        case SHOULDER_L1:
+            rotateFrame(true, false);
+            if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color, true))
+            {
+                rotateFrame(false, false);
+            }
+            break;
+        case SHOULDER_R1:
+            rotateFrame(false, false);
+            if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color, true))
+            {
+                rotateFrame(true, false);
+            }
+            break;
+        case BUTTON_X:
+            rotateShape(data->shape);
+            break;
+        case DPAD_LEFT:
+            data->shape->pixel -= 1;
+
+            if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color), true))
+            {
+                data->shape->pixel += 1;
+            }
+            break;
+        case DPAD_RIGHT:
+            data->shape->pixel += 1;
+
+            if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color), true))
+            {
+                data->shape->pixel -= 1;
+            }
+            break;
+        default:
+            break;
+        }
+
+        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color));
+        if (button != MISC_START)
+        {
+            state->halt = false;
+        }
+    }
+}
+
+void onTetrisAnalogButton(Button button, uint16_t value)
+{
+    EffectTetris *data = &state->data->tetris;
+
+    if (data->state == RUNNING)
+    {
+        if (data->lastRotation > ((1020 - value) / 100))
+        {
+            state->halt = true;
+
+            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
+
+            switch (button)
+            {
+            case BREAK:
+                rotateFrame(true, true);
+                break;
+            case THROTTLE:
+                rotateFrame(false, true);
+                break;
+                break;
+            default:
+                break;
+            }
+
+            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color));
+
+            state->halt = false;
+            data->lastRotation = 0;
+        }
+
+        data->lastRotation++;
     }
 }

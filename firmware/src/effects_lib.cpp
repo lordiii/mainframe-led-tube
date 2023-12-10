@@ -106,3 +106,62 @@ int randomColor()
     int color = (r << 16) | (g << 8) | b;
     return color == 0 ? randomColor() : color;
 }
+
+uint8_t qsub8(uint8_t i, uint8_t j)
+{
+    int t = i - j;
+    if (t < 0)
+        t = 0;
+    return t;
+}
+
+uint8_t qadd8(uint8_t i, uint8_t j)
+{
+    unsigned int t = i + j;
+    if (t > 255)
+        t = 255;
+    return t;
+}
+
+uint8_t scale8_video(uint8_t i, uint8_t scale)
+{
+    uint8_t j = (((int)i * (int)scale) >> 8) + ((i && scale) ? 1 : 0);
+    return j;
+}
+
+int HeatColor(uint8_t temperature)
+{
+    int heatcolor = 0;
+ 
+    // Scale 'heat' down from 0-255 to 0-191,
+    // which can then be easily divided into three
+    // equal 'thirds' of 64 units each.
+    uint8_t t192 = scale8_video(temperature, 191);
+
+    // calculate a value that ramps up from
+    // zero to 255 in each 'third' of the scale.
+    uint8_t heatramp = t192 & 0x3F; // 0..63
+    heatramp <<= 2; // scale up to 0..252
+ 
+    // now figure out which third of the spectrum we're in:
+    if( t192 & 0x80) {
+        // we're in the hottest third
+        heatcolor |= (255 << 16); // full red
+        heatcolor |= (255 << 8);  // full green
+        heatcolor |= heatramp;    // ramp up blue
+    } else if( t192 & 0x40 ) {
+        // we're in the middle third
+        heatcolor |= (255 << 16); // full red
+        heatcolor |= (heatramp << 8); // ramp up green
+        heatcolor |= 0; // no blue
+ 
+    } else {
+        // we're in the coolest third
+        heatcolor =  (heatramp << 16); // ramp up red
+        heatcolor |= (0 << 8); // no green
+        heatcolor |= 0; // no blue
+    }
+ 
+    return heatcolor;
+}
+ 

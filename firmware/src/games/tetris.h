@@ -3,7 +3,7 @@
 
 #define TETRIS_MAX_SIZE 4
 
-#include "effects.h"
+#include <effects.h>
 
 struct Shape
 {
@@ -12,14 +12,14 @@ struct Shape
     int pixel;
     bool placed = false;
     int color;
-    String name;
 };
 
 enum TetrisState
 {
     RUNNING,
     ENDING,
-    WAITING
+    WAITING,
+    RINGS
 };
 
 struct EffectTetris
@@ -29,7 +29,8 @@ struct EffectTetris
     TetrisState state;
     int lastEndAnimationRing;
     uint32_t lastInput;
-    uint32_t lastRotation;
+    uint16_t lastRotation;
+    bool ringStatus[LED_TOTAL_RINGS];
 };
 
 bool effectTetris(unsigned long delta);
@@ -37,9 +38,10 @@ void initializeTetris();
 
 bool renderShape(uint8_t shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRing, int currentPixel, int color, bool testRun = false);
 void addTetrisShape();
-bool processMovement(bool forceMovement);
 void eliminateRings();
 void rotateFrame(bool clockwise);
 void rotateShape(Shape *shape);
+void onTetrisButtonPress(Button button);
+void onTetrisAnalogButton(Button button, uint16_t value);
 
 #endif //FIRMWARE_TETRIS_H

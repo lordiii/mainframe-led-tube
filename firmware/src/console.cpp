@@ -3,6 +3,7 @@
 
 #include <effects.h>
 #include <globals.h>
+#include <effects_lib.h>
 
 bool debug = false;
 
@@ -139,6 +140,18 @@ void processCommand()
             Wire.write(0x02);
             Wire.endTransmission();
         }
+    }
+    else if(consoleBuffer.startsWith("set-ring "))
+    {
+        int ring = consoleBuffer.substring(strlen("set-ring ")).toInt();
+        
+        setRingColor(ring, 0xFFFFFF);
+    }
+    else if(consoleBuffer.equals("controller-rumble"))
+    {
+        Wire.beginTransmission(I2C_CONTROLLER);
+        Wire.write(0x03);
+        Wire.endTransmission();
     }
     else
     {
