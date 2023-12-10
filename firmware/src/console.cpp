@@ -5,7 +5,6 @@
 #include <globals.h>
 
 bool debug = false;
-bool listenMode = false;
 
 const int BUFFER_SIZE = 65;
 String consoleBuffer;
@@ -17,89 +16,55 @@ void initConsole()
 
 void processConsoleData()
 {
-    if (listenMode)
+    bool change = false;
+
+    while (Serial.available())
     {
-        while(Serial.available())
+        size_t bufferLength = consoleBuffer.length();
+        char character = Serial.read();
+
+        switch (character)
         {
-            switch (Serial.read())
+        case 0xD:
+            Serial.print("\n\r");
+            processCommand();
+            consoleBuffer = "";
+            change = true;
+            break;
+        case 0x7F:
+            if (bufferLength > 0)
             {
-            case 'a':
-                state->movement = LEFT;
-                break;
-            case 's':
-                state->movement = DOWN;
-                break;
-            case 'd':
-                state->movement = RIGHT;
-                break;
-            case 'r':
-                state->data->tetris.rotate = true;
-                break;
-            case 'j':
-                state->data->tetris.state = ROTATE_CLOCKWISE;
-                break;
-            case 'k':
-                state->data->tetris.state = ROTATE_COUNTER_CLOCKWISE;
-                break;
-            case 0x1B:
-                listenMode = false;
-                setCurrentEffect(&effects[0]);
-                break;
+                consoleBuffer = consoleBuffer.substring(0, consoleBuffer.length() - 1);
+                change = true;
             }
+            break;
+        default:
+            if (bufferLength < (BUFFER_SIZE - 1) && ((character >= 0x20 && character <= 0x7E) || debug))
+            {
+                consoleBuffer.append(character);
+                change = true;
+            }
+            break;
         }
     }
-    else
+
+    if (change)
     {
-        bool change = false;
+        size_t bufferLength = consoleBuffer.length();
 
-        while (Serial.available())
+        Serial.print("\33[2K\r#> ");
+        for (size_t i = 0; i < bufferLength; i++)
         {
-            size_t bufferLength = consoleBuffer.length();
-            char character = Serial.read();
+            char character = consoleBuffer[i];
 
-            switch (character)
+            if (!debug)
             {
-            case 0xD:
-                Serial.print("\n\r");
-                processCommand();
-                consoleBuffer = "";
-                change = true;
-                break;
-            case 0x7F:
-                if (bufferLength > 0)
-                {
-                    consoleBuffer = consoleBuffer.substring(0, consoleBuffer.length() - 1);
-                    change = true;
-                }
-                break;
-            default:
-                if (bufferLength < (BUFFER_SIZE - 1) && ((character >= 0x20 && character <= 0x7E) || debug))
-                {
-                    consoleBuffer.append(character);
-                    change = true;
-                }
-                break;
+                Serial.write(character);
             }
-        }
-
-        if (change)
-        {
-            size_t bufferLength = consoleBuffer.length();
-
-            Serial.print("\33[2K\r#> ");
-            for (size_t i = 0; i < bufferLength; i++)
+            else
             {
-                char character = consoleBuffer[i];
-
-                if (!debug)
-                {
-                    Serial.write(character);
-                }
-                else
-                {
-                    Serial.print(character, 16);
-                    Serial.print(' ');
-                }
+                Serial.print(character, 16);
+                Serial.print(' ');
             }
         }
     }
@@ -134,38 +99,46 @@ void processCommand()
     else if (consoleBuffer.equals("debug"))
     {
         debug = !debug;
-    } else if(consoleBuffer.equals("effect-list"))
+    }
+    else if (consoleBuffer.equals("effect-list"))
     {
         commandPrintEffectList();
     }
     else if (consoleBuffer.startsWith("power "))
     {
         commandTogglePowerSupply();
-    } else if (consoleBuffer.equals("halt") || consoleBuffer.equals("h"))
+    }
+    else if (consoleBuffer.equals("halt") || consoleBuffer.equals("h"))
     {
         commandToggleHalt();
-    } else if (consoleBuffer.equals("next") || consoleBuffer.equals("n"))
+    }
+    else if (consoleBuffer.equals("next") || consoleBuffer.equals("n"))
     {
         commandExecuteNext();
-    } else if (consoleBuffer.startsWith("slow ")) 
+    }
+    else if (consoleBuffer.startsWith("slow "))
     {
         state->slowRate = consoleBuffer.substring(strlen("slow ")).toInt();
     }
-    else if (consoleBuffer.equals("a"))
+    else if(consoleBuffer.equals("controller-clear"))
     {
-        state->movement = LEFT;
+        Wire.beginTransmission(I2C_CONTROLLER);
+        Wire.write(0x00);
+        Wire.endTransmission();
     }
-    else if (consoleBuffer.equals("s"))
+    else if(consoleBuffer.startsWith("controller-register "))
     {
-        state->movement = DOWN;
-    }
-    else if (consoleBuffer.equals("d"))
-    {
-        state->movement = RIGHT;
-    }
-    else if (consoleBuffer.equals("w"))
-    {
-        state->movement = NONE;
+        String effectName = consoleBuffer.substring(strlen("controller-register "));
+        if(effectName.equals("on"))
+        {
+            Wire.beginTransmission(I2C_CONTROLLER);
+            Wire.write(0x01);
+            Wire.endTransmission();
+        } else {
+            Wire.beginTransmission(I2C_CONTROLLER);
+            Wire.write(0x02);
+            Wire.endTransmission();
+        }
     }
     else
     {
@@ -226,13 +199,13 @@ void commandReboot()
 void commandSetEffect()
 {
     String effectName = consoleBuffer.substring(strlen("effect "));
-    
+
     Effect *effect = nullptr;
-    for(int i = 0; i < effectCount; i++)
+    for (int i = 0; i < effectCount; i++)
     {
         effect = &effects[i];
 
-        if(effect->name.equals(effectName))
+        if (effect->name.equals(effectName))
         {
             break;
         }
@@ -240,18 +213,13 @@ void commandSetEffect()
 
     setCurrentEffect(effect);
 
-    if(effect == nullptr)
+    if (effect == nullptr)
     {
         Serial.println("Effect '" + effectName + "' not found!");
-    } else
+    }
+    else
     {
         Serial.print("Effect set to '" + effectName + "'!");
-
-        if(effect->requiresListen)
-        {
-            listenMode = true;
-            consoleBuffer = "";
-        }
     }
 }
 
@@ -332,7 +300,7 @@ void commandPrintEffectList()
 {
     Serial.println("Known effects: ");
 
-    for(int i = 0; i < effectCount; i++)
+    for (int i = 0; i < effectCount; i++)
     {
         Serial.println("\t> " + effects[i].name);
     }
@@ -342,10 +310,12 @@ void commandToggleHalt()
 {
     state->halt = !state->halt;
 
-    if(state->halt)
+    if (state->halt)
     {
         Serial.println("Halt Enabled!");
-    } else {
+    }
+    else
+    {
         Serial.println("Halt Disabled!");
     }
 }
@@ -357,12 +327,13 @@ void commandExecuteNext()
 
 void commandSlowExecution()
 {
-    if(state->slowRate != 0)
+    if (state->slowRate != 0)
     {
         state->slowRate = 0;
         Serial.println("Disabled animation slowing!");
-    } else {
-        ;
+    }
+    else
+    {
         Serial.print("Set animation slowing to ");
         Serial.print(state->slowRate);
         Serial.println("ms");

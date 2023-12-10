@@ -19,9 +19,7 @@ enum TetrisState
 {
     RUNNING,
     ENDING,
-    WAITING,
-    ROTATE_CLOCKWISE,
-    ROTATE_COUNTER_CLOCKWISE
+    WAITING
 };
 
 struct EffectTetris
@@ -30,7 +28,8 @@ struct EffectTetris
     int score;
     TetrisState state;
     int lastEndAnimationRing;
-    bool rotate;
+    uint32_t lastInput;
+    uint32_t lastRotation;
 };
 
 bool effectTetris(unsigned long delta);
@@ -38,7 +37,7 @@ void initializeTetris();
 
 bool renderShape(uint8_t shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRing, int currentPixel, int color, bool testRun = false);
 void addTetrisShape();
-void processMovement(bool forceMovement);
+bool processMovement(bool forceMovement);
 void eliminateRings();
 void rotateFrame(bool clockwise);
 void rotateShape(Shape *shape);

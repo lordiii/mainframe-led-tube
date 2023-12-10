@@ -12,7 +12,6 @@ struct Effect
     String name = "";
     EffectCallback callback = nullptr;
     void (*resetData)() = []() {};
-    bool requiresListen = false;
 };
 
 struct EffectStrobe
@@ -75,18 +74,9 @@ union EffectData
     EffectTetris tetris;
 };
 
-enum Movement
-{
-    NONE = 0,
-    DOWN = 2,
-    LEFT = -1,
-    RIGHT = 1,
-};
-
 struct EffectState
 {
     Effect* current = nullptr;
-    Movement movement = NONE;
     EffectData* data = new EffectData;
     unsigned int lastFrameChange = 0;
     unsigned int slowRate = 0;

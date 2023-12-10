@@ -3,7 +3,6 @@
 #include <effects.h>
 #include <web.h>
 #include <console.h>
-
 #include <Wire.h>
 #include <INA226.h>
 #include <OneWire.h>
@@ -30,9 +29,12 @@ unsigned long taskReadSensors = 0;
 unsigned long taskRenderScreen = 0;
 unsigned long taskActivityLed = 0;
 unsigned long taskReadCurrent = 0;
+unsigned long taskReadControllerInput = 0;
 
 // Sensor Values
 SensorValues *sensorValues = new SensorValues;
+
+ControllerStatus *controller = new ControllerStatus;
 
 void setup()
 {
@@ -79,6 +81,7 @@ void setup()
     initTFT();
 }
 
+char controllerBuffer[2] = {};
 bool toggleTemperatureReadWrite = false;
 bool activityLedState = false;
 void loop()
@@ -127,8 +130,48 @@ void loop()
         taskReadCurrent = time;
     }
 
+    if((time - taskReadControllerInput) > 15)
+    {
+        memset(controllerBuffer, 0, sizeof(controllerBuffer));
+        uint8_t quantity = Wire.requestFrom(0x55, sizeof(controllerBuffer));
+        size_t read = Wire.readBytes(controllerBuffer, quantity);
+
+        processControllerInputs();
+        Wire.begin();
+
+        taskReadControllerInput = time;
+    }
+    
     processConsoleData();
     handleWebClient();
+
+    if(Wire.getReadError())
+    {
+        Wire.clearReadError();
+    }
+
+    if(Wire.getWriteError())
+    {
+        Wire.clearWriteError();
+    }
+}
+
+void processControllerInputs()
+{
+    controller->dpadLeft = controllerBuffer[0] & 0b001000;
+    controller->dpadRight = controllerBuffer[0] & 0b000100;
+    controller->dpadUp = controllerBuffer[0] & 0b000001;
+    controller->dpadDown = controllerBuffer[0] & 0b000010;
+
+    controller->buttonY = (controllerBuffer[1] & 0b10000000) > 0;
+    controller->buttonB = (controllerBuffer[1] & 0b01000000) > 0;
+    controller->buttonA = (controllerBuffer[1] & 0b00100000) > 0;
+    controller->buttonX = (controllerBuffer[1] & 0b00010000) > 0;
+
+    controller->shoulderL1 = controllerBuffer[1] & 0b00001000;
+    controller->shoulderL2 = controllerBuffer[1] & 0b00000100;
+    controller->shoulderR1 = controllerBuffer[1] & 0b00000010;
+    controller->shoulderR2 = controllerBuffer[1] & 0b00000001;
 }
 
 void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue)

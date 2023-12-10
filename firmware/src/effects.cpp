@@ -2,6 +2,7 @@
 #include <globals.h>
 #include <effects_lib.h>
 #include <OctoWS2811.h>
+#include <main.h>
 
 #include "games/games.h"
 
@@ -26,7 +27,7 @@ Effect effects[effectCount] = {
     {"solid-white", &effectSolidWhite},
     {"beam", &effectBeam},
     {"gol", &effectGOL, &initializeGOLData},
-    {"tetris", &effectTetris, &initializeTetris, true}};
+    {"tetris", &effectTetris, &initializeTetris}};
 
 void initOctoWS2811()
 {
@@ -306,11 +307,25 @@ bool effectTetris(unsigned long delta)
 {
     const bool forceMovement = delta > 500;
     EffectTetris *data = &state->data->tetris;
-
+    
     switch (data->state)
     {
     case RUNNING:
     {
+        if (controller->shoulderL1)
+        {
+            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
+            rotateFrame(true);
+            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color));
+        }
+
+        if (controller->shoulderR1)
+        {
+            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
+            rotateFrame(false);
+            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color));
+        }
+
         if (data->shape->placed)
         {
             addTetrisShape();
@@ -320,25 +335,25 @@ bool effectTetris(unsigned long delta)
         {
             renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
 
-            if(data->rotate)
+            if((millis() - data->lastRotation) > 250 && controller->buttonX)
             {
                 rotateShape(data->shape);
-                data->rotate = false;
+                data->lastRotation = millis();
             }
 
-            if (forceMovement || state->movement != NONE)
+            if (forceMovement || ((millis() - data->lastInput) > 100 && (controller->dpadLeft || controller->dpadRight || controller->dpadDown)))
             {
-
-                processMovement(forceMovement);
+                if(processMovement(forceMovement))
+                {
+                    data->lastInput = millis();
+                }
             }
         }
 
-        if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color))
+        if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color)))
         {
             data->state = ENDING;
         }
-
-        state->movement = NONE;
 
         return forceMovement;
     }
@@ -375,24 +390,6 @@ bool effectTetris(unsigned long delta)
         }
 
         break;
-    }
-    case ROTATE_CLOCKWISE:
-    {
-        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
-        rotateFrame(true);
-        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color);
-
-        data->state = RUNNING;
-        return true;
-    }
-    case ROTATE_COUNTER_CLOCKWISE:
-    {
-        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
-        rotateFrame(false);
-        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color);
-
-        data->state = RUNNING;
-        return true;
     }
     }
 

@@ -1,5 +1,6 @@
 #include <effects.h>
 #include <effects_lib.h>
+#include <main.h>
 #include "tetris.h"
 
 #define TETRONIMO_COUNT 5
@@ -114,12 +115,12 @@ void addTetrisShape()
     data->shape->color = randomColor();
 }
 
-void processMovement(bool forceMovement)
+bool processMovement(bool forceMovement)
 {
     EffectTetris *data = &state->data->tetris;
 
-    bool checkDown = state->movement == DOWN || forceMovement;
-    bool checkSide = state->movement == LEFT || state->movement == RIGHT;
+    bool checkDown = controller->dpadDown || forceMovement;
+    int checkSide = (controller->dpadLeft || controller->dpadRight) ? (controller->dpadLeft ? -1 : 1) : 0;
 
     bool collidesDown = false;
     if (checkDown) {
@@ -127,20 +128,20 @@ void processMovement(bool forceMovement)
     }
 
     bool collidesSide = false;
-    if (checkSide) {
+    if (checkSide != 0) {
         collidesSide = detectSideCollision(
                 data->shape,
-                state->movement
+                controller->dpadLeft ? -1 : 1
         );
     }
 
     if(collidesDown)
     {
         data->shape->placed = true;
-        data->shape->pixel += checkSide && !collidesSide ? state->movement : 0;
+        data->shape->pixel += checkSide && !collidesSide ? checkSide : 0;
     } else {
         data->shape->ring -= checkDown ? 1 : 0;
-        data->shape->pixel += !collidesSide && checkSide ? state->movement : 0;
+        data->shape->pixel += !collidesSide && checkSide ? checkSide : 0;
     }
     
     for (int i = 0; i < TETRIS_MAX_SIZE; i++)
@@ -154,6 +155,8 @@ void processMovement(bool forceMovement)
             }
         }
     }
+
+    return checkSide != 0;
 }
 
 void eliminateRings()
