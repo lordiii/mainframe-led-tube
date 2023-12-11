@@ -75,7 +75,7 @@ void fadePixelToBlack(int ring, int pixel, uint8_t scale) {
     pixels += calculatePixelId(ring, pixel) * LED_BYTES_PER_LED;
 
     for (int i = 0; i < (LED_BYTES_PER_LED); i++) {
-        *pixels = ((uint16_t) *pixels) * scale >> 8;
+        *pixels = (((uint16_t) *pixels) * scale) >> 8;
         pixels++;
     }
 }
@@ -86,7 +86,7 @@ void fadeRingToBlack(int ring, uint8_t scale) {
     pixels += calculatePixelId(ring, 0) * LED_BYTES_PER_LED;
 
     for (size_t i = 0; i < (LED_PER_RING * LED_BYTES_PER_LED); i++) {
-        *pixels = ((uint16_t) *pixels) * scale >> 8;
+        *pixels = (((uint16_t) *pixels) * scale) >> 8;
         pixels++;
     }
 }
@@ -95,7 +95,7 @@ void fadeAllToBlack(uint8_t scale) {
     auto *pixels = (uint8_t *) drawingMemory;
 
     for (size_t i = 0; i < (LED_TOTAL_AMOUNT * LED_BYTES_PER_LED); i++) {
-        *pixels = (uint8_t) (((uint16_t) *pixels) * scale >> 8);
+        *pixels = ((uint8_t) (((uint16_t) *pixels) * scale) >> 8);
         pixels++;
     }
 }

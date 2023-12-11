@@ -57,7 +57,9 @@ void setCurrentEffect(Effect *effect) {
     memset(state->data, 0, sizeof(EffectData));
 
     // Clear display
-    fillLEDs(0x000000);
+    memset(drawingMemory, 0, sizeof(drawingMemory));
+    memset(drawingMemory, 0, sizeof(displayMemory));
+    memset(drawingMemory, 0, sizeof(ZeroBuf));
 
     // Reset Data
     if (state->current != nullptr) {
@@ -339,10 +341,10 @@ bool effectTetris(unsigned long delta) {
                 int done = 1;
                 for (int i = 1; i < (LED_TOTAL_RINGS - 1); i++) {
                     if (data->ringStatus[i]) {
-                        fadeRingToBlack(i, 225);
+                        fadeRingToBlack(i, 230);
 
-                        int src = calculatePixelId(i, 0);
-                        if (memcmp(drawingMemory + src, ZeroBuf, LED_PER_RING) == 0) {
+                        int src = calculatePixelId(i, 0) * 3;
+                        if (memcmp(((uint8_t *) drawingMemory) + src, ZeroBuf, LED_PER_RING) == 0) {
                             moveArea(i + 1, 0, i, 0, (LED_TOTAL_RINGS - 2 - i) * LED_PER_RING);
                             memmove(data->ringStatus + i, data->ringStatus + i + 1, LED_TOTAL_RINGS - i);
                             data->ringStatus[LED_TOTAL_RINGS - 1] = false;
