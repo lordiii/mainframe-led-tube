@@ -16,8 +16,11 @@
 #include <Arduino.h>
 
 void initWebServer();
+
 void handleWebClient();
+
 bool sendFile(String fileName);
-String getContentType(const String& filename);
+
+String getContentType(const String &filename);
 
 #endif

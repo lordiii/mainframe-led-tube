@@ -22,11 +22,10 @@ const unsigned char tempProbeCenter[8] = TEMPERATURE_SENSOR_CENTER_ADDRESS;
 const unsigned char tempProbeBottom[8] = TEMPERATURE_SENSOR_BOTTOM_ADDRESS;
 
 // LED Render Tasks
-IntervalTimer taskRenderLeds;
+IntervalTimer *taskRenderLeds = new IntervalTimer();
 
 // Scheduled Tasks
 unsigned long taskReadSensors = 0;
-unsigned long taskRenderScreen = 0;
 unsigned long taskActivityLed = 0;
 unsigned long taskReadCurrent = 0;
 unsigned long taskReadControllerInput = 0;
@@ -36,8 +35,7 @@ SensorValues *sensorValues = new SensorValues;
 
 ControllerStatus *controller = new ControllerStatus;
 
-void setup()
-{
+void setup() {
     pinMode(13, OUTPUT);
     digitalWrite(13, HIGH);
 
@@ -52,7 +50,7 @@ void setup()
 
     qindesign::network::Ethernet.begin();
 
-    taskRenderLeds.begin(renderFrame, 12621);
+    taskRenderLeds->begin(renderFrame, LED_FRAMES_PER_SECOND);
 
     sensorValues->temperatureTop = 0.0f;
     sensorValues->temperatureCenter = 0.0f;
@@ -87,41 +85,37 @@ void setup()
 char controllerBuffer[7] = {};
 bool toggleTemperatureReadWrite = false;
 bool activityLedState = false;
-void loop()
-{
+
+void loop() {
     unsigned long time = millis();
 
-    if ((time - taskReadSensors) > 1000)
-    {
+    if ((time - taskReadSensors) > 1000) {
         taskReadSensors = time;
 
         // Read Temperature Values
-        if (toggleTemperatureReadWrite)
-        {
+        if (toggleTemperatureReadWrite) {
             tempSensors.requestTemperatures();
-            toggleTemperatureReadWrite = !toggleTemperatureReadWrite;
-        }
-        else
-        {
+            toggleTemperatureReadWrite = false;
+        } else {
             fetchTemperatureValue(tempProbeTop, TOP, &sensorValues->temperatureTop);
             fetchTemperatureValue(tempProbeCenter, CENTER, &sensorValues->temperatureCenter);
             fetchTemperatureValue(tempProbeBottom, BOTTOM, &sensorValues->temperatureBottom);
 
-            toggleTemperatureReadWrite = !toggleTemperatureReadWrite;
+            toggleTemperatureReadWrite = true;
         }
     }
 
     if (
-        ((time - taskActivityLed) > 125 && !qindesign::network::Ethernet.linkState()) || ((time - taskActivityLed) > 250 && qindesign::network::Ethernet.localIP()[0] == 0) || (time - taskActivityLed > 500))
-    {
+            ((time - taskActivityLed) > 125 && !qindesign::network::Ethernet.linkState()) ||
+            ((time - taskActivityLed) > 250 && qindesign::network::Ethernet.localIP()[0] == 0) ||
+            (time - taskActivityLed > 500)) {
         taskActivityLed = time;
 
         digitalWrite(13, activityLedState ? LOW : HIGH);
         activityLedState = !activityLedState;
     }
 
-    if ((time - taskReadCurrent) > 100)
-    {
+    if ((time - taskReadCurrent) > 100) {
         fetchCurrentValue(currentSensorTop, TOP, &sensorValues->currentLine3);
         fetchCurrentValue(currentSensorCenter, CENTER, &sensorValues->currentLine2);
         fetchCurrentValue(currentSensorBottom, BOTTOM, &sensorValues->currentLine1);
@@ -133,8 +127,7 @@ void loop()
         taskReadCurrent = time;
     }
 
-    if((time - taskReadControllerInput) > 20)
-    {
+    if ((time - taskReadControllerInput) > 20) {
         memset(controllerBuffer, 0, sizeof(controllerBuffer));
         uint8_t quantity = Wire.requestFrom(0x55, sizeof(controllerBuffer));
         Wire.readBytes(controllerBuffer, quantity);
@@ -143,138 +136,115 @@ void loop()
 
         taskReadControllerInput = time;
     }
-    
+
     processConsoleData();
     handleWebClient();
 
-    if(Wire.getReadError())
-    {
+    if (Wire.getReadError()) {
         Wire.clearReadError();
     }
 
-    if(Wire.getWriteError())
-    {
+    if (Wire.getWriteError()) {
         Wire.clearWriteError();
     }
 }
 
-void processButton(bool *value, Button type, uint8_t mask, uint8_t source)
-{
+void processButton(bool *value, Button type, uint8_t mask, uint8_t source) {
     bool pressed = (source & mask) > 0;
 
-    if(pressed && !*value)
-    {
-        if(state->current != nullptr)
-        {
+    if (pressed && !*value) {
+        if (state->current != nullptr) {
             state->current->onButtonPress(type);
         }
     }
     *value = pressed;
 }
 
-void processControllerInputs()
-{
-    processButton(&controller->dpadLeft, DPAD_LEFT,         0b00001000, controllerBuffer[0]);
-    processButton(&controller->dpadRight, DPAD_RIGHT,       0b00000100, controllerBuffer[0]);
-    processButton(&controller->dpadDown, DPAD_DOWN,         0b00000010, controllerBuffer[0]);
-    processButton(&controller->dpadUp, DPAD_UP,             0b00000001, controllerBuffer[0]);
+void processControllerInputs() {
+    processButton(&controller->dpadLeft, DPAD_LEFT, 0b00001000, controllerBuffer[0]);
+    processButton(&controller->dpadRight, DPAD_RIGHT, 0b00000100, controllerBuffer[0]);
+    processButton(&controller->dpadDown, DPAD_DOWN, 0b00000010, controllerBuffer[0]);
+    processButton(&controller->dpadUp, DPAD_UP, 0b00000001, controllerBuffer[0]);
 
-    processButton(&controller->buttonY, BUTTON_Y,           0b10000000, controllerBuffer[1]);
-    processButton(&controller->buttonB, BUTTON_B,           0b01000000, controllerBuffer[1]);
-    processButton(&controller->buttonA, BUTTON_A,           0b00100000, controllerBuffer[1]);
-    processButton(&controller->buttonX, BUTTON_X,           0b00010000, controllerBuffer[1]);
-    processButton(&controller->shoulderL1, SHOULDER_L1,     0b00001000, controllerBuffer[1]);
-    processButton(&controller->shoulderR2, SHOULDER_R2,     0b00000100, controllerBuffer[1]);
-    processButton(&controller->shoulderR1, SHOULDER_R1,     0b00000010, controllerBuffer[1]);
-    processButton(&controller->shoulderL2, SHOULDER_L2,     0b00000001, controllerBuffer[1]);
-    
-    processButton(&controller->miscHome, MISC_HOME,         0b10000000, controllerBuffer[2]);
-    processButton(&controller->miscStart, MISC_START,       0b01000000, controllerBuffer[2]);
-    processButton(&controller->miscSelect, MISC_SELECT,     0b00100000, controllerBuffer[2]);
-    processButton(&controller->miscSystem, MISC_SYSTEM,     0b00010000, controllerBuffer[2]);
-    processButton(&controller->miscBack, MISC_BACK,         0b00001000, controllerBuffer[2]);
-    processButton(&controller->miscCapture, MISC_CAPTURE,   0b00000100, controllerBuffer[2]);
-    processButton(&controller->buttonTR, BUTTON_TR,         0b00000010, controllerBuffer[2]);
-    processButton(&controller->buttonTL, BUTTON_TL,         0b00000001, controllerBuffer[2]);
+    processButton(&controller->buttonY, BUTTON_Y, 0b10000000, controllerBuffer[1]);
+    processButton(&controller->buttonB, BUTTON_B, 0b01000000, controllerBuffer[1]);
+    processButton(&controller->buttonA, BUTTON_A, 0b00100000, controllerBuffer[1]);
+    processButton(&controller->buttonX, BUTTON_X, 0b00010000, controllerBuffer[1]);
+    processButton(&controller->shoulderL1, SHOULDER_L1, 0b00001000, controllerBuffer[1]);
+    processButton(&controller->shoulderR2, SHOULDER_R2, 0b00000100, controllerBuffer[1]);
+    processButton(&controller->shoulderR1, SHOULDER_R1, 0b00000010, controllerBuffer[1]);
+    processButton(&controller->shoulderL2, SHOULDER_L2, 0b00000001, controllerBuffer[1]);
 
-    controller->breakForce = (((uint16_t)controllerBuffer[3]) << 8) | (uint16_t)controllerBuffer[4];
-    if(controller->breakForce > 0 && state->current != nullptr)
-    {
+    processButton(&controller->miscHome, MISC_HOME, 0b10000000, controllerBuffer[2]);
+    processButton(&controller->miscStart, MISC_START, 0b01000000, controllerBuffer[2]);
+    processButton(&controller->miscSelect, MISC_SELECT, 0b00100000, controllerBuffer[2]);
+    processButton(&controller->miscSystem, MISC_SYSTEM, 0b00010000, controllerBuffer[2]);
+    processButton(&controller->miscBack, MISC_BACK, 0b00001000, controllerBuffer[2]);
+    processButton(&controller->miscCapture, MISC_CAPTURE, 0b00000100, controllerBuffer[2]);
+    processButton(&controller->buttonTR, BUTTON_TR, 0b00000010, controllerBuffer[2]);
+    processButton(&controller->buttonTL, BUTTON_TL, 0b00000001, controllerBuffer[2]);
+
+    controller->breakForce = (((uint16_t) controllerBuffer[3]) << 8) | (uint16_t) controllerBuffer[4];
+    if (controller->breakForce > 0 && state->current != nullptr) {
         state->current->onAnalogButton(BREAK, controller->breakForce);
     }
 
-    controller->throttleForce = (((uint16_t)controllerBuffer[5]) << 8) | (uint16_t)controllerBuffer[6];
-    if(controller->throttleForce > 0 && state->current != nullptr)
-    {
+    controller->throttleForce = (((uint16_t) controllerBuffer[5]) << 8) | (uint16_t) controllerBuffer[6];
+    if (controller->throttleForce > 0 && state->current != nullptr) {
         state->current->onAnalogButton(THROTTLE, controller->throttleForce);
     }
 }
 
-void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue)
-{
+void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue) {
     float value = round(sensor.getBusVoltage() * 100.0f) / 100.0f;
 
-    if (*oldvalue != value)
-    {
+    if (*oldvalue != value) {
         *oldvalue = value;
         renderVoltageValue(section, value);
     }
 }
 
-void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue)
-{
+void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue) {
     float value = round((sensor.getShuntVoltage() / 0.006f) * 100.0f) / 100.0f;
 
-    if (*oldvalue != value)
-    {
+    if (*oldvalue != value) {
         *oldvalue = value;
         renderCurrentValue(section, value);
     }
 }
 
-void fetchTemperatureValue(const uint8_t * sensor, TUBE_SECTION section, float *oldvalue)
-{
+void fetchTemperatureValue(const uint8_t *sensor, TUBE_SECTION section, float *oldvalue) {
     float value = round(tempSensors.getTempC(sensor) * 100.0f) / 100.0f;
 
-    if (*oldvalue != value)
-    {
+    if (*oldvalue != value) {
         *oldvalue = value;
         renderTemperatureValue(section, value);
     }
 }
 
-File getFileContents(String fileName)
-{
-    if (SD.begin(BUILTIN_SDCARD))
-    {
+File getFileContents(const String &fileName) {
+    if (SD.begin(BUILTIN_SDCARD)) {
 
         File dataFile = SD.open(fileName.c_str(), FILE_READ);
 
-        if (dataFile)
-        {
+        if (dataFile) {
             return dataFile;
+        } else {
+            return nullptr;
         }
-        else
-        {
-            return NULL;
-        }
-    }
-    else
-    {
-        return NULL;
+    } else {
+        return nullptr;
     }
 }
 
-INA226 getCurrentSensor(int id)
-{
-    switch (id)
-    {
-    case 1:
-        return currentSensorBottom;
-    case 2:
-        return currentSensorCenter;
-    case 3:
-    default:
-        return currentSensorTop;
+INA226 getCurrentSensor(int id) {
+    switch (id) {
+        case 1:
+            return currentSensorBottom;
+        case 2:
+            return currentSensorCenter;
+        case 3:
+        default:
+            return currentSensorTop;
     }
 }

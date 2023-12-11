@@ -10,60 +10,49 @@ bool debug = false;
 const int BUFFER_SIZE = 65;
 String consoleBuffer;
 
-void initConsole()
-{
+void initConsole() {
     consoleBuffer = String("");
 }
 
-void processConsoleData()
-{
+void processConsoleData() {
     bool change = false;
 
-    while (Serial.available())
-    {
+    while (Serial.available()) {
         size_t bufferLength = consoleBuffer.length();
         char character = Serial.read();
 
-        switch (character)
-        {
-        case 0xD:
-            Serial.print("\n\r");
-            processCommand();
-            consoleBuffer = "";
-            change = true;
-            break;
-        case 0x7F:
-            if (bufferLength > 0)
-            {
-                consoleBuffer = consoleBuffer.substring(0, consoleBuffer.length() - 1);
+        switch (character) {
+            case 0xD:
+                Serial.print("\n\r");
+                processCommand();
+                consoleBuffer = "";
                 change = true;
-            }
-            break;
-        default:
-            if (bufferLength < (BUFFER_SIZE - 1) && ((character >= 0x20 && character <= 0x7E) || debug))
-            {
-                consoleBuffer.append(character);
-                change = true;
-            }
-            break;
+                break;
+            case 0x7F:
+                if (bufferLength > 0) {
+                    consoleBuffer = consoleBuffer.substring(0, consoleBuffer.length() - 1);
+                    change = true;
+                }
+                break;
+            default:
+                if (bufferLength < (BUFFER_SIZE - 1) && ((character >= 0x20 && character <= 0x7E) || debug)) {
+                    consoleBuffer.append(character);
+                    change = true;
+                }
+                break;
         }
     }
 
-    if (change)
-    {
+    if (change) {
         size_t bufferLength = consoleBuffer.length();
 
         Serial.print("\33[2K\r#> ");
-        for (size_t i = 0; i < bufferLength; i++)
-        {
+        for (size_t i = 0; i < bufferLength; i++) {
             char character = consoleBuffer[i];
 
-            if (!debug)
-            {
+            if (!debug) {
                 Serial.write(character);
-            }
-            else
-            {
+            } else {
                 Serial.print(character, 16);
                 Serial.print(' ');
             }
@@ -71,67 +60,38 @@ void processConsoleData()
     }
 }
 
-void processCommand()
-{
-    if (consoleBuffer.equals("temperature"))
-    {
+void processCommand() {
+    if (consoleBuffer.equals("temperature")) {
         commandPrintTemperatures();
-    }
-    else if (consoleBuffer.equals("network"))
-    {
+    } else if (consoleBuffer.equals("network")) {
         commandPrintNetworkInfo();
-    }
-    else if (consoleBuffer.equals("reboot"))
-    {
+    } else if (consoleBuffer.equals("reboot")) {
         commandReboot();
-    }
-    else if (consoleBuffer.startsWith("effect "))
-    {
+    } else if (consoleBuffer.startsWith("effect ")) {
         commandSetEffect();
-    }
-    else if (consoleBuffer.startsWith("brightness "))
-    {
+    } else if (consoleBuffer.startsWith("brightness ")) {
         commandSetBrightness();
-    }
-    else if (consoleBuffer.equals("current"))
-    {
+    } else if (consoleBuffer.equals("current")) {
         commandPrintCurrent();
-    }
-    else if (consoleBuffer.equals("debug"))
-    {
+    } else if (consoleBuffer.equals("debug")) {
         debug = !debug;
-    }
-    else if (consoleBuffer.equals("effect-list"))
-    {
+    } else if (consoleBuffer.equals("effect-list")) {
         commandPrintEffectList();
-    }
-    else if (consoleBuffer.startsWith("power "))
-    {
+    } else if (consoleBuffer.startsWith("power ")) {
         commandTogglePowerSupply();
-    }
-    else if (consoleBuffer.equals("halt") || consoleBuffer.equals("h"))
-    {
+    } else if (consoleBuffer.equals("halt") || consoleBuffer.equals("h")) {
         commandToggleHalt();
-    }
-    else if (consoleBuffer.equals("next") || consoleBuffer.equals("n"))
-    {
+    } else if (consoleBuffer.equals("next") || consoleBuffer.equals("n")) {
         commandExecuteNext();
-    }
-    else if (consoleBuffer.startsWith("slow "))
-    {
+    } else if (consoleBuffer.startsWith("slow ")) {
         state->slowRate = consoleBuffer.substring(strlen("slow ")).toInt();
-    }
-    else if(consoleBuffer.equals("controller-clear"))
-    {
+    } else if (consoleBuffer.equals("controller-clear")) {
         Wire.beginTransmission(I2C_CONTROLLER);
         Wire.write(0x00);
         Wire.endTransmission();
-    }
-    else if(consoleBuffer.startsWith("controller-register "))
-    {
+    } else if (consoleBuffer.startsWith("controller-register ")) {
         String effectName = consoleBuffer.substring(strlen("controller-register "));
-        if(effectName.equals("on"))
-        {
+        if (effectName.equals("on")) {
             Wire.beginTransmission(I2C_CONTROLLER);
             Wire.write(0x01);
             Wire.endTransmission();
@@ -140,27 +100,20 @@ void processCommand()
             Wire.write(0x02);
             Wire.endTransmission();
         }
-    }
-    else if(consoleBuffer.startsWith("set-ring "))
-    {
+    } else if (consoleBuffer.startsWith("set-ring ")) {
         int ring = consoleBuffer.substring(strlen("set-ring ")).toInt();
-        
+
         setRingColor(ring, 0xFFFFFF);
-    }
-    else if(consoleBuffer.equals("controller-rumble"))
-    {
+    } else if (consoleBuffer.equals("controller-rumble")) {
         Wire.beginTransmission(I2C_CONTROLLER);
         Wire.write(0x03);
         Wire.endTransmission();
-    }
-    else
-    {
+    } else {
         Serial.println("Command not found...");
     }
 }
 
-void commandPrintTemperatures()
-{
+void commandPrintTemperatures() {
     Serial.print("Top: ");
     Serial.print(sensorValues->temperatureTop);
     Serial.println("°C");
@@ -174,8 +127,7 @@ void commandPrintTemperatures()
     Serial.println("°C");
 }
 
-void commandPrintCurrent()
-{
+void commandPrintCurrent() {
     Serial.print("Top: ");
     Serial.print(sensorValues->currentLine1, 4);
     Serial.println("A");
@@ -189,8 +141,7 @@ void commandPrintCurrent()
     Serial.println("A");
 }
 
-void commandPrintNetworkInfo()
-{
+void commandPrintNetworkInfo() {
     Serial.print("IP: ");
     Serial.println(qindesign::network::Ethernet.localIP());
 
@@ -204,56 +155,44 @@ void commandPrintNetworkInfo()
     Serial.println(qindesign::network::Ethernet.dnsServerIP());
 }
 
-void commandReboot()
-{
+void commandReboot() {
     _reboot_Teensyduino_();
 }
 
-void commandSetEffect()
-{
+void commandSetEffect() {
     String effectName = consoleBuffer.substring(strlen("effect "));
 
     Effect *effect = nullptr;
-    for (int i = 0; i < effectCount; i++)
-    {
+    for (int i = 0; i < effectCount; i++) {
         effect = &effects[i];
 
-        if (effect->name.equals(effectName))
-        {
+        if (effect->name.equals(effectName)) {
             break;
         }
     }
 
     setCurrentEffect(effect);
+    displayEffect(effectName);
 
-    if (effect == nullptr)
-    {
+    if (effect == nullptr) {
         Serial.println("Effect '" + effectName + "' not found!");
-    }
-    else
-    {
+    } else {
         Serial.print("Effect set to '" + effectName + "'!");
     }
 }
 
-void commandSetBrightness()
-{
+void commandSetBrightness() {
     int brightness = consoleBuffer.substring(strlen("brightness ")).toInt();
 
-    if (brightness)
-    {
-        if (brightness < 0)
-        {
+    if (brightness) {
+        if (brightness < 0) {
             brightness = 0;
         }
 
-        if (brightness > 100)
-        {
+        if (brightness > 100) {
             brightness = 100;
         }
-    }
-    else
-    {
+    } else {
         brightness = 0;
     }
 
@@ -264,8 +203,7 @@ void commandSetBrightness()
     Serial.println('%');
 }
 
-void commandSensorStatus()
-{
+void commandSensorStatus() {
     int id = consoleBuffer.substring(strlen("sensor-status ")).toInt();
 
     INA226 sensor = getCurrentSensor(id);
@@ -285,68 +223,51 @@ void commandSensorStatus()
 }
 
 long lastToggle = 0;
-void commandTogglePowerSupply()
-{
-    if ((millis() - lastToggle) > 5000)
-    {
+
+void commandTogglePowerSupply() {
+    if ((millis() - lastToggle) > 5000) {
         String sub = consoleBuffer.substring(strlen("power "));
-        if (sub.equals("on"))
-        {
+        if (sub.equals("on")) {
             digitalWrite(PIN_PW_ON, HIGH);
             Serial.println("Power Supply Enabled");
-        }
-        else if (sub.equals("off"))
-        {
+        } else if (sub.equals("off")) {
             digitalWrite(PIN_PW_ON, LOW);
             Serial.println("Power Supply Disabled");
         }
 
         lastToggle = millis();
-    }
-    else
-    {
+    } else {
         Serial.println("Power supply recentry toggled...");
     }
 }
 
-void commandPrintEffectList()
-{
+void commandPrintEffectList() {
     Serial.println("Known effects: ");
 
-    for (int i = 0; i < effectCount; i++)
-    {
+    for (int i = 0; i < effectCount; i++) {
         Serial.println("\t> " + effects[i].name);
     }
 }
 
-void commandToggleHalt()
-{
+void commandToggleHalt() {
     state->halt = !state->halt;
 
-    if (state->halt)
-    {
+    if (state->halt) {
         Serial.println("Halt Enabled!");
-    }
-    else
-    {
+    } else {
         Serial.println("Halt Disabled!");
     }
 }
 
-void commandExecuteNext()
-{
+void commandExecuteNext() {
     state->singleStep = true;
 }
 
-void commandSlowExecution()
-{
-    if (state->slowRate != 0)
-    {
+void commandSlowExecution() {
+    if (state->slowRate != 0) {
         state->slowRate = 0;
         Serial.println("Disabled animation slowing!");
-    }
-    else
-    {
+    } else {
         Serial.print("Set animation slowing to ");
         Serial.print(state->slowRate);
         Serial.println("ms");

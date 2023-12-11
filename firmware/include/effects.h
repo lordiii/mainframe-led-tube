@@ -4,6 +4,12 @@
 #include <OctoWS2811.h>
 #include <globals.h>
 
+#define LED_STRIP_AMOUNT (LED_TOTAL_RINGS / LED_RINGS_PER_SEGMENT)
+#define LED_PER_STRIP (LED_PER_RING * LED_RINGS_PER_SEGMENT)
+#define LED_TOTAL_AMOUNT (LED_PER_RING * LED_TOTAL_RINGS)
+#define LED_BYTES_PER_LED 3
+#define LED_BUFFER_SIZE ((LED_PER_RING * LED_TOTAL_RINGS * LED_BYTES_PER_LED) / 4)
+
 typedef bool (*EffectCallback)(unsigned long);
 
 enum Button
@@ -69,15 +75,12 @@ struct EffectBeam
     int lastRing;
 };
 
-struct EffectFire
-{
-    bool heat[LED_TOTAL_RINGS * LED_PER_RING];
-};
-
 extern OctoWS2811 leds;
 
 extern Effect effects[];
 extern const int effectCount;
+extern int drawingMemory[LED_BUFFER_SIZE];
+extern const int ZeroBuf[LED_BUFFER_SIZE];
 
 void initOctoWS2811();
 void renderFrame();
@@ -91,7 +94,6 @@ bool effectRainbowStrobe(unsigned long delta);
 bool effectPolice(unsigned long delta);
 bool effectSolidWhite(unsigned long delta);
 bool effectBeam(unsigned long delta);
-bool effectFire(unsigned long delta);
 
 #include "games/games.h"
 
@@ -105,7 +107,6 @@ union EffectData
     EffectBeam beam;
     EffectGOL gol;
     EffectTetris tetris;
-    EffectFire fire;
 };
 
 struct EffectState

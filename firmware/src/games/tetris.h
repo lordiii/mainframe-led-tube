@@ -5,8 +5,7 @@
 
 #include <effects.h>
 
-struct Shape
-{
+struct Shape {
     uint8_t array[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE];
     int ring;
     int pixel;
@@ -14,16 +13,14 @@ struct Shape
     int color;
 };
 
-enum TetrisState
-{
+enum TetrisState {
     RUNNING,
     ENDING,
     WAITING,
     RINGS
 };
 
-struct EffectTetris
-{
+struct EffectTetris {
     Shape *shape;
     int score;
     TetrisState state;
@@ -34,14 +31,22 @@ struct EffectTetris
 };
 
 bool effectTetris(unsigned long delta);
+
 void initializeTetris();
 
-bool renderShape(uint8_t shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRing, int currentPixel, int color, bool testRun = false);
+bool renderShape(uint8_t shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRing, int currentPixel, int color,
+                 bool testRun = false);
+
 void addTetrisShape();
-void eliminateRings();
+
+bool eliminateRings();
+
 void rotateFrame(bool clockwise);
+
 void rotateShape(Shape *shape);
+
 void onTetrisButtonPress(Button button);
+
 void onTetrisAnalogButton(Button button, uint16_t value);
 
 #endif //FIRMWARE_TETRIS_H

@@ -6,9 +6,6 @@
 #include <INA226.h>
 #include <tft.h>
 
-#define PIN_PW_ON 28
-#define PIN_PS_GOOD 29
-
 // Temperature Sensor Values
 struct SensorValues {
     float temperatureTop;
@@ -54,9 +51,10 @@ struct ControllerStatus
 
 extern SensorValues *sensorValues;
 extern ControllerStatus *controller;
+extern IntervalTimer *taskRenderLeds;
 
 bool initializeCurrentSensor(INA226 *sensor);
-File getFileContents(String fileName);
+File getFileContents(const String& fileName);
 INA226 getCurrentSensor(int id);
 void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
 void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);

@@ -1,12 +1,10 @@
-#include "web.h"
-#include "main.h"
-#include "globals.h"
-
+#include <web.h>
+#include <main.h>
+#include <globals.h>
 #include <EthernetWebServer.h>
 #include <SD.h>
 
-const size_t MAX_CHUNK_SIZE = 1024;
-char buffer[MAX_CHUNK_SIZE];
+char buffer[WEB_CHUNK_SIZE];
 
 EthernetWebServer server(80);
 
@@ -50,7 +48,7 @@ bool sendFile(String fileName)
 
         while(true)
         {
-            size_t chunkSize = min(file.available(), MAX_CHUNK_SIZE);
+            size_t chunkSize = min(file.available(), WEB_CHUNK_SIZE);
             if(chunkSize == 0) {
                 break;
             }
@@ -78,12 +76,7 @@ String getContentType(const String &filename)
     if (server.hasArg("download"))
     {
         return "application/octet-stream";
-    }
-    else if (filename.endsWith(".htm"))
-    {
-        return "text/html";
-    }
-    else if (filename.endsWith(".html"))
+    } else if (filename.endsWith(".htm") || filename.endsWith(".html"))
     {
         return "text/html";
     }
