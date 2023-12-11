@@ -43,7 +43,7 @@ bool eliminateRings();
 
 void rotateFrame(bool clockwise);
 
-void rotateShape(Shape *shape);
+void rotateShape(Shape *shape, bool clockwise);
 
 void onTetrisButtonPress(Button button);
 

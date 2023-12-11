@@ -103,29 +103,34 @@ bool eliminateRings() {
     return false;
 }
 
-void rotateShape(Shape *shape) {
-    for (int i = 0; i < TETRIS_MAX_SIZE; i++) {
-        for (int j = 0; j < TETRIS_MAX_SIZE; j++) {
-            rotateBuffer[i][j] = shape->array[TETRIS_MAX_SIZE - j - 1][i];
+void rotateShape(Shape *shape, bool clockwise) {
+    // Rotate
+    if (clockwise) {
+        for (int i = 0; i < TETRIS_MAX_SIZE; i++) {
+            for (int j = 0; j < TETRIS_MAX_SIZE; j++) {
+                rotateBuffer[i][j] = shape->array[TETRIS_MAX_SIZE - j - 1][i];
+            }
+        }
+    } else {
+        for (int i = 0; i < TETRIS_MAX_SIZE; i++) {
+            for (int j = 0; j < TETRIS_MAX_SIZE; j++) {
+                rotateBuffer[i][j] = shape->array[j][TETRIS_MAX_SIZE - i - 1];
+            }
         }
     }
 
+    // Orient to bottom left
     bool exit = false;
-    while (!exit)
-    {
-        for (int i = 0; i < TETRIS_MAX_SIZE; i++)
-        {
-            if (rotateBuffer[0][i] == 1)
-            {
+    while (!exit) {
+        for (int i = 0; i < TETRIS_MAX_SIZE; i++) {
+            if (rotateBuffer[0][i] == 1) {
                 exit = true;
                 break;
             }
         }
 
-        if (!exit)
-        {
-            for (int i = 0; i < (TETRIS_MAX_SIZE - 1); i++)
-            {
+        if (!exit) {
+            for (int i = 0; i < (TETRIS_MAX_SIZE - 1); i++) {
                 memcpy(rotateBuffer[i], rotateBuffer[i + 1], TETRIS_MAX_SIZE);
             }
 
@@ -134,29 +139,23 @@ void rotateShape(Shape *shape) {
     }
 
     exit = false;
-    while (!exit)
-    {
-        for (int i = 0; i < TETRIS_MAX_SIZE; i++)
-        {
-            if (rotateBuffer[i][0] == 1)
-            {
+    while (!exit) {
+        for (int i = 0; i < TETRIS_MAX_SIZE; i++) {
+            if (rotateBuffer[i][0] == 1) {
                 exit = true;
                 break;
             }
         }
 
-        if (!exit)
-        {
-            for (int i = 0; i < TETRIS_MAX_SIZE; i++)
-            {
+        if (!exit) {
+            for (int i = 0; i < TETRIS_MAX_SIZE; i++) {
                 memcpy(rotateBuffer[i], rotateBuffer[i] + 1, TETRIS_MAX_SIZE - 1);
                 rotateBuffer[i][TETRIS_MAX_SIZE - 1] = 0;
             }
         }
     }
 
-    if (renderShape(rotateBuffer, shape->ring, shape->pixel, shape->color, true))
-    {
+    if (renderShape(rotateBuffer, shape->ring, shape->pixel, shape->color, true)) {
         memcpy(shape->array, rotateBuffer, sizeof(rotateBuffer));
     }
 }
@@ -203,10 +202,10 @@ void onTetrisButtonPress(Button button) {
                 }
                 break;
             case BUTTON_X:
-                rotateShape(data->shape);
+                rotateShape(data->shape, true);
                 break;
             case BUTTON_A:
-                rotateShape(data->shape);
+                rotateShape(data->shape, false);
                 break;
             case DPAD_LEFT:
                 data->shape->pixel -= 1;
