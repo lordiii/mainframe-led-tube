@@ -369,3 +369,18 @@ bool effectTetris(unsigned long delta) {
 
     return false;
 }
+
+bool effectPong(unsigned long delta) {
+    EffectPong *data = &state->data->pong;
+
+    const int paddleColor = 0xFFFFFF; // TODO: Paddle color
+
+    if (delta > 20) {
+
+
+
+        return true;
+    }
+
+    return false;
+}
