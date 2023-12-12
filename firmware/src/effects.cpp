@@ -26,7 +26,8 @@ Effect effects[effectCount] = {
         {"solid-white",    &effectSolidWhite},
         {"beam",           &effectBeam},
         {"gol",            &effectGOL,    &initializeGOLData},
-        {"tetris",         &effectTetris, &initializeTetris, &onTetrisButtonPress, &onTetrisAnalogButton}
+        {"tetris",         &effectTetris, &initializeTetris, &onTetrisButtonPress, &onTetrisAnalogButton},
+        {"pong",           &effectPong,   &initializePong}
 };
 
 void initOctoWS2811() {
@@ -277,32 +278,32 @@ bool effectGOL(unsigned long delta) {
 //
 bool effectTetris(unsigned long delta) {
     EffectTetris *data = &state->data->tetris;
-    const bool forceMovement = delta > (unsigned long) max(500 - ((data->score / 100) * 25), 100);
+    const bool forceMovement = delta > (unsigned long) max(500 - ((data->score / 100) * 25), 50);
 
     switch (data->state) {
         case RUNNING: {
-            if (data->shape->placed) {
-                addTetrisShape();
+            if (data->shape.placed) {
+                setTetrisShape(&data->shape);
                 if (!eliminateRings()) {
-                    if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel,
-                                     applyBrightness(data->shape->color))) {
+                    if (!renderShape(data->shape.array, data->shape.ring, data->shape.pixel,
+                                     applyBrightness(data->shape.color))) {
                         data->state = ENDING;
                     }
                 }
             } else {
-                renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
+                renderShape(data->shape.array, data->shape.ring, data->shape.pixel, 0);
 
                 if (forceMovement || ((millis() - data->lastInput) > 100 && controller->dpadDown)) {
-                    data->shape->ring--;
-                    if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color,
+                    data->shape.ring--;
+                    if (!renderShape(data->shape.array, data->shape.ring, data->shape.pixel, data->shape.color,
                                      true)) {
-                        data->shape->ring++;
-                        data->shape->placed = true;
+                        data->shape.ring++;
+                        data->shape.placed = true;
                     }
                 }
 
-                if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel,
-                                 applyBrightness(data->shape->color))) {
+                if (!renderShape(data->shape.array, data->shape.ring, data->shape.pixel,
+                                 applyBrightness(data->shape.color))) {
                     data->state = ENDING;
                 }
             }
@@ -357,8 +358,8 @@ bool effectTetris(unsigned long delta) {
                 if (done >= (LED_TOTAL_RINGS - 1)) {
                     data->state = RUNNING;
 
-                    renderShape(data->shape->array, data->shape->ring, data->shape->pixel,
-                                applyBrightness(data->shape->color));
+                    renderShape(data->shape.array, data->shape.ring, data->shape.pixel,
+                                applyBrightness(data->shape.color));
                 }
 
                 return true;
@@ -376,7 +377,11 @@ bool effectPong(unsigned long delta) {
     const int paddleColor = 0xFFFFFF; // TODO: Paddle color
 
     if (delta > 20) {
+        renderPongPaddle(&data->paddle, 0x000000);
+        renderPongBall(&data->ball, 0x000000);
 
+        renderPongPaddle(&data->paddle, paddleColor);
+        renderPongBall(&data->ball, paddleColor);
 
 
         return true;

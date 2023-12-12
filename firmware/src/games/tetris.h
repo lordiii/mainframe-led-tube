@@ -9,7 +9,7 @@ struct Shape {
     uint8_t array[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE];
     int ring;
     int pixel;
-    bool placed = false;
+    bool placed;
     int color;
 };
 
@@ -21,7 +21,7 @@ enum TetrisState {
 };
 
 struct EffectTetris {
-    Shape *shape;
+    Shape shape;
     int score;
     TetrisState state;
     int lastEndAnimationRing;
@@ -37,11 +37,11 @@ void initializeTetris();
 bool renderShape(uint8_t shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRing, int currentPixel, int color,
                  bool testRun = false);
 
-void addTetrisShape();
+void setTetrisShape(Shape *shape);
 
 bool eliminateRings();
 
-void rotateFrame(bool clockwise);
+void rotateFrame(bool clockwise, Shape *shape = nullptr);
 
 void rotateShape(Shape *shape, bool clockwise);
 

@@ -1,6 +1,6 @@
 #include <effects.h>
 #include <effects_lib.h>
-#include <main.h>
+#include <globals.h>
 #include "tetris.h"
 
 #define TETRONIMO_COUNT 7
@@ -18,14 +18,11 @@ uint8_t rotateBuffer[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE] = {};
 void initializeTetris() {
     EffectTetris *data = &state->data->tetris;
 
-    if (data->shape == nullptr) {
-        data->shape = new Shape;
-        data->shape->placed = true;
-    }
+    data->shape.placed = true;
+    data->shape.pixel = random(0, LED_PER_RING);
 
     data->score = 0;
     data->lastEndAnimationRing = 0;
-    data->shape->pixel = random(0, LED_PER_RING);
 
     randomSeed(micros());
 
@@ -34,7 +31,7 @@ void initializeTetris() {
         setPixelColor(LED_TOTAL_RINGS - 1, i, applyBrightness(0xFF0000));
     }
 
-    addTetrisShape();
+    setTetrisShape(&data->shape);
 }
 
 bool renderShape(uint8_t shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRing, int currentPixel, int color,
@@ -58,20 +55,18 @@ bool renderShape(uint8_t shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRin
     return true;
 }
 
-void addTetrisShape() {
-    EffectTetris *data = &state->data->tetris;
-
+void setTetrisShape(Shape *shape) {
     uint8_t shapeID = random(0, TETRONIMO_COUNT);
-    memcpy(data->shape->array, TETRONIMOS[shapeID], sizeof(TETRONIMOS[shapeID]));
-    data->shape->ring = LED_TOTAL_RINGS - (TETRIS_MAX_SIZE + 1);
-    data->shape->placed = false;
-    data->shape->color = TETRONIMO_COLORS[shapeID];
+    memcpy(shape->array, TETRONIMOS[shapeID], sizeof(TETRONIMOS[shapeID]));
+    shape->ring = LED_TOTAL_RINGS - (TETRIS_MAX_SIZE + 1);
+    shape->placed = false;
+    shape->color = TETRONIMO_COLORS[shapeID];
 
-    while (renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color, true)) {
-        data->shape->ring++;
+    while (renderShape(shape->array, shape->ring, shape->pixel, shape->color, true)) {
+        shape->ring++;
     }
 
-    data->shape->ring--;
+    shape->ring--;
 }
 
 bool eliminateRings() {
@@ -95,7 +90,7 @@ bool eliminateRings() {
     }
 
     if (total > 0) {
-        state->data->tetris.score += ((total * 10) * total);
+        data->score += ((total * 10) * total);
         data->state = RINGS;
         return true;
     }
@@ -160,11 +155,9 @@ void rotateShape(Shape *shape, bool clockwise) {
     }
 }
 
-void rotateFrame(bool clockwise, bool moveShape) {
-    EffectTetris *data = &state->data->tetris;
-
-    if (moveShape) {
-        data->shape->pixel += clockwise ? -1 : 1;
+void rotateFrame(bool clockwise, Shape *shape) {
+    if (shape != nullptr) {
+        shape->pixel += clockwise ? -1 : 1;
     }
 
     int buffer[2];
@@ -186,48 +179,48 @@ void onTetrisButtonPress(Button button) {
 
     if (data->state == RUNNING) {
         state->halt = true;
-        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
+        renderShape(data->shape.array, data->shape.ring, data->shape.pixel, 0);
 
         switch (button) {
             case SHOULDER_L1:
-                rotateFrame(true, false);
-                if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color, true)) {
-                    rotateFrame(false, false);
+                rotateFrame(true);
+                if (!renderShape(data->shape.array, data->shape.ring, data->shape.pixel, data->shape.color, true)) {
+                    rotateFrame(false);
                 }
                 break;
             case SHOULDER_R1:
-                rotateFrame(false, false);
-                if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel, data->shape->color, true)) {
-                    rotateFrame(true, false);
+                rotateFrame(false);
+                if (!renderShape(data->shape.array, data->shape.ring, data->shape.pixel, data->shape.color, true)) {
+                    rotateFrame(true);
                 }
                 break;
             case BUTTON_X:
-                rotateShape(data->shape, true);
+                rotateShape(&data->shape, true);
                 break;
             case BUTTON_A:
-                rotateShape(data->shape, false);
+                rotateShape(&data->shape, false);
                 break;
             case DPAD_LEFT:
-                data->shape->pixel -= 1;
+                data->shape.pixel -= 1;
 
-                if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel,
-                                 applyBrightness(data->shape->color), true)) {
-                    data->shape->pixel += 1;
+                if (!renderShape(data->shape.array, data->shape.ring, data->shape.pixel,
+                                 applyBrightness(data->shape.color), true)) {
+                    data->shape.pixel += 1;
                 }
                 break;
             case DPAD_RIGHT:
-                data->shape->pixel += 1;
+                data->shape.pixel += 1;
 
-                if (!renderShape(data->shape->array, data->shape->ring, data->shape->pixel,
-                                 applyBrightness(data->shape->color), true)) {
-                    data->shape->pixel -= 1;
+                if (!renderShape(data->shape.array, data->shape.ring, data->shape.pixel,
+                                 applyBrightness(data->shape.color), true)) {
+                    data->shape.pixel -= 1;
                 }
                 break;
             default:
                 break;
         }
 
-        renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color));
+        renderShape(data->shape.array, data->shape.ring, data->shape.pixel, applyBrightness(data->shape.color));
         if (button != MISC_START) {
             state->halt = false;
         }
@@ -241,20 +234,20 @@ void onTetrisAnalogButton(Button button, uint16_t value) {
         if (data->lastRotation > ((1020 - value) / 50)) {
             state->halt = true;
 
-            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, 0);
+            renderShape(data->shape.array, data->shape.ring, data->shape.pixel, 0);
 
             switch (button) {
                 case BREAK:
-                    rotateFrame(true, true);
+                    rotateFrame(true, &data->shape);
                     break;
                 case THROTTLE:
-                    rotateFrame(false, true);
+                    rotateFrame(false, &data->shape);
                     break;
                 default:
                     break;
             }
 
-            renderShape(data->shape->array, data->shape->ring, data->shape->pixel, applyBrightness(data->shape->color));
+            renderShape(data->shape.array, data->shape.ring, data->shape.pixel, applyBrightness(data->shape.color));
 
             state->halt = false;
             data->lastRotation = 0;

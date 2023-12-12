@@ -5,19 +5,21 @@
 #include <globals.h>
 
 struct PongPaddle {
-    int ring = LED_TOTAL_RINGS / 2;
-    int pixel = 0;
+    int ring;
+    int pixel;
 };
 
 struct PongBall {
-    int ring = 0;
-    int pixel = 0;
+    int ring;
+    int pixel;
 };
 
 struct EffectPong {
-    PongPaddle *paddle;
-    PongBall *ball;
+    PongPaddle paddle;
+    PongBall ball;
 };
+
+void initializePong();
 
 void rotatePongFrame(bool clockwise);
 

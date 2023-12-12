@@ -79,6 +79,7 @@ extern OctoWS2811 leds;
 
 extern Effect effects[];
 extern const int effectCount;
+extern int displayMemory[LED_BUFFER_SIZE];
 extern int drawingMemory[LED_BUFFER_SIZE];
 extern const int ZeroBuf[LED_BUFFER_SIZE];
 
