@@ -35,7 +35,11 @@ enum Button
     MISC_BACK,
     MISC_CAPTURE,
     THROTTLE,
-    BREAK
+    BREAK,
+    STICK_L_X,
+    STICK_L_Y,
+    STICK_R_X,
+    STICK_R_Y
 };
 
 struct Effect
@@ -44,7 +48,7 @@ struct Effect
     EffectCallback callback = nullptr;
     void (*resetData)() = []() {};
     void (*onButtonPress)(Button button) = [](Button button){};
-    void (*onAnalogButton)(Button button, uint16_t value) = [](Button button, uint16_t value){};
+    void (*onAnalogButton)(Button button, int value) = [](Button button, int value){};
 };
 
 struct EffectStrobe
@@ -82,11 +86,14 @@ extern const int effectCount;
 extern int displayMemory[LED_BUFFER_SIZE];
 extern int drawingMemory[LED_BUFFER_SIZE];
 extern const int ZeroBuf[LED_BUFFER_SIZE];
+extern IntervalTimer *taskRenderLeds;
 
 void initOctoWS2811();
 void renderFrame();
 void setCurrentEffect(Effect *effect);
 void setBrightness(float value);
+void startAnimation();
+void stopAnimation();
 
 bool effectTestLEDs(unsigned long delta);
 bool effectOff(unsigned long delta);

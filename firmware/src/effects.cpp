@@ -3,6 +3,7 @@
 #include <effects_lib.h>
 #include <OctoWS2811.h>
 #include <main.h>
+#include <Entropy.h>
 
 #include "games/games.h"
 
@@ -27,8 +28,11 @@ Effect effects[effectCount] = {
         {"beam",           &effectBeam},
         {"gol",            &effectGOL,    &initializeGOLData},
         {"tetris",         &effectTetris, &initializeTetris, &onTetrisButtonPress, &onTetrisAnalogButton},
-        {"pong",           &effectPong,   &initializePong}
+        {"pong",           &effectPong,   &initializePong,   &onPongButtonPress,   &onPongAnalogButton}
 };
+
+// LED Render Tasks
+IntervalTimer *taskRenderLeds = new IntervalTimer();
 
 void initOctoWS2811() {
     leds.begin();
@@ -36,6 +40,8 @@ void initOctoWS2811() {
 
     state->lastFrameChange = 0;
     state->brightness = 0.50f;
+
+    taskRenderLeds->begin(renderFrame, LED_FRAMES_PER_SECOND);
 }
 
 void setBrightness(float value) {
@@ -47,7 +53,7 @@ void setBrightness(float value) {
 }
 
 void setCurrentEffect(Effect *effect) {
-    taskRenderLeds->end();
+    stopAnimation();
 
     // Wait for current frame
     while (leds.busy()) {}
@@ -65,8 +71,17 @@ void setCurrentEffect(Effect *effect) {
     // Reset Data
     if (state->current != nullptr) {
         state->current->resetData();
-    }
 
+        startAnimation();
+    }
+}
+
+void stopAnimation() {
+    taskRenderLeds->end();
+    while (leds.busy()) {}
+}
+
+void startAnimation() {
     taskRenderLeds->begin(renderFrame, LED_FRAMES_PER_SECOND);
 }
 
@@ -216,7 +231,7 @@ bool effectPolice(unsigned long delta) {
 
 //
 //
-// Miscellanous
+// Miscellaneous
 //
 //
 bool effectSolidWhite(unsigned long delta) {
@@ -371,18 +386,63 @@ bool effectTetris(unsigned long delta) {
     return false;
 }
 
+int calculateDirection(int ballPixel, int paddlePixel) {
+    ballPixel = ((ballPixel > 0) ? ballPixel : LED_PER_RING + ballPixel) % LED_PER_RING;
+    paddlePixel = ((paddlePixel > 0) ? paddlePixel : LED_PER_RING + paddlePixel) % LED_PER_RING;
+
+    int direction = ballPixel - paddlePixel;
+
+    if (direction == 0) {
+        direction = (int) (Entropy.random(3) - 1);
+    }
+
+    return direction;
+}
+
 bool effectPong(unsigned long delta) {
     EffectPong *data = &state->data->pong;
 
-    const int paddleColor = 0xFFFFFF; // TODO: Paddle color
+    if (delta > 50) {
+        renderPongBall(data->ball.ring, data->ball.pixel, data->ball.size, 0x000000);
 
-    if (delta > 20) {
-        renderPongPaddle(&data->paddle, 0x000000);
-        renderPongBall(&data->ball, 0x000000);
+        bool xFrame = data->moveX >= ((data->paddleP1.width / 2) - abs(data->directionX)) && data->directionX != 0;
 
-        renderPongPaddle(&data->paddle, paddleColor);
-        renderPongBall(&data->ball, paddleColor);
+        bool collides = !renderPongBall(data->ball.ring + data->directionY,
+                                        xFrame ? data->ball.pixel : (data->ball.pixel +
+                                                                     (data->directionX > 0 ? 1 : -1)),
+                                        data->ball.size,
+                                        data->ball.color,
+                                        true
+        );
 
+        if (data->ball.ring >= (LED_TOTAL_RINGS - 1) || data->ball.ring <= 0) {
+            data->directionX = 0;
+
+            data->ball.ring = LED_TOTAL_RINGS / 2;
+            data->ball.pixel = data->ball.ring > (LED_TOTAL_RINGS / 2) ? data->paddleP2.pixel : data->paddleP1.pixel;
+        } else if (data->ball.ring > (LED_TOTAL_RINGS / 2) && collides) {
+            data->directionX = calculateDirection(data->ball.pixel, data->paddleP1.pixel);
+            data->directionY = -1;
+
+            data->moveX = 0;
+            data->moveY = 0;
+        } else if (data->ball.ring < (LED_TOTAL_RINGS / 2) && collides) {
+            data->directionX = calculateDirection(data->ball.pixel, data->paddleP2.pixel);
+            data->directionY = 1;
+
+            data->moveX = 0;
+            data->moveY = 0;
+        }
+
+        if (data->moveX >= (data->paddleP1.width - abs(data->directionX)) && data->directionX != 0) {
+            data->ball.pixel += data->directionX > 0 ? 1 : -1;
+            data->moveX = 0;
+        }
+
+        data->ball.ring += data->directionY;
+        data->moveX++;
+
+        renderPongBall(data->ball.ring, data->ball.pixel, data->ball.size, data->ball.color);
 
         return true;
     }

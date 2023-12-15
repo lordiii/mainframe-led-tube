@@ -5,6 +5,7 @@
 #include <QNEthernet.h>
 #include <INA226.h>
 #include <tft.h>
+#include <effects.h>
 
 // Temperature Sensor Values
 struct SensorValues {
@@ -43,22 +44,25 @@ struct ControllerStatus
     bool miscBack;
     bool miscCapture;
     bool buttonTR;
-    bool buttonTL; 
+    bool buttonTL;
 
-    uint16_t breakForce;
-    uint16_t throttleForce;
+    int breakForce;
+    int throttleForce;
+    int stickLX;
+    int stickLY;
+    int stickRX;
+    int stickRY;
 };
 
 extern SensorValues *sensorValues;
 extern ControllerStatus *controller;
-extern IntervalTimer *taskRenderLeds;
 
-bool initializeCurrentSensor(INA226 *sensor);
 File getFileContents(const String& fileName);
 INA226 getCurrentSensor(int id);
 void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
 void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
 void fetchTemperatureValue(const uint8_t * sensor, TUBE_SECTION section, float *oldvalue);
 void processControllerInputs();
+void processAnalogValue(size_t offset, int *value, Button type);
 
 #endif

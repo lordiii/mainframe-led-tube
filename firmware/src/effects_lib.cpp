@@ -18,6 +18,7 @@ int applyBrightness(int color) {
     return (r << 16) | (g << 8) | b;
 }
 
+
 int calculatePixelId(int ring, int pixel) {
     ring = abs(ring);
     pixel = (pixel > 0) ? pixel : LED_PER_RING + pixel;

@@ -47,6 +47,6 @@ void rotateShape(Shape *shape, bool clockwise);
 
 void onTetrisButtonPress(Button button);
 
-void onTetrisAnalogButton(Button button, uint16_t value);
+void onTetrisAnalogButton(Button button, int value);
 
 #endif //FIRMWARE_TETRIS_H

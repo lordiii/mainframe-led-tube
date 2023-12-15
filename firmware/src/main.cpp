@@ -8,7 +8,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SD.h>
-#include <Adafruit_ST7735.h>
+#include <Entropy.h>
 
 // Create Sensor Objects
 INA226 currentSensorTop(CURRENT_SENSOR_TOP_ADDRESS);
@@ -20,9 +20,6 @@ DallasTemperature tempSensors(&oneWire);
 const unsigned char tempProbeTop[8] = TEMPERATURE_SENSOR_TOP_ADDRESS;
 const unsigned char tempProbeCenter[8] = TEMPERATURE_SENSOR_CENTER_ADDRESS;
 const unsigned char tempProbeBottom[8] = TEMPERATURE_SENSOR_BOTTOM_ADDRESS;
-
-// LED Render Tasks
-IntervalTimer *taskRenderLeds = new IntervalTimer();
 
 // Scheduled Tasks
 unsigned long taskReadSensors = 0;
@@ -49,8 +46,6 @@ void setup() {
     digitalWrite(PIN_PW_ON, LOW);
 
     qindesign::network::Ethernet.begin();
-
-    taskRenderLeds->begin(renderFrame, LED_FRAMES_PER_SECOND);
 
     sensorValues->temperatureTop = 0.0f;
     sensorValues->temperatureCenter = 0.0f;
@@ -80,9 +75,11 @@ void setup() {
     initWebServer();
     initOctoWS2811();
     initTFT();
+
+    Entropy.Initialize();
 }
 
-char controllerBuffer[7] = {};
+uint8_t controllerBuffer[27] = {};
 bool toggleTemperatureReadWrite = false;
 bool activityLedState = false;
 
@@ -160,6 +157,15 @@ void processButton(bool *value, Button type, uint8_t mask, uint8_t source) {
     *value = pressed;
 }
 
+void processAnalogValue(size_t offset, int *value, Button type) {
+    *value = ((int) (controllerBuffer[offset + 0])) << 24 | ((int) controllerBuffer[offset + 1]) << 16 |
+             ((int) controllerBuffer[offset + 2]) << 8 | ((int) controllerBuffer[offset + 3]);
+
+    if (*value != 0 && state->current != nullptr) {
+        state->current->onAnalogButton(type, *value);
+    }
+}
+
 void processControllerInputs() {
     processButton(&controller->dpadLeft, DPAD_LEFT, 0b00001000, controllerBuffer[0]);
     processButton(&controller->dpadRight, DPAD_RIGHT, 0b00000100, controllerBuffer[0]);
@@ -184,15 +190,12 @@ void processControllerInputs() {
     processButton(&controller->buttonTR, BUTTON_TR, 0b00000010, controllerBuffer[2]);
     processButton(&controller->buttonTL, BUTTON_TL, 0b00000001, controllerBuffer[2]);
 
-    controller->breakForce = (((uint16_t) controllerBuffer[3]) << 8) | (uint16_t) controllerBuffer[4];
-    if (controller->breakForce > 0 && state->current != nullptr) {
-        state->current->onAnalogButton(BREAK, controller->breakForce);
-    }
-
-    controller->throttleForce = (((uint16_t) controllerBuffer[5]) << 8) | (uint16_t) controllerBuffer[6];
-    if (controller->throttleForce > 0 && state->current != nullptr) {
-        state->current->onAnalogButton(THROTTLE, controller->throttleForce);
-    }
+    processAnalogValue(3, &controller->breakForce, BREAK);
+    processAnalogValue(7, &controller->throttleForce, THROTTLE);
+    processAnalogValue(11, &controller->stickLX, STICK_L_X);
+    processAnalogValue(15, &controller->stickLY, STICK_L_Y);
+    processAnalogValue(19, &controller->stickRX, STICK_R_X);
+    processAnalogValue(23, &controller->stickRY, STICK_R_Y);
 }
 
 void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue) {

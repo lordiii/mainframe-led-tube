@@ -7,24 +7,38 @@
 struct PongPaddle {
     int ring;
     int pixel;
+    int color;
+    int width;
 };
 
 struct PongBall {
     int ring;
     int pixel;
+    int color;
+    int size;
 };
 
 struct EffectPong {
-    PongPaddle paddle;
+    PongPaddle paddleP1;
+    PongPaddle paddleP2;
     PongBall ball;
+    int lastRotation;
+    int lastP1Move;
+    int lastP2Move;
+    int directionX;
+    int directionY;
+    int moveX;
+    int moveY;
 };
 
 void initializePong();
 
-void rotatePongFrame(bool clockwise);
+bool renderPongPaddle(int ring, int pixel, int width, int color, bool testRun = false);
 
-void renderPongPaddle(PongPaddle *paddle, int color);
+bool renderPongBall(int ring, int pixel, int size, int color, bool testRun = false);
 
-void renderPongBall(PongBall *ball, int color);
+void onPongButtonPress(Button button);
+
+void onPongAnalogButton(Button button, int value);
 
 #endif //FIRMWARE_PONG_H

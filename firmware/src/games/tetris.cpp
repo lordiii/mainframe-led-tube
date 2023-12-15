@@ -178,7 +178,8 @@ void onTetrisButtonPress(Button button) {
     EffectTetris *data = &state->data->tetris;
 
     if (data->state == RUNNING) {
-        state->halt = true;
+        stopAnimation();
+
         renderShape(data->shape.array, data->shape.ring, data->shape.pixel, 0);
 
         switch (button) {
@@ -222,17 +223,17 @@ void onTetrisButtonPress(Button button) {
 
         renderShape(data->shape.array, data->shape.ring, data->shape.pixel, applyBrightness(data->shape.color));
         if (button != MISC_START) {
-            state->halt = false;
+            startAnimation();
         }
     }
 }
 
-void onTetrisAnalogButton(Button button, uint16_t value) {
+void onTetrisAnalogButton(Button button, int value) {
     EffectTetris *data = &state->data->tetris;
 
     if (data->state == RUNNING) {
         if (data->lastRotation > ((1020 - value) / 50)) {
-            state->halt = true;
+            stopAnimation();
 
             renderShape(data->shape.array, data->shape.ring, data->shape.pixel, 0);
 
@@ -249,7 +250,7 @@ void onTetrisAnalogButton(Button button, uint16_t value) {
 
             renderShape(data->shape.array, data->shape.ring, data->shape.pixel, applyBrightness(data->shape.color));
 
-            state->halt = false;
+            startAnimation();
             data->lastRotation = 0;
         }
 
