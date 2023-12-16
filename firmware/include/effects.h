@@ -79,6 +79,11 @@ struct EffectBeam
     int lastRing;
 };
 
+struct EffectHelix
+{
+    int pixel;
+};
+
 extern OctoWS2811 leds;
 
 extern Effect effects[];
@@ -102,6 +107,7 @@ bool effectRainbowStrobe(unsigned long delta);
 bool effectPolice(unsigned long delta);
 bool effectSolidWhite(unsigned long delta);
 bool effectBeam(unsigned long delta);
+bool effectHelix(unsigned long delta);
 
 #include "games/games.h"
 
@@ -116,6 +122,7 @@ union EffectData
     EffectGOL gol;
     EffectTetris tetris;
     EffectPong pong;
+    EffectHelix helix;
 };
 
 struct EffectState

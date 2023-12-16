@@ -17,7 +17,7 @@ const int ZeroBuf[LED_BUFFER_SIZE] = {0};
 OctoWS2811 leds = OctoWS2811(LED_PER_STRIP, displayMemory, drawingMemory, LED_CONFIGURATION, LED_STRIP_AMOUNT, pinList);
 EffectState *state = new EffectState;
 
-const int effectCount = 10;
+const int effectCount = 11;
 Effect effects[effectCount] = {
         {"off",            &effectOff},
         {"test-led",       &effectTestLEDs},
@@ -26,6 +26,7 @@ Effect effects[effectCount] = {
         {"police",         &effectPolice},
         {"solid-white",    &effectSolidWhite},
         {"beam",           &effectBeam},
+        {"helix",          &effectHelix},
         {"gol",            &effectGOL,    &initializeGOLData},
         {"tetris",         &effectTetris, &initializeTetris, &onTetrisButtonPress, &onTetrisAnalogButton},
         {"pong",           &effectPong,   &initializePong,   &onPongButtonPress,   &onPongAnalogButton}
@@ -252,6 +253,43 @@ bool effectBeam(unsigned long delta) {
 
         setRingColor(data->lastRing, 0xFF00FF);
         data->lastRing++;
+
+        return true;
+    }
+
+    return false;
+}
+
+double calculateHelixPosition(double x, int pos) {
+    const static double centerOffset = ((((double) LED_TOTAL_RINGS) / 2.0) - 0.5);
+
+    double y = x + (pos / 3.0) * ((double) LED_PER_RING);
+    y = y / (((double) LED_PER_RING) / 2.0);
+    y = y * PI;
+    y = sin(y);
+    y = (y * centerOffset) + centerOffset;
+
+    return y;
+}
+
+bool effectHelix(unsigned long delta) {
+    EffectHelix *data = &state->data->helix;
+
+    if (delta > 25) {
+        clearLEDs();
+
+        for (int i = data->pixel; i < (data->pixel + LED_PER_RING); i++) {
+            double y1 = calculateHelixPosition(i, 0);
+            double y2 = calculateHelixPosition(i, 1);
+            double y3 = calculateHelixPosition(i, 2);
+
+            setPixelColor(i, floor(y1), 0xFFFFFF);
+            setPixelColor(i, floor(y2), 0xFFFFFF);
+            setPixelColor(i, floor(y3), 0xFFFFFF);
+        }
+
+        data->pixel++;
+        data->pixel = data->pixel % LED_PER_RING;
 
         return true;
     }
