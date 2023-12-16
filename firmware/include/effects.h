@@ -44,7 +44,7 @@ enum Button
 
 struct Effect
 {
-    String name = "";
+    const char *name = "";
     EffectCallback callback = nullptr;
     void (*resetData)() = []() {};
     void (*onButtonPress)(Button button) = [](Button button){};

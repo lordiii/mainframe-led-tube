@@ -2,7 +2,7 @@
 #include <globals.h>
 #include <effects.h>
 #include <web.h>
-#include <console.h>
+#include <cli.h>
 #include <Wire.h>
 #include <INA226.h>
 #include <OneWire.h>
@@ -71,7 +71,7 @@ void setup() {
     currentSensorTop.setMaxCurrentShunt(10, 0.006);
     currentSensorTop.setAverage(3);
 
-    initConsole();
+    initCLI();
     initWebServer();
     initOctoWS2811();
     initTFT();
@@ -134,7 +134,7 @@ void loop() {
         taskReadControllerInput = time;
     }
 
-    processConsoleData();
+    processCLI();
     handleWebClient();
 
     if (Wire.getReadError()) {
