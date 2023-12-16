@@ -1,6 +1,7 @@
 #include <effects.h>
 #include <effects_lib.h>
 #include <globals.h>
+#include <Entropy.h>
 #include "tetris.h"
 
 #define TETRONIMO_COUNT 7
@@ -19,12 +20,10 @@ void initializeTetris() {
     EffectTetris *data = &state->data->tetris;
 
     data->shape.placed = true;
-    data->shape.pixel = random(0, LED_PER_RING);
+    data->shape.pixel = (int) Entropy.random(0, LED_PER_RING);
 
     data->score = 0;
     data->lastEndAnimationRing = 0;
-
-    randomSeed(micros());
 
     for (int i = 0; i < LED_PER_RING; i++) {
         setPixelColor(0, i, applyBrightness(0xFF0000));
@@ -56,7 +55,7 @@ bool renderShape(uint8_t shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRin
 }
 
 void setTetrisShape(Shape *shape) {
-    uint8_t shapeID = random(0, TETRONIMO_COUNT);
+    uint8_t shapeID = Entropy.random(0, TETRONIMO_COUNT);
     memcpy(shape->array, TETRONIMOS[shapeID], sizeof(TETRONIMOS[shapeID]));
     shape->ring = LED_TOTAL_RINGS - (TETRIS_MAX_SIZE + 1);
     shape->placed = false;
@@ -135,17 +134,17 @@ void rotateShape(Shape *shape, bool clockwise) {
 
     exit = false;
     while (!exit) {
-        for (int i = 0; i < TETRIS_MAX_SIZE; i++) {
-            if (rotateBuffer[i][0] == 1) {
+        for (auto & i : rotateBuffer) {
+            if (i[0] == 1) {
                 exit = true;
                 break;
             }
         }
 
         if (!exit) {
-            for (int i = 0; i < TETRIS_MAX_SIZE; i++) {
-                memcpy(rotateBuffer[i], rotateBuffer[i] + 1, TETRIS_MAX_SIZE - 1);
-                rotateBuffer[i][TETRIS_MAX_SIZE - 1] = 0;
+            for (auto & i : rotateBuffer) {
+                memcpy(i, i + 1, TETRIS_MAX_SIZE - 1);
+                i[TETRIS_MAX_SIZE - 1] = 0;
             }
         }
     }

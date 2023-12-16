@@ -41,4 +41,8 @@ void onPongButtonPress(Button button);
 
 void onPongAnalogButton(Button button, int value);
 
+int calculatePongDirection(int ballPixel, int paddlePixel);
+
+bool effectPong(unsigned long delta);
+
 #endif //FIRMWARE_PONG_H

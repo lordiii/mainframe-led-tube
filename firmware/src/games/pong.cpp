@@ -1,6 +1,7 @@
 #include <effects.h>
 #include <effects_lib.h>
 #include <globals.h>
+#include <Entropy.h>
 #include "pong.h"
 
 void initializePong() {
@@ -142,4 +143,17 @@ void onPongAnalogButton(Button button, int value) {
             break;
     }
     startAnimation();
+}
+
+int calculatePongDirection(int ballPixel, int paddlePixel) {
+    ballPixel = ((ballPixel > 0) ? ballPixel : LED_PER_RING + ballPixel) % LED_PER_RING;
+    paddlePixel = ((paddlePixel > 0) ? paddlePixel : LED_PER_RING + paddlePixel) % LED_PER_RING;
+
+    int direction = ballPixel - paddlePixel;
+
+    if (direction == 0) {
+        direction = (int) (Entropy.random(3) - 1);
+    }
+
+    return direction;
 }

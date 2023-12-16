@@ -15,6 +15,7 @@ int calculatePixelId(int ring, int pixel);
 // Segments
 void setRingColor(int ring, int color);
 void fillLEDs(int color);
+void clearLEDs();
 void moveArea(int srcRing, int srcPixel, int dstRing, int dstPixel, int amount);
 
 // Single Pixel

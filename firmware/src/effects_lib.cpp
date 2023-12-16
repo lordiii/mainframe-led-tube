@@ -45,6 +45,11 @@ void fillLEDs(int color) {
     }
 }
 
+void clearLEDs()
+{
+    memset(drawingMemory, 0, sizeof(drawingMemory));
+}
+
 void moveArea(int srcRing, int srcPixel, int dstRing, int dstPixel, int amount) {
     int src = calculatePixelId(srcRing, srcPixel) * LED_BYTES_PER_LED;
     int dst = calculatePixelId(dstRing, dstPixel) * LED_BYTES_PER_LED;

@@ -13,10 +13,6 @@ struct EffectGOL {
     bool state[LED_TOTAL_RINGS * LED_PER_RING];
 };
 
-void initializeGOLData();
-
-bool calculateGOLCell(int ring, int pixel);
-
 bool effectGOL(unsigned long delta);
 
 #endif //FIRMWARE_GOL_H

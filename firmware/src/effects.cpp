@@ -261,7 +261,7 @@ bool effectBeam(unsigned long delta) {
 
 //
 //
-// Game of life
+// Games
 //
 //
 bool effectGOL(unsigned long delta) {
@@ -286,11 +286,6 @@ bool effectGOL(unsigned long delta) {
     return false;
 }
 
-//
-//
-// Tetris
-//
-//
 bool effectTetris(unsigned long delta) {
     EffectTetris *data = &state->data->tetris;
     const bool forceMovement = delta > (unsigned long) max(500 - ((data->score / 100) * 25), 50);
@@ -386,19 +381,6 @@ bool effectTetris(unsigned long delta) {
     return false;
 }
 
-int calculateDirection(int ballPixel, int paddlePixel) {
-    ballPixel = ((ballPixel > 0) ? ballPixel : LED_PER_RING + ballPixel) % LED_PER_RING;
-    paddlePixel = ((paddlePixel > 0) ? paddlePixel : LED_PER_RING + paddlePixel) % LED_PER_RING;
-
-    int direction = ballPixel - paddlePixel;
-
-    if (direction == 0) {
-        direction = (int) (Entropy.random(3) - 1);
-    }
-
-    return direction;
-}
-
 bool effectPong(unsigned long delta) {
     EffectPong *data = &state->data->pong;
 
@@ -421,13 +403,13 @@ bool effectPong(unsigned long delta) {
             data->ball.ring = LED_TOTAL_RINGS / 2;
             data->ball.pixel = data->ball.ring > (LED_TOTAL_RINGS / 2) ? data->paddleP2.pixel : data->paddleP1.pixel;
         } else if (data->ball.ring > (LED_TOTAL_RINGS / 2) && collides) {
-            data->directionX = calculateDirection(data->ball.pixel, data->paddleP1.pixel);
+            data->directionX = calculatePongDirection(data->ball.pixel, data->paddleP1.pixel);
             data->directionY = -1;
 
             data->moveX = 0;
             data->moveY = 0;
         } else if (data->ball.ring < (LED_TOTAL_RINGS / 2) && collides) {
-            data->directionX = calculateDirection(data->ball.pixel, data->paddleP2.pixel);
+            data->directionX = calculatePongDirection(data->ball.pixel, data->paddleP2.pixel);
             data->directionY = 1;
 
             data->moveX = 0;

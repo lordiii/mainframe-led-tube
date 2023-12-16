@@ -102,7 +102,6 @@ bool effectRainbowStrobe(unsigned long delta);
 bool effectPolice(unsigned long delta);
 bool effectSolidWhite(unsigned long delta);
 bool effectBeam(unsigned long delta);
-bool effectPong(unsigned long delta);
 
 #include "games/games.h"
 

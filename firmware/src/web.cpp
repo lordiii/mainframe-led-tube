@@ -36,8 +36,6 @@ bool sendFile(String fileName)
         fileName += "index.html";
     }
 
-    Serial.println("handleFileRead: " + fileName);
-
     File file = getFileContents(fileName);
     if (file)
     {
@@ -54,11 +52,6 @@ bool sendFile(String fileName)
             }
 
             size_t fetched = file.readBytes(buffer, chunkSize);
-
-            Serial.print("Sending ");
-            Serial.print(fetched);
-            Serial.println(" bytes.");
-
             server.client().writeFully(buffer, fetched);
         }
 
