@@ -10,9 +10,83 @@ EthernetWebServer server(80);
 
 void initWebServer() {
     server.on(
+            "/effects",
+            HTTP_GET,
+            []() {
+                String response = "[";
+
+                for (int i = 0; i < effectCount; i++) {
+                    response.append('"');
+                    response.append(effects[i].name);
+                    response.append('"');
+
+                    if (i + 1 != effectCount) {
+                        response.append(',');
+                    }
+                }
+
+                response.append(']');
+
+                server.send(200, "application/json", response);
+                server.client().close();
+            }
+    );
+
+    server.on(
+            "/current",
+            HTTP_GET,
+            []() {
+                if (state->current != nullptr) {
+                    server.send(200, "text/plain", state->current->name);
+                } else {
+                    server.send(200, "text/plain", "off");
+                }
+            }
+    );
+
+    server.on(
+            "/set-effect",
+            HTTP_POST,
+            []() {
+                if (server.authenticate("tube-ctl", "supersecretpassword")) {
+                    String effectName = server.arg("effect");
+
+                    Effect *effect = nullptr;
+                    for (int i = 0; i < effectCount; i++) {
+                        effect = &effects[i];
+
+                        if (effectName.equals(effect->name)) {
+                            break;
+                        } else {
+                            effect = nullptr;
+                        }
+                    }
+
+                    setCurrentEffect(effect);
+
+                    server.send(200, "text/plain", "");
+                } else {
+                    server.requestAuthentication();
+                }
+
+                server.client().close();
+            }
+    );
+
+    server.on(
             "/leds",
             HTTP_GET,
             sendLEDs
+    );
+
+    server.on(
+            "/",
+            HTTP_GET,
+            []() {
+                if (!sendFile("/index.html")) {
+                    server.send(404, "text/plain", "FileNotFound");
+                }
+            }
     );
 
     server.onNotFound(
