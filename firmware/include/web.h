@@ -23,4 +23,6 @@ bool sendFile(String fileName);
 
 String getContentType(const String &filename);
 
+void sendLEDs();
+
 #endif

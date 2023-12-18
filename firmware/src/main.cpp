@@ -86,7 +86,7 @@ bool activityLedState = false;
 void loop() {
     unsigned long time = millis();
 
-    if ((time - taskReadSensors) > 1000) {
+    if ((time - taskReadSensors) > 1000 && false) {
         taskReadSensors = time;
 
         // Read Temperature Values
@@ -112,7 +112,7 @@ void loop() {
         activityLedState = !activityLedState;
     }
 
-    if ((time - taskReadCurrent) > 100) {
+    if ((time - taskReadCurrent) > 100 && false) {
         fetchCurrentValue(currentSensorTop, TOP, &sensorValues->currentLine3);
         fetchCurrentValue(currentSensorCenter, CENTER, &sensorValues->currentLine2);
         fetchCurrentValue(currentSensorBottom, BOTTOM, &sensorValues->currentLine1);
@@ -124,7 +124,7 @@ void loop() {
         taskReadCurrent = time;
     }
 
-    if ((time - taskReadControllerInput) > 20) {
+    if ((time - taskReadControllerInput) > 20 && false) {
         memset(controllerBuffer, 0, sizeof(controllerBuffer));
         uint8_t quantity = Wire.requestFrom(0x55, sizeof(controllerBuffer));
         Wire.readBytes(controllerBuffer, quantity);
