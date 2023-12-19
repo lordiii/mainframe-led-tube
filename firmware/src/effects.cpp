@@ -17,7 +17,7 @@ const int ZeroBuf[LED_BUFFER_SIZE] = {0};
 OctoWS2811 leds = OctoWS2811(LED_PER_STRIP, displayMemory, drawingMemory, LED_CONFIGURATION, LED_STRIP_AMOUNT, pinList);
 EffectState *state = new EffectState;
 
-const int effectCount = 11;
+const int effectCount = 12;
 Effect effects[effectCount] = {
         {"off",            &effectOff},
         {"test-led",       &effectTestLEDs},
@@ -27,6 +27,7 @@ Effect effects[effectCount] = {
         {"solid-white",    &effectSolidWhite},
         {"beam",           &effectBeam},
         {"helix",          &effectHelix},
+        {"filled-helix",   &effectFilledHelix},
         {"gol",            &effectGOL,    &initializeGOLData},
         {"tetris",         &effectTetris, &initializeTetris, &onTetrisButtonPress, &onTetrisAnalogButton},
         {"pong",           &effectPong,   &initializePong,   &onPongButtonPress,   &onPongAnalogButton}
@@ -260,10 +261,10 @@ bool effectBeam(unsigned long delta) {
     return false;
 }
 
-double calculateHelixPosition(double x, int pos) {
+double calculateHelixPosition(double x, double pos, double count) {
     const static double centerOffset = ((((double) LED_TOTAL_RINGS) / 2.0) - 0.5);
 
-    double y = x + (pos / 3.0) * ((double) LED_PER_RING);
+    double y = x + (pos / count) * ((double) LED_PER_RING);
     y = y / (((double) LED_PER_RING) / 2.0);
     y = y * PI;
     y = sin(y);
@@ -272,20 +273,57 @@ double calculateHelixPosition(double x, int pos) {
     return y;
 }
 
+bool effectFilledHelix(unsigned long delta) {
+    EffectHelix *data = &state->data->helix;
+
+    if (delta > 25) {
+        clearLEDs();
+
+        for (double i = 0; i < (LED_PER_RING * 10); i += 0.1) {
+            double y1 = calculateHelixPosition(i, 0, 6);
+            double y2 = calculateHelixPosition(i, 1, 6);
+            double y3 = calculateHelixPosition(i, 2, 6);
+            double y4 = calculateHelixPosition(i, 3, 6);
+            double y5 = calculateHelixPosition(i, 4, 6);
+            double y6 = calculateHelixPosition(i, 5, 6);
+
+            setPixelColor((int) y1, data->pixel + ((int) i), 0x0000FF);
+            setPixelColor((int) y2, data->pixel + ((int) i), 0xFF0000);
+            setPixelColor((int) y3, data->pixel + ((int) i), 0x00FF00);
+            setPixelColor((int) y4, data->pixel + ((int) i), 0xFF00FF);
+            setPixelColor((int) y5, data->pixel + ((int) i), 0x00FFFF);
+            setPixelColor((int) y6, data->pixel + ((int) i), 0xFFFF00);
+        }
+
+        data->pixel++;
+        data->pixel = data->pixel % LED_PER_RING;
+
+        return true;
+    }
+
+    return false;
+}
+
 bool effectHelix(unsigned long delta) {
     EffectHelix *data = &state->data->helix;
 
     if (delta > 25) {
         clearLEDs();
 
-        for (int i = data->pixel; i < (data->pixel + LED_PER_RING); i++) {
-            double y1 = calculateHelixPosition(i, 0);
-            double y2 = calculateHelixPosition(i, 1);
-            double y3 = calculateHelixPosition(i, 2);
+        for (int i = 0; i < LED_PER_RING; i++) {
+            double y1 = calculateHelixPosition(i, 0, 6);
+            double y2 = calculateHelixPosition(i, 1, 6);
+            double y3 = calculateHelixPosition(i, 2, 6);
+            double y4 = calculateHelixPosition(i, 3, 6);
+            double y5 = calculateHelixPosition(i, 4, 6);
+            double y6 = calculateHelixPosition(i, 5, 6);
 
-            setPixelColor(i, floor(y1), 0xFFFFFF);
-            setPixelColor(i, floor(y2), 0xFFFFFF);
-            setPixelColor(i, floor(y3), 0xFFFFFF);
+            setPixelColor(floor(y1), data->pixel + i, 0x0000FF);
+            setPixelColor(floor(y2), data->pixel + i, 0xFF0000);
+            setPixelColor(floor(y3), data->pixel + i, 0x00FF00);
+            setPixelColor(floor(y4), data->pixel + i, 0xFF00FF);
+            setPixelColor(floor(y5), data->pixel + i, 0x00FFFF);
+            setPixelColor(floor(y6), data->pixel + i, 0xFFFF00);
         }
 
         data->pixel++;
