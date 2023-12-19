@@ -101,7 +101,7 @@ void fadeAllToBlack(uint8_t scale) {
     auto *pixels = (uint8_t *) drawingMemory;
 
     for (size_t i = 0; i < (LED_TOTAL_AMOUNT * LED_BYTES_PER_LED); i++) {
-        *pixels = ((uint8_t) (((uint16_t) *pixels) * scale) >> 8);
+        *pixels = (((uint16_t) *pixels) * scale) >> 8;
         pixels++;
     }
 }
