@@ -287,12 +287,12 @@ bool effectFilledHelix(unsigned long delta) {
             double y5 = calculateHelixPosition(i, 4, 6);
             double y6 = calculateHelixPosition(i, 5, 6);
 
-            setPixelColor((int) y1, data->pixel + ((int) i), 0x0000FF);
-            setPixelColor((int) y2, data->pixel + ((int) i), 0xFF0000);
-            setPixelColor((int) y3, data->pixel + ((int) i), 0x00FF00);
-            setPixelColor((int) y4, data->pixel + ((int) i), 0xFF00FF);
-            setPixelColor((int) y5, data->pixel + ((int) i), 0x00FFFF);
-            setPixelColor((int) y6, data->pixel + ((int) i), 0xFFFF00);
+            setPixelColor((int) y1, data->pixel + ((int) i), applyBrightness(0x0000FF));
+            setPixelColor((int) y2, data->pixel + ((int) i), applyBrightness(0xFF0000));
+            setPixelColor((int) y3, data->pixel + ((int) i), applyBrightness(0x00FF00));
+            setPixelColor((int) y4, data->pixel + ((int) i), applyBrightness(0xFF00FF));
+            setPixelColor((int) y5, data->pixel + ((int) i), applyBrightness(0x00FFFF));
+            setPixelColor((int) y6, data->pixel + ((int) i), applyBrightness(0xFFFF00));
         }
 
         data->pixel++;
@@ -318,12 +318,12 @@ bool effectHelix(unsigned long delta) {
             double y5 = calculateHelixPosition(i, 4, 6);
             double y6 = calculateHelixPosition(i, 5, 6);
 
-            setPixelColor(floor(y1), data->pixel + i, 0x0000FF);
-            setPixelColor(floor(y2), data->pixel + i, 0xFF0000);
-            setPixelColor(floor(y3), data->pixel + i, 0x00FF00);
-            setPixelColor(floor(y4), data->pixel + i, 0xFF00FF);
-            setPixelColor(floor(y5), data->pixel + i, 0x00FFFF);
-            setPixelColor(floor(y6), data->pixel + i, 0xFFFF00);
+            setPixelColor(floor(y1), data->pixel + i, applyBrightness(0x0000FF));
+            setPixelColor(floor(y2), data->pixel + i, applyBrightness(0xFF0000));
+            setPixelColor(floor(y3), data->pixel + i, applyBrightness(0x00FF00));
+            setPixelColor(floor(y4), data->pixel + i, applyBrightness(0xFF00FF));
+            setPixelColor(floor(y5), data->pixel + i, applyBrightness(0x00FFFF));
+            setPixelColor(floor(y6), data->pixel + i, applyBrightness(0xFFFF00));
         }
 
         data->pixel++;
