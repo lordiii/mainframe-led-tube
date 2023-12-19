@@ -207,7 +207,7 @@ void commandPrintNetworkInfo(EmbeddedCli *cli, char *args, void *context) {
     out->print("\t");
 
     out->print(qindesign::network::Ethernet.dnsServerIP());
-    out->print("\t");
+    out->println("\t");
 }
 
 //
