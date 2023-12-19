@@ -2,6 +2,7 @@
 #include <embedded_cli.h>
 #include <Arduino.h>
 #include <main.h>
+#include <effects_lib.h>
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "UnusedParameter"
@@ -108,6 +109,39 @@ void initCLI() {
             commandSlowExecution
     });
 
+    embeddedCliAddBinding(embeddedCli, {
+            "set-ring",
+            "Set given ring to given color. Usage: set-ring [ring] [color]",
+            true,
+            &Serial,
+            commandSetRing
+    });
+
+    embeddedCliAddBinding(embeddedCli, {
+            "set-all",
+            "Set all LEDs to given color. Usage: set-all [color]",
+            true,
+            &Serial,
+            commandSetAll
+    });
+
+    embeddedCliAddBinding(embeddedCli, {
+            "gamepad-clear",
+            "Tell Gamepad Controller to clear all known controllers",
+            true,
+            &Serial,
+            commandClearGamepads
+    });
+
+    embeddedCliAddBinding(embeddedCli, {
+            "gamepad-register",
+            "Toggle registration of new controller on gamepad controller. Usage: gamepad-register: [on|off]",
+            true,
+            &Serial,
+            commandToggleGamepadRegister
+    });
+
+
     embeddedCli->writeChar = writeCmdOutChar;
 }
 
@@ -146,13 +180,13 @@ void commandPrintCurrent(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
     out->println("TOP\t\tCENTER\t\tBOTTOM\r\n");
 
-    out->print(sensorValues->currentLine1, 2);
+    out->print(sensorValues->currentSensorTop, 2);
     out->print(" A\t");
 
-    out->print(sensorValues->currentLine2, 2);
+    out->print(sensorValues->currentSensorCenter, 2);
     out->print(" A\t");
 
-    out->print(sensorValues->currentLine3, 2);
+    out->print(sensorValues->currentSensorBottom, 2);
     out->println(" A\t");
 }
 
@@ -242,7 +276,7 @@ void commandSetEffect(EmbeddedCli *cli, char *args, void *context) {
         } else {
             displayEffect(effectName);
 
-            out->println("Effect set to '");
+            out->print("Effect set to '");
             out->print(effectName);
             out->println("'!");
         }
@@ -278,7 +312,7 @@ void commandPrintEffectList(EmbeddedCli *cli, char *args, void *context) {
 
     for (int i = 0; i < effectCount; i++) {
         out->print("\t* ");
-        out->print(effects[i].name);
+        out->println(effects[i].name);
     }
 
     out->println();
@@ -305,11 +339,87 @@ void commandSlowExecution(EmbeddedCli *cli, char *args, void *context) {
     if (embeddedCliGetTokenCount(args) == 0) {
         out->println("Missing argument: brightness [0-100]");
     } else {
-        state->slowRate = String(embeddedCliGetToken(args, 1)).toInt();
+        state->slowRate = strtol(embeddedCliGetToken(args, 1), nullptr, 10);
 
         out->print("Set animation slowing to ");
         out->print(state->slowRate);
         out->println("ms");
+    }
+}
+
+void commandSetRing(EmbeddedCli *cli, char *args, void *context) {
+    auto *out = (Print *) context;
+
+    if (embeddedCliGetTokenCount(args) == 0) {
+        out->println("Missing argument: set-ring [ring] [color]");
+    } else {
+        int ring = strtol(embeddedCliGetToken(args, 1), nullptr, 10);
+
+        int color;
+        if (embeddedCliGetTokenCount(args) > 1) {
+            color = strtol(embeddedCliGetToken(args, 2), nullptr, 16);
+        } else {
+            color = 0xFFFFFF;
+        }
+
+        out->print("Set ring ");
+        out->print(ring);
+        out->print(" to color ");
+        out->println(color, 16);
+
+        setRingColor(ring, color);
+    }
+}
+
+void commandSetAll(EmbeddedCli *cli, char *args, void *context) {
+    auto *out = (Print *) context;
+
+    if (embeddedCliGetTokenCount(args) == 0) {
+        out->println("Missing argument: set-all [color]");
+    } else {
+        int color = strtol(embeddedCliGetToken(args, 1), nullptr, 16);
+
+        out->print("Setting all to color ");
+        out->println(color, 16);
+
+        fillLEDs(color);
+    }
+}
+
+//
+// Gamepad control
+//
+void commandClearGamepads(EmbeddedCli *cli, char *args, void *context) {
+    auto *out = (Print *) context;
+
+    Wire.beginTransmission(I2C_CONTROLLER);
+    Wire.write(0x00);
+    Wire.endTransmission();
+
+    out->println("Gamepads cleared!");
+}
+
+void commandToggleGamepadRegister(EmbeddedCli *cli, char *args, void *context) {
+    auto *out = (Print *) context;
+
+    if (embeddedCliGetTokenCount(args) == 0) {
+        out->println("Missing argument: gamepad-register [on|off]");
+    } else {
+        const char *command = embeddedCliGetToken(args, 1);
+
+        bool turnOn = strcmp(command, "on") == 0;
+        if (turnOn) {
+            Wire.beginTransmission(I2C_CONTROLLER);
+            Wire.write(0x01);
+            Wire.endTransmission();
+        } else {
+            Wire.beginTransmission(I2C_CONTROLLER);
+            Wire.write(0x02);
+            Wire.endTransmission();
+        }
+
+        out->print("Controller registration turned ");
+        out->print(turnOn ? "on" : "off");
     }
 }
 

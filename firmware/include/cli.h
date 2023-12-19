@@ -44,5 +44,15 @@ void commandSlowExecution(EmbeddedCli *cli, char *args, void *context);
 
 void commandPrintEffectList(EmbeddedCli *cli, char *args, void *context);
 
+void commandSetRing(EmbeddedCli *cli, char *args, void *context);
+
+void commandSetAll(EmbeddedCli *cli, char *args, void *context);
+
+//
+// Gamepad control
+//
+void commandClearGamepads(EmbeddedCli *cli, char *args, void *context);
+
+void commandToggleGamepadRegister(EmbeddedCli *cli, char *args, void *context);
 
 #endif //FIRMWARE_CLI_H

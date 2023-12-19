@@ -13,13 +13,13 @@ struct SensorValues {
     float temperatureCenter;
     float temperatureBottom;
 
-    float currentLine1;
-    float currentLine2;
-    float currentLine3;
+    float currentSensorBottom;
+    float currentSensorCenter;
+    float currentSensorTop;
 
-    float busVoltageLine1;
-    float busVoltageLine2;
-    float busVoltageLine3;
+    float busVoltageBottom;
+    float busVoltageCenter;
+    float busVoltageTop;
 };
 
 struct ControllerStatus

@@ -51,9 +51,9 @@ void setup() {
     sensorValues->temperatureCenter = 0.0f;
     sensorValues->temperatureBottom = 0.0f;
 
-    sensorValues->currentLine1 = 0.0f;
-    sensorValues->currentLine2 = 0.0f;
-    sensorValues->currentLine3 = 0.0f;
+    sensorValues->currentSensorBottom = 0.0f;
+    sensorValues->currentSensorCenter = 0.0f;
+    sensorValues->currentSensorTop = 0.0f;
 
     Wire.begin();
     currentSensorBottom.reset();
@@ -113,13 +113,13 @@ void loop() {
     }
 
     if ((time - taskReadCurrent) > 100) {
-        fetchCurrentValue(currentSensorTop, TOP, &sensorValues->currentLine3);
-        fetchCurrentValue(currentSensorCenter, CENTER, &sensorValues->currentLine2);
-        fetchCurrentValue(currentSensorBottom, BOTTOM, &sensorValues->currentLine1);
+        fetchCurrentValue(currentSensorTop, TOP, &sensorValues->currentSensorTop);
+        fetchCurrentValue(currentSensorCenter, CENTER, &sensorValues->currentSensorCenter);
+        fetchCurrentValue(currentSensorBottom, BOTTOM, &sensorValues->currentSensorBottom);
 
-        fetchBusVoltageValue(currentSensorTop, TOP, &sensorValues->busVoltageLine3);
-        fetchBusVoltageValue(currentSensorCenter, CENTER, &sensorValues->busVoltageLine2);
-        fetchBusVoltageValue(currentSensorBottom, BOTTOM, &sensorValues->busVoltageLine1);
+        fetchBusVoltageValue(currentSensorTop, TOP, &sensorValues->busVoltageTop);
+        fetchBusVoltageValue(currentSensorCenter, CENTER, &sensorValues->busVoltageCenter);
+        fetchBusVoltageValue(currentSensorBottom, BOTTOM, &sensorValues->busVoltageBottom);
 
         taskReadCurrent = time;
     }
