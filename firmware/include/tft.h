@@ -24,6 +24,6 @@ void renderVoltageValue(TUBE_SECTION section, float value);
 
 void renderTemperatureValue(TUBE_SECTION section, float value);
 
-void displayEffect(const String &effect);
+void displayEffect(const char *effectName);
 
 #endif

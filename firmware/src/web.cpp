@@ -64,6 +64,10 @@ void initWebServer() {
 
                     setCurrentEffect(effect);
 
+                    if (effect != nullptr) {
+                        displayEffect(effect->name);
+                    }
+
                     server.send(200, "text/plain", "");
                 } else {
                     server.requestAuthentication();
@@ -91,7 +95,7 @@ void initWebServer() {
 
     server.onNotFound(
             []() {
-                if (!sendFile(server.uri())) {
+                if (!sendFile(server.uri().c_str())) {
                     server.send(404, "text/plain", "FileNotFound");
                 }
             });
@@ -119,16 +123,11 @@ void sendLEDs() {
     server.client().close();
 }
 
-bool sendFile(String fileName) {
-    fileName = fileName.substring(1);
-
-    if (fileName.endsWith("/")) {
-        fileName += "index.html";
-    }
-
+bool sendFile(const char *fileName) {
     File file = getFileContents(fileName);
+
     if (file) {
-        String contentType = getContentType(fileName);
+        const char *contentType = getContentType(fileName);
 
         server.setContentLength(file.size());
         server.send(200, contentType, "");
@@ -152,32 +151,62 @@ bool sendFile(String fileName) {
     return false;
 }
 
-String getContentType(const String &filename) {
+const char *getContentType(const char *filename) {
     if (server.hasArg("download")) {
         return "application/octet-stream";
-    } else if (filename.endsWith(".htm") || filename.endsWith(".html")) {
+    } else if (strEndsWith(filename, ".htm") || strEndsWith(filename, ".html")) {
         return "text/html";
-    } else if (filename.endsWith(".css")) {
+    } else if (strEndsWith(filename, ".css")) {
         return "text/css";
-    } else if (filename.endsWith(".js")) {
+    } else if (strEndsWith(filename, ".js")) {
         return "application/javascript";
-    } else if (filename.endsWith(".png")) {
+    } else if (strEndsWith(filename, ".png")) {
         return "image/png";
-    } else if (filename.endsWith(".gif")) {
+    } else if (strEndsWith(filename, ".gif")) {
         return "image/gif";
-    } else if (filename.endsWith(".jpg")) {
+    } else if (strEndsWith(filename, ".jpg")) {
         return "image/jpeg";
-    } else if (filename.endsWith(".ico")) {
+    } else if (strEndsWith(filename, ".ico")) {
         return "image/x-icon";
-    } else if (filename.endsWith(".xml")) {
+    } else if (strEndsWith(filename, ".xml")) {
         return "text/xml";
-    } else if (filename.endsWith(".pdf")) {
+    } else if (strEndsWith(filename, ".pdf")) {
         return "application/x-pdf";
-    } else if (filename.endsWith(".zip")) {
+    } else if (strEndsWith(filename, ".zip")) {
         return "application/x-zip";
-    } else if (filename.endsWith(".gz")) {
+    } else if (strEndsWith(filename, ".gz")) {
         return "application/x-gzip";
     }
 
     return "text/plain";
+}
+
+File getFileContents(const char *fileName) {
+    if (SD.begin(BUILTIN_SDCARD)) {
+
+        File dataFile = SD.open(fileName, FILE_READ);
+
+        if (dataFile) {
+            return dataFile;
+        } else {
+            return nullptr;
+        }
+    } else {
+        return nullptr;
+    }
+}
+
+bool strEndsWith(const char *str, const char *suffix) {
+    if (!str || !suffix) {
+        return false;
+    }
+
+    size_t lenstr = strlen(str);
+    size_t lensuffix = strlen(suffix);
+
+    if (lensuffix > lenstr) {
+        return false;
+    }
+
+    return strncmp(str + lenstr - lensuffix, suffix, lensuffix) == 0;
 }

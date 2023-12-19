@@ -14,15 +14,20 @@
 #define DEBUG_ETHERNET_WEBSERVER_PORT Serial
 
 #include <Arduino.h>
+#include <SD.h>
 
 void initWebServer();
 
 void handleWebClient();
 
-bool sendFile(String fileName);
+bool sendFile(const char *fileName);
 
-String getContentType(const String &filename);
+const char *getContentType(const char *filename);
 
 void sendLEDs();
+
+File getFileContents(const char *fileName);
+
+bool strEndsWith(const char *str, const char *suffix);
 
 #endif

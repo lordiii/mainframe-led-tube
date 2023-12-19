@@ -25,7 +25,8 @@ Adafruit_ST7735 tft = Adafruit_ST7735(&SPI1, CS1, CS2, RST); // SPI, CS, DC, RST
 void initTFT() {
     tft.initR(INITR_BLACKTAB);
     tft.fillScreen(ST7735_BLACK);
-    tft.setTextColor(ST7735_GREEN);    tft.setTextWrap(false);
+    tft.setTextColor(ST7735_GREEN);
+    tft.setTextWrap(false);
 
     tft.drawRect(RECT_OFFSET, RECT_OFFSET, RECT_WIDTH, RECT_HEIGHT, ST7735_WHITE);
 
@@ -47,7 +48,7 @@ void initTFT() {
     renderTemperatureValue(BOTTOM, 0);
 
     XY xy = getStartPosition(TOP);
-    tft.setCursor(xy.X  + RECT_WIDTH + 8, xy.Y + 10);
+    tft.setCursor(xy.X + RECT_WIDTH + 8, xy.Y + 10);
     tft.setTextColor(ST7735_WHITE);
     tft.print("Effect:");
 }
@@ -65,13 +66,12 @@ XY getStartPosition(TUBE_SECTION section) {
     return {0, 0};
 }
 
-void displayEffect(const String &effect)
-{
+void displayEffect(const char *effectName) {
     XY xy = getStartPosition(TOP);
     tft.fillRect(xy.X + RECT_WIDTH + 8, xy.Y + 20, RECT_WIDTH, 10, ST7735_BLACK);
     tft.setCursor(xy.X + RECT_WIDTH + 8, xy.Y + 20);
     tft.setTextColor(ST7735_GREEN);
-    tft.print(effect);
+    tft.print(effectName);
 }
 
 void renderCurrentValue(TUBE_SECTION section, float value) {

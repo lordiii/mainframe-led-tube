@@ -57,8 +57,6 @@ struct ControllerStatus
 extern SensorValues *sensorValues;
 extern ControllerStatus *controller;
 
-File getFileContents(const String& fileName);
-INA226 getCurrentSensor(int id);
 void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
 void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
 void fetchTemperatureValue(const uint8_t * sensor, TUBE_SECTION section, float *oldvalue);

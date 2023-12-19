@@ -224,30 +224,3 @@ void fetchTemperatureValue(const uint8_t *sensor, TUBE_SECTION section, float *o
         renderTemperatureValue(section, value);
     }
 }
-
-File getFileContents(const String &fileName) {
-    if (SD.begin(BUILTIN_SDCARD)) {
-
-        File dataFile = SD.open(fileName.c_str(), FILE_READ);
-
-        if (dataFile) {
-            return dataFile;
-        } else {
-            return nullptr;
-        }
-    } else {
-        return nullptr;
-    }
-}
-
-INA226 getCurrentSensor(int id) {
-    switch (id) {
-        case 1:
-            return currentSensorBottom;
-        case 2:
-            return currentSensorCenter;
-        case 3:
-        default:
-            return currentSensorTop;
-    }
-}
