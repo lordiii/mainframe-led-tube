@@ -76,7 +76,7 @@ struct EffectPolice
 
 struct EffectBeam
 {
-    int lastRing;
+    int last;
 };
 
 struct EffectHelix
@@ -107,6 +107,7 @@ bool effectRainbowStrobe(unsigned long delta);
 bool effectPolice(unsigned long delta);
 bool effectSolidWhite(unsigned long delta);
 bool effectBeam(unsigned long delta);
+bool effectSideBeam(unsigned long delta);
 bool effectHelix(unsigned long delta);
 bool effectFilledHelix(unsigned long delta);
 

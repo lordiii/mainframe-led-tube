@@ -17,7 +17,7 @@ const int ZeroBuf[LED_BUFFER_SIZE] = {0};
 OctoWS2811 leds = OctoWS2811(LED_PER_STRIP, displayMemory, drawingMemory, LED_CONFIGURATION, LED_STRIP_AMOUNT, pinList);
 EffectState *state = new EffectState;
 
-const int effectCount = 12;
+const int effectCount = 13;
 Effect effects[effectCount] = {
         {"off",            &effectOff},
         {"test-led",       &effectTestLEDs},
@@ -26,6 +26,7 @@ Effect effects[effectCount] = {
         {"police",         &effectPolice},
         {"solid-white",    &effectSolidWhite},
         {"beam",           &effectBeam},
+        {"side-beam",      &effectSideBeam},
         {"helix",          &effectHelix},
         {"filled-helix",   &effectFilledHelix},
         {"gol",            &effectGOL,    &initializeGOLData},
@@ -252,8 +253,25 @@ bool effectBeam(unsigned long delta) {
     if (delta > 30) {
         fadeAllToBlack(100);
 
-        setRingColor(data->lastRing, 0xFF00FF);
-        data->lastRing++;
+        setRingColor(data->last, 0xFF00FF);
+        data->last++;
+
+        return true;
+    }
+
+    return false;
+}
+
+bool effectSideBeam(unsigned long delta) {
+    EffectBeam *data = &state->data->beam;
+
+    if (delta > 30) {
+        fadeAllToBlack(150);
+
+        for (int i = 0; i < LED_TOTAL_RINGS; i++) {
+            setPixelColor(i, data->last, 0xFF00FF);
+        }
+        data->last++;
 
         return true;
     }

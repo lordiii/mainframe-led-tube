@@ -21,7 +21,7 @@ int applyBrightness(int color) {
 
 int calculatePixelId(int ring, int pixel) {
     ring = abs(ring);
-    pixel = (pixel > 0) ? pixel : LED_PER_RING + pixel;
+    pixel = (pixel >= 0) ? pixel : (LED_PER_RING + (pixel % -LED_PER_RING));
 
     pixel = pixel % LED_PER_RING;
     ring = ring % LED_TOTAL_RINGS;
@@ -45,8 +45,7 @@ void fillLEDs(int color) {
     }
 }
 
-void clearLEDs()
-{
+void clearLEDs() {
     memset(drawingMemory, 0, sizeof(drawingMemory));
 }
 
