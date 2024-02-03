@@ -43,7 +43,7 @@ void setup() {
     pinMode(PIN_PW_ON, OUTPUT);
     pinMode(PIN_PS_GOOD, INPUT);
 
-    digitalWrite(PIN_PW_ON, LOW);
+    digitalWrite(PIN_PW_ON, HIGH);
 
     qindesign::network::Ethernet.begin();
 
@@ -77,6 +77,8 @@ void setup() {
     initTFT();
 
     Entropy.Initialize();
+
+    setCurrentEffect(&effects[9]);
 }
 
 uint8_t controllerBuffer[27] = {};
