@@ -1,7 +1,6 @@
-#include <effects.h>
-#include <effects_lib.h>
+#include "_effects.h"
 #include "gol.h"
-
+/*
 void addCopperhead(int centerRing, int centerPixel)
 {
     EffectGOL* data = &state->data->gol;
@@ -113,3 +112,4 @@ bool calculateGOLCell(int ring, int pixel)
 
     return ((cnt == 2 && populated) || cnt == 3);
 }
+*/

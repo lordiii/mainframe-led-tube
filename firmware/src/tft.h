@@ -1,15 +1,9 @@
 #ifndef TFT_H
 #define TFT_H
 
-enum TUBE_SECTION
-{
-    TOP,
-    CENTER,
-    BOTTOM
-};
+#include "enum.h"
 
-struct XY
-{
+struct XY {
     short X;
     short Y;
 };
@@ -24,6 +18,6 @@ void renderVoltageValue(TUBE_SECTION section, float value);
 
 void renderTemperatureValue(TUBE_SECTION section, float value);
 
-void displayEffect(const char* effectName);
+void displayEffect(const char *effectName);
 
 #endif

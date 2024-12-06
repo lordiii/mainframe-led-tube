@@ -1,13 +1,12 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include "tft.h"
-#include "effects.h"
-#include <INA226.h>
+#include "enum.h"
+
+class INA226;
 
 // Temperature Sensor Values
-struct SensorValues
-{
+struct SensorValues {
     float temperatureTop;
     float temperatureCenter;
     float temperatureBottom;
@@ -21,8 +20,7 @@ struct SensorValues
     float busVoltageTop;
 };
 
-struct ControllerStatus
-{
+struct ControllerStatus {
     bool buttonY;
     bool buttonB;
     bool buttonA;
@@ -53,13 +51,17 @@ struct ControllerStatus
     int stickRY;
 };
 
-extern SensorValues* sensorValues;
-extern ControllerStatus* controller;
+extern SensorValues *sensorValues;
+extern ControllerStatus *controller;
 
-void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float* oldvalue);
-void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float* oldvalue);
-void fetchTemperatureValue(const uint8_t* sensor, TUBE_SECTION section, float* oldvalue);
+void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
+
+void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
+
+void fetchTemperatureValue(const unsigned char *sensor, TUBE_SECTION section, float *oldvalue);
+
 void processControllerInputs();
-void processAnalogValue(size_t offset, int* value, Button type);
+
+void processAnalogValue(int offset, int *value, Button type);
 
 #endif

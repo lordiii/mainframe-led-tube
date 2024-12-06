@@ -1,12 +1,11 @@
 #ifndef TETRIS_H
 #define TETRIS_H
 
-#include "effects.h"
+#include "_effects.h"
 
 #define TETRIS_MAX_SIZE 4
 
-struct Shape
-{
+struct Shape {
     unsigned char array[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE];
     int ring;
     int pixel;
@@ -14,16 +13,14 @@ struct Shape
     int color;
 };
 
-enum TetrisState
-{
+enum TetrisState {
     RUNNING,
     ENDING,
     WAITING,
     RINGS
 };
 
-struct EffectTetris
-{
+struct EffectTetris {
     Shape shape;
     int score;
     TetrisState state;
@@ -33,20 +30,20 @@ struct EffectTetris
     bool ringStatus[LED_TOTAL_RINGS];
 };
 
-bool effectTetris(unsigned long delta);
+bool renderTetrisFrame(unsigned long delta);
 
 void initializeTetris();
 
 bool renderShape(unsigned char shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRing, int currentPixel, int color,
                  bool testRun = false);
 
-void setTetrisShape(Shape* shape);
+void setTetrisShape(Shape *shape);
 
 bool eliminateRings();
 
-void rotateFrame(bool clockwise, Shape* shape = nullptr);
+void rotateFrame(bool clockwise, Shape *shape = nullptr);
 
-void rotateShape(Shape* shape, bool clockwise);
+void rotateShape(Shape *shape, bool clockwise);
 
 void onTetrisButtonPress(Button button);
 
