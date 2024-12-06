@@ -1,8 +1,8 @@
-#ifndef FIRMWARE_EFFECTS_H
-#define FIRMWARE_EFFECTS_H
+#ifndef EFFECTS_H
+#define EFFECTS_H
 
+#include "globals.h"
 #include <OctoWS2811.h>
-#include <globals.h>
 
 #define LED_STRIP_AMOUNT (LED_TOTAL_RINGS / LED_RINGS_PER_SEGMENT)
 #define LED_PER_STRIP (LED_PER_RING * LED_RINGS_PER_SEGMENT)
@@ -44,11 +44,17 @@ enum Button
 
 struct Effect
 {
-    const char *name = "";
+    const char* name = "";
     EffectCallback callback = nullptr;
-    void (*resetData)() = []() {};
-    void (*onButtonPress)(Button button) = [](Button button){};
-    void (*onAnalogButton)(Button button, int value) = [](Button button, int value){};
+    void (*resetData)() = []()
+    {
+    };
+    void (*onButtonPress)(Button button) = [](Button button)
+    {
+    };
+    void (*onAnalogButton)(Button button, int value) = [](Button button, int value)
+    {
+    };
 };
 
 struct EffectStrobe
@@ -86,16 +92,16 @@ struct EffectHelix
 
 extern OctoWS2811 leds;
 
-extern Effect effects[];
+extern Effect* effects;
 extern const int effectCount;
 extern int displayMemory[LED_BUFFER_SIZE];
 extern int drawingMemory[LED_BUFFER_SIZE];
 extern const int ZeroBuf[LED_BUFFER_SIZE];
-extern IntervalTimer *taskRenderLeds;
+extern IntervalTimer* taskRenderLeds;
 
 void initOctoWS2811();
 void renderFrame();
-void setCurrentEffect(Effect *effect);
+void setCurrentEffect(Effect* effect);
 void setBrightness(float value);
 void startAnimation();
 void stopAnimation();
@@ -111,7 +117,8 @@ bool effectSideBeam(unsigned long delta);
 bool effectHelix(unsigned long delta);
 bool effectFilledHelix(unsigned long delta);
 
-#include "games/games.h"
+#include "gol.h"
+#include "tetris.h"
 
 // Data Union
 union EffectData
@@ -123,7 +130,6 @@ union EffectData
     EffectBeam beam;
     EffectGOL gol;
     EffectTetris tetris;
-    EffectPong pong;
     EffectHelix helix;
 };
 
@@ -138,6 +144,6 @@ struct EffectState
     bool singleStep = false;
 };
 
-extern EffectState *state;
+extern EffectState* state;
 
 #endif

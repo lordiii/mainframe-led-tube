@@ -1,14 +1,13 @@
-#ifndef FIRMWARE_MAIN_H
-#define FIRMWARE_MAIN_H
+#ifndef MAIN_H
+#define MAIN_H
 
-#include <SD.h>
-#include <QNEthernet.h>
+#include "tft.h"
+#include "effects.h"
 #include <INA226.h>
-#include <tft.h>
-#include <effects.h>
 
 // Temperature Sensor Values
-struct SensorValues {
+struct SensorValues
+{
     float temperatureTop;
     float temperatureCenter;
     float temperatureBottom;
@@ -38,7 +37,7 @@ struct ControllerStatus
     bool shoulderR2;
 
     bool miscHome;
-    bool miscStart; 
+    bool miscStart;
     bool miscSelect;
     bool miscSystem;
     bool miscBack;
@@ -54,13 +53,13 @@ struct ControllerStatus
     int stickRY;
 };
 
-extern SensorValues *sensorValues;
-extern ControllerStatus *controller;
+extern SensorValues* sensorValues;
+extern ControllerStatus* controller;
 
-void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
-void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
-void fetchTemperatureValue(const uint8_t * sensor, TUBE_SECTION section, float *oldvalue);
+void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float* oldvalue);
+void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float* oldvalue);
+void fetchTemperatureValue(const uint8_t* sensor, TUBE_SECTION section, float* oldvalue);
 void processControllerInputs();
-void processAnalogValue(size_t offset, int *value, Button type);
+void processAnalogValue(size_t offset, int* value, Button type);
 
 #endif

@@ -1,7 +1,5 @@
-#ifndef FIRMWARE_EFFECTS_LIB_H
-#define FIRMWARE_EFFECTS_LIB_H
-
-#include <Arduino.h>
+#ifndef EFFECTS_LIB_H
+#define EFFECTS_LIB_H
 
 // Color Constants
 #define RED 0xFF0000
@@ -24,8 +22,8 @@ void setPixelColor(int ring, int pixel, int r, int g, int b);
 void setPixelColor(int ring, int pixel, int color);
 
 // Fade
-void fadePixelToBlack(int ring, int pixel, uint8_t scale);
-void fadeRingToBlack(int ring, uint8_t scale);
-void fadeAllToBlack(uint8_t scale);
+void fadePixelToBlack(int ring, int pixel, unsigned char scale);
+void fadeRingToBlack(int ring, unsigned char scale);
+void fadeAllToBlack(unsigned char scale);
 
 #endif

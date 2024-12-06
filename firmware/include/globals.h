@@ -1,5 +1,5 @@
-#ifndef FIRMWARE_GLOBALS_H
-#define FIRMWARE_GLOBALS_H
+#ifndef GLOBALS_H
+#define GLOBALS_H
 
 #define LED_TOTAL_RINGS 60
 #define LED_PER_RING 32
@@ -22,8 +22,5 @@
 #define PIN_PS_GOOD 29
 
 #define WEB_CHUNK_SIZE 1024
-
-#include <QNEthernet.h>
-using namespace qindesign::network;
 
 #endif

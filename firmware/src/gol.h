@@ -1,5 +1,5 @@
-#ifndef FIRMWARE_GOL_H
-#define FIRMWARE_GOL_H
+#ifndef GOL_H
+#define GOL_H
 
 #include <globals.h>
 
@@ -9,7 +9,8 @@ void initializeGOLData();
 
 void addCopperhead(int centerRing, int centerPixel);
 
-struct EffectGOL {
+struct EffectGOL
+{
     bool state[LED_TOTAL_RINGS * LED_PER_RING];
 };
 

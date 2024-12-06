@@ -1,15 +1,15 @@
-#ifndef FIRMWARE_TFT_H
-#define FIRMWARE_TFT_H
+#ifndef TFT_H
+#define TFT_H
 
-#include <Arduino.h>
-
-enum TUBE_SECTION {
+enum TUBE_SECTION
+{
     TOP,
     CENTER,
     BOTTOM
 };
 
-struct XY {
+struct XY
+{
     short X;
     short Y;
 };
@@ -24,6 +24,6 @@ void renderVoltageValue(TUBE_SECTION section, float value);
 
 void renderTemperatureValue(TUBE_SECTION section, float value);
 
-void displayEffect(const char *effectName);
+void displayEffect(const char* effectName);
 
 #endif

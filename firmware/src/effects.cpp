@@ -1,43 +1,43 @@
-#include <effects.h>
-#include <globals.h>
-#include <effects_lib.h>
+#include "effects.h"
+#include "effects_lib.h"
+#include "globals.h"
+#include "tetris.h"
+#include "gol.h"
+#include "main.h"
+#include <Arduino.h>
 #include <OctoWS2811.h>
-#include <main.h>
-#include <Entropy.h>
-
-#include "games/games.h"
 
 // Setup LEDs
-const byte pinList[LED_STRIP_AMOUNT] = LED_PINS;
+const unsigned char pinList[LED_STRIP_AMOUNT] = LED_PINS;
 DMAMEM int displayMemory[LED_BUFFER_SIZE] = {0};
 int drawingMemory[LED_BUFFER_SIZE] = {0};
 
 const int ZeroBuf[LED_BUFFER_SIZE] = {0};
 
 OctoWS2811 leds = OctoWS2811(LED_PER_STRIP, displayMemory, drawingMemory, LED_CONFIGURATION, LED_STRIP_AMOUNT, pinList);
-EffectState *state = new EffectState;
+EffectState* state = new EffectState;
 
 const int effectCount = 13;
-Effect effects[effectCount] = {
-        {"off",            &effectOff},
-        {"test-led",       &effectTestLEDs},
-        {"strobe",         &effectStrobe},
-        {"rainbow-strobe", &effectRainbowStrobe},
-        {"police",         &effectPolice},
-        {"solid-white",    &effectSolidWhite},
-        {"beam",           &effectBeam},
-        {"side-beam",      &effectSideBeam},
-        {"helix",          &effectHelix},
-        {"filled-helix",   &effectFilledHelix},
-        {"gol",            &effectGOL,    &initializeGOLData},
-        {"tetris",         &effectTetris, &initializeTetris, &onTetrisButtonPress, &onTetrisAnalogButton},
-        {"pong",           &effectPong,   &initializePong,   &onPongButtonPress,   &onPongAnalogButton}
+Effect* effects = new Effect[]{
+    {"off", &effectOff},
+    {"test-led", &effectTestLEDs},
+    {"strobe", &effectStrobe},
+    {"rainbow-strobe", &effectRainbowStrobe},
+    {"police", &effectPolice},
+    {"solid-white", &effectSolidWhite},
+    {"beam", &effectBeam},
+    {"side-beam", &effectSideBeam},
+    {"helix", &effectHelix},
+    {"filled-helix", &effectFilledHelix},
+    {"gol", &effectGOL, &initializeGOLData},
+    {"tetris", &effectTetris, &initializeTetris, &onTetrisButtonPress, &onTetrisAnalogButton}
 };
 
 // LED Render Tasks
-IntervalTimer *taskRenderLeds = new IntervalTimer();
+IntervalTimer* taskRenderLeds = new IntervalTimer();
 
-void initOctoWS2811() {
+void initOctoWS2811()
+{
     leds.begin();
     leds.show();
 
@@ -47,19 +47,24 @@ void initOctoWS2811() {
     taskRenderLeds->begin(renderFrame, LED_FRAMES_PER_SECOND);
 }
 
-void setBrightness(float value) {
+void setBrightness(float value)
+{
     state->brightness = value;
 
-    for (int i = 0; i < leds.numPixels(); i++) {
+    for (int i = 0; i < leds.numPixels(); i++)
+    {
         leds.setPixel(i, applyBrightness(leds.getPixel(i)));
     }
 }
 
-void setCurrentEffect(Effect *effect) {
+void setCurrentEffect(Effect* effect)
+{
     stopAnimation();
 
     // Wait for current frame
-    while (leds.busy()) {}
+    while (leds.busy())
+    {
+    }
 
     // Reset State
     state->lastFrameChange = 0;
@@ -72,41 +77,51 @@ void setCurrentEffect(Effect *effect) {
     memset(drawingMemory, 0, sizeof(ZeroBuf));
 
     // Reset Data
-    if (state->current != nullptr) {
+    if (state->current != nullptr)
+    {
         state->current->resetData();
 
         startAnimation();
     }
 }
 
-void stopAnimation() {
+void stopAnimation()
+{
     taskRenderLeds->end();
-    while (leds.busy()) {}
+    while (leds.busy())
+    {
+    }
 }
 
-void startAnimation() {
+void startAnimation()
+{
     taskRenderLeds->begin(renderFrame, LED_FRAMES_PER_SECOND);
 }
 
-void renderFrame() {
+void renderFrame()
+{
     unsigned long delta = millis() - state->lastFrameChange;
 
     if ((!state->halt && state->slowRate == 0) || state->singleStep ||
-        (state->slowRate != 0 && delta > state->slowRate && !state->halt)) {
+        (state->slowRate != 0 && delta > state->slowRate && !state->halt))
+    {
         bool updated = false;
 
-        if (state->current != nullptr) {
+        if (state->current != nullptr)
+        {
             updated = state->current->callback(delta);
         }
 
-        if (updated) {
+        if (updated)
+        {
             state->lastFrameChange = millis();
         }
 
         state->singleStep = false;
     }
 
-    if (!leds.busy()) {
+    if (!leds.busy())
+    {
         leds.show();
     }
 }
@@ -116,21 +131,24 @@ void renderFrame() {
 // LED Test Effects
 //
 //
-bool effectTestLEDs(unsigned long delta) {
-    EffectTestAll *data = &state->data->testAll;
+bool effectTestLEDs(unsigned long delta)
+{
+    EffectTestAll* data = &state->data->testAll;
 
-    if (delta > 250) {
-        switch (data->lastColor) {
-            case RED:
-                data->lastColor = GREEN;
-                break;
-            case GREEN:
-                data->lastColor = BLUE;
-                break;
-            case BLUE:
-            default:
-                data->lastColor = RED;
-                break;
+    if (delta > 250)
+    {
+        switch (data->lastColor)
+        {
+        case RED:
+            data->lastColor = GREEN;
+            break;
+        case GREEN:
+            data->lastColor = BLUE;
+            break;
+        case BLUE:
+        default:
+            data->lastColor = RED;
+            break;
         }
 
         fillLEDs(applyBrightness(data->lastColor));
@@ -146,17 +164,20 @@ bool effectTestLEDs(unsigned long delta) {
 // Strobe Effects
 //
 //
-bool effectStrobe(unsigned long delta) {
-    EffectStrobe *data = &state->data->strobe;
+bool effectStrobe(unsigned long delta)
+{
+    EffectStrobe* data = &state->data->strobe;
 
-    if (delta > 5 && !data->toggle) {
+    if (delta > 5 && !data->toggle)
+    {
         fillLEDs(0xFFFFFF);
         data->toggle = true;
 
         return true;
     }
 
-    if (delta > 50 && data->toggle) {
+    if (delta > 50 && data->toggle)
+    {
         fillLEDs(0x000000);
         data->toggle = false;
 
@@ -166,23 +187,26 @@ bool effectStrobe(unsigned long delta) {
     return false;
 }
 
-bool effectRainbowStrobe(unsigned long delta) {
-    EffectRainbowStrobe *data = &state->data->rainbowStrobe;
+bool effectRainbowStrobe(unsigned long delta)
+{
+    EffectRainbowStrobe* data = &state->data->rainbowStrobe;
 
-    if (delta > 5 && !data->toggle) {
+    if (delta > 5 && !data->toggle)
+    {
         data->toggle = true;
 
-        switch (data->lastColor) {
-            case RED:
-                data->lastColor = GREEN;
-                break;
-            case GREEN:
-                data->lastColor = BLUE;
-                break;
-            case BLUE:
-            default:
-                data->lastColor = RED;
-                break;
+        switch (data->lastColor)
+        {
+        case RED:
+            data->lastColor = GREEN;
+            break;
+        case GREEN:
+            data->lastColor = BLUE;
+            break;
+        case BLUE:
+        default:
+            data->lastColor = RED;
+            break;
         }
 
         fillLEDs(data->lastColor);
@@ -190,7 +214,8 @@ bool effectRainbowStrobe(unsigned long delta) {
         return true;
     }
 
-    if (delta > 25 && data->toggle) {
+    if (delta > 25 && data->toggle)
+    {
         fillLEDs(0x000000);
         data->toggle = false;
 
@@ -200,13 +225,18 @@ bool effectRainbowStrobe(unsigned long delta) {
     return false;
 }
 
-bool effectPolice(unsigned long delta) {
-    EffectPolice *data = &state->data->police;
+bool effectPolice(unsigned long delta)
+{
+    EffectPolice* data = &state->data->police;
 
-    if (delta > 25 && data->blinkTimes >= 2) {
-        if (data->lastColor == BLUE) {
+    if (delta > 25 && data->blinkTimes >= 2)
+    {
+        if (data->lastColor == BLUE)
+        {
             data->lastColor = RED;
-        } else {
+        }
+        else
+        {
             data->lastColor = BLUE;
         }
 
@@ -216,12 +246,16 @@ bool effectPolice(unsigned long delta) {
         return true;
     }
 
-    if (delta > 50 && data->blinkTimes < 2) {
-        if (data->toggle) {
+    if (delta > 50 && data->blinkTimes < 2)
+    {
+        if (data->toggle)
+        {
             data->toggle = false;
             data->blinkTimes++;
             fillLEDs(0x000000);
-        } else {
+        }
+        else
+        {
             data->toggle = true;
             fillLEDs(data->lastColor);
         }
@@ -237,20 +271,24 @@ bool effectPolice(unsigned long delta) {
 // Miscellaneous
 //
 //
-bool effectSolidWhite(unsigned long delta) {
+bool effectSolidWhite(unsigned long delta)
+{
     fillLEDs(0xFFFFFF);
     return true;
 }
 
-bool effectOff(unsigned long delta) {
+bool effectOff(unsigned long delta)
+{
     fillLEDs(0);
     return true;
 }
 
-bool effectBeam(unsigned long delta) {
-    EffectBeam *data = &state->data->beam;
+bool effectBeam(unsigned long delta)
+{
+    EffectBeam* data = &state->data->beam;
 
-    if (delta > 30) {
+    if (delta > 30)
+    {
         fadeAllToBlack(100);
 
         setRingColor(data->last, 0xFF00FF);
@@ -262,13 +300,16 @@ bool effectBeam(unsigned long delta) {
     return false;
 }
 
-bool effectSideBeam(unsigned long delta) {
-    EffectBeam *data = &state->data->beam;
+bool effectSideBeam(unsigned long delta)
+{
+    EffectBeam* data = &state->data->beam;
 
-    if (delta > 30) {
+    if (delta > 30)
+    {
         fadeAllToBlack(150);
 
-        for (int i = 0; i < LED_TOTAL_RINGS; i++) {
+        for (int i = 0; i < LED_TOTAL_RINGS; i++)
+        {
             setPixelColor(i, data->last, 0xFF00FF);
         }
         data->last++;
@@ -279,11 +320,12 @@ bool effectSideBeam(unsigned long delta) {
     return false;
 }
 
-double calculateHelixPosition(double x, double pos, double count) {
-    const static double centerOffset = ((((double) LED_TOTAL_RINGS) / 2.0) - 0.5);
+double calculateHelixPosition(double x, double pos, double count)
+{
+    const static double centerOffset = ((((double)LED_TOTAL_RINGS) / 2.0) - 0.5);
 
-    double y = x + (pos / count) * ((double) LED_PER_RING);
-    y = y / (((double) LED_PER_RING) / 2.0);
+    double y = x + (pos / count) * ((double)LED_PER_RING);
+    y = y / (((double)LED_PER_RING) / 2.0);
     y = y * PI;
     y = sin(y);
     y = (y * centerOffset) + centerOffset;
@@ -291,13 +333,16 @@ double calculateHelixPosition(double x, double pos, double count) {
     return y;
 }
 
-bool effectFilledHelix(unsigned long delta) {
-    EffectHelix *data = &state->data->helix;
+bool effectFilledHelix(unsigned long delta)
+{
+    EffectHelix* data = &state->data->helix;
 
-    if (delta > 25) {
+    if (delta > 25)
+    {
         clearLEDs();
 
-        for (double i = 0; i < (LED_PER_RING * 10); i += 0.1) {
+        for (double i = 0; i < (LED_PER_RING * 10); i += 0.1)
+        {
             double y1 = calculateHelixPosition(i, 0, 6);
             double y2 = calculateHelixPosition(i, 1, 6);
             double y3 = calculateHelixPosition(i, 2, 6);
@@ -305,12 +350,12 @@ bool effectFilledHelix(unsigned long delta) {
             double y5 = calculateHelixPosition(i, 4, 6);
             double y6 = calculateHelixPosition(i, 5, 6);
 
-            setPixelColor((int) y1, data->pixel + ((int) i), applyBrightness(0x0000FF));
-            setPixelColor((int) y2, data->pixel + ((int) i), applyBrightness(0xFF0000));
-            setPixelColor((int) y3, data->pixel + ((int) i), applyBrightness(0x00FF00));
-            setPixelColor((int) y4, data->pixel + ((int) i), applyBrightness(0xFF00FF));
-            setPixelColor((int) y5, data->pixel + ((int) i), applyBrightness(0x00FFFF));
-            setPixelColor((int) y6, data->pixel + ((int) i), applyBrightness(0xFFFF00));
+            setPixelColor((int)y1, data->pixel + ((int)i), applyBrightness(0x0000FF));
+            setPixelColor((int)y2, data->pixel + ((int)i), applyBrightness(0xFF0000));
+            setPixelColor((int)y3, data->pixel + ((int)i), applyBrightness(0x00FF00));
+            setPixelColor((int)y4, data->pixel + ((int)i), applyBrightness(0xFF00FF));
+            setPixelColor((int)y5, data->pixel + ((int)i), applyBrightness(0x00FFFF));
+            setPixelColor((int)y6, data->pixel + ((int)i), applyBrightness(0xFFFF00));
         }
 
         data->pixel++;
@@ -322,13 +367,16 @@ bool effectFilledHelix(unsigned long delta) {
     return false;
 }
 
-bool effectHelix(unsigned long delta) {
-    EffectHelix *data = &state->data->helix;
+bool effectHelix(unsigned long delta)
+{
+    EffectHelix* data = &state->data->helix;
 
-    if (delta > 25) {
+    if (delta > 25)
+    {
         clearLEDs();
 
-        for (int i = 0; i < LED_PER_RING; i++) {
+        for (int i = 0; i < LED_PER_RING; i++)
+        {
             double y1 = calculateHelixPosition(i, 0, 6);
             double y2 = calculateHelixPosition(i, 1, 6);
             double y3 = calculateHelixPosition(i, 2, 6);
@@ -358,18 +406,24 @@ bool effectHelix(unsigned long delta) {
 // Games
 //
 //
-bool effectGOL(unsigned long delta) {
-    EffectGOL *data = &state->data->gol;
+bool effectGOL(unsigned long delta)
+{
+    EffectGOL* data = &state->data->gol;
 
-    if (delta > 10) {
-        for (int i = 0; i < LED_TOTAL_RINGS; i++) {
-            for (int j = 0; j < LED_PER_RING; j++) {
+    if (delta > 10)
+    {
+        for (int i = 0; i < LED_TOTAL_RINGS; i++)
+        {
+            for (int j = 0; j < LED_PER_RING; j++)
+            {
                 data->state[calculatePixelId(i, j)] = calculateGOLCell(i, j);
             }
         }
 
-        for (int i = 0; i < LED_TOTAL_RINGS; i++) {
-            for (int j = 0; j < LED_PER_RING; j++) {
+        for (int i = 0; i < LED_TOTAL_RINGS; i++)
+        {
+            for (int j = 0; j < LED_PER_RING; j++)
+            {
                 setPixelColor(i, j, data->state[calculatePixelId(i, j)] ? 0xFFFFFF : 0x000000);
             }
         }
@@ -380,86 +434,113 @@ bool effectGOL(unsigned long delta) {
     return false;
 }
 
-bool effectTetris(unsigned long delta) {
-    EffectTetris *data = &state->data->tetris;
-    const bool forceMovement = delta > (unsigned long) max(500 - ((data->score / 100) * 25), 50);
+bool effectTetris(unsigned long delta)
+{
+    EffectTetris* data = &state->data->tetris;
+    const bool forceMovement = delta > (unsigned long)max(500 - ((data->score / 100) * 25), 50);
 
-    switch (data->state) {
-        case RUNNING: {
-            if (data->shape.placed) {
+    switch (data->state)
+    {
+    case RUNNING:
+        {
+            if (data->shape.placed)
+            {
                 setTetrisShape(&data->shape);
-                if (!eliminateRings()) {
+                if (!eliminateRings())
+                {
                     if (!renderShape(data->shape.array, data->shape.ring, data->shape.pixel,
-                                     applyBrightness(data->shape.color))) {
+                                     applyBrightness(data->shape.color)))
+                    {
                         data->state = ENDING;
                     }
                 }
-            } else {
+            }
+            else
+            {
                 renderShape(data->shape.array, data->shape.ring, data->shape.pixel, 0);
 
-                if (forceMovement || ((millis() - data->lastInput) > 100 && controller->dpadDown)) {
+                if (forceMovement || ((millis() - data->lastInput) > 100 && controller->dpadDown))
+                {
                     data->shape.ring--;
                     if (!renderShape(data->shape.array, data->shape.ring, data->shape.pixel, data->shape.color,
-                                     true)) {
+                                     true))
+                    {
                         data->shape.ring++;
                         data->shape.placed = true;
                     }
                 }
 
                 if (!renderShape(data->shape.array, data->shape.ring, data->shape.pixel,
-                                 applyBrightness(data->shape.color))) {
+                                 applyBrightness(data->shape.color)))
+                {
                     data->state = ENDING;
                 }
             }
 
             return forceMovement;
         }
-        case ENDING: {
-            if (delta > 62) {
+    case ENDING:
+        {
+            if (delta > 62)
+            {
                 setRingColor(LED_TOTAL_RINGS - data->lastEndAnimationRing, applyBrightness(0xFF0000));
                 setRingColor(data->lastEndAnimationRing, applyBrightness(0xFF0000));
                 data->lastEndAnimationRing++;
 
-                if (data->lastEndAnimationRing >= LED_TOTAL_RINGS) {
+                if (data->lastEndAnimationRing >= LED_TOTAL_RINGS)
+                {
                     data->state = WAITING;
                 }
                 return true;
             }
             break;
         }
-        case WAITING: {
+    case WAITING:
+        {
             bool startNew = getPixelColor(0, 0) == 0;
 
-            if (startNew && delta > 1000) {
+            if (startNew && delta > 1000)
+            {
                 initializeTetris();
                 data->state = RUNNING;
                 return true;
-            } else if (delta > 10 && !startNew) {
+            }
+
+            if (delta > 10 && !startNew)
+            {
                 fadeAllToBlack(255);
                 return true;
             }
 
             break;
         }
-        case RINGS: {
-            if (delta > 10) {
+    case RINGS:
+        {
+            if (delta > 10)
+            {
                 int done = 1;
-                for (int i = 1; i < (LED_TOTAL_RINGS - 1); i++) {
-                    if (data->ringStatus[i]) {
+                for (int i = 1; i < (LED_TOTAL_RINGS - 1); i++)
+                {
+                    if (data->ringStatus[i])
+                    {
                         fadeRingToBlack(i, 230);
 
                         int src = calculatePixelId(i, 0) * 3;
-                        if (memcmp(((uint8_t *) drawingMemory) + src, ZeroBuf, LED_PER_RING) == 0) {
+                        if (memcmp(((uint8_t*)drawingMemory) + src, ZeroBuf, LED_PER_RING) == 0)
+                        {
                             moveArea(i + 1, 0, i, 0, (LED_TOTAL_RINGS - 2 - i) * LED_PER_RING);
                             memmove(data->ringStatus + i, data->ringStatus + i + 1, LED_TOTAL_RINGS - i);
                             data->ringStatus[LED_TOTAL_RINGS - 1] = false;
                         }
-                    } else {
+                    }
+                    else
+                    {
                         done++;
                     }
                 }
 
-                if (done >= (LED_TOTAL_RINGS - 1)) {
+                if (done >= (LED_TOTAL_RINGS - 1))
+                {
                     data->state = RUNNING;
 
                     renderShape(data->shape.array, data->shape.ring, data->shape.pixel,
@@ -470,57 +551,6 @@ bool effectTetris(unsigned long delta) {
             }
             break;
         }
-    }
-
-    return false;
-}
-
-bool effectPong(unsigned long delta) {
-    EffectPong *data = &state->data->pong;
-
-    if (delta > 50) {
-        renderPongBall(data->ball.ring, data->ball.pixel, data->ball.size, 0x000000);
-
-        bool xFrame = data->moveX >= ((data->paddleP1.width / 2) - abs(data->directionX)) && data->directionX != 0;
-
-        bool collides = !renderPongBall(data->ball.ring + data->directionY,
-                                        xFrame ? data->ball.pixel : (data->ball.pixel +
-                                                                     (data->directionX > 0 ? 1 : -1)),
-                                        data->ball.size,
-                                        data->ball.color,
-                                        true
-        );
-
-        if (data->ball.ring >= (LED_TOTAL_RINGS - 1) || data->ball.ring <= 0) {
-            data->directionX = 0;
-
-            data->ball.ring = LED_TOTAL_RINGS / 2;
-            data->ball.pixel = data->ball.ring > (LED_TOTAL_RINGS / 2) ? data->paddleP2.pixel : data->paddleP1.pixel;
-        } else if (data->ball.ring > (LED_TOTAL_RINGS / 2) && collides) {
-            data->directionX = calculatePongDirection(data->ball.pixel, data->paddleP1.pixel);
-            data->directionY = -1;
-
-            data->moveX = 0;
-            data->moveY = 0;
-        } else if (data->ball.ring < (LED_TOTAL_RINGS / 2) && collides) {
-            data->directionX = calculatePongDirection(data->ball.pixel, data->paddleP2.pixel);
-            data->directionY = 1;
-
-            data->moveX = 0;
-            data->moveY = 0;
-        }
-
-        if (data->moveX >= (data->paddleP1.width - abs(data->directionX)) && data->directionX != 0) {
-            data->ball.pixel += data->directionX > 0 ? 1 : -1;
-            data->moveX = 0;
-        }
-
-        data->ball.ring += data->directionY;
-        data->moveX++;
-
-        renderPongBall(data->ball.ring, data->ball.pixel, data->ball.size, data->ball.color);
-
-        return true;
     }
 
     return false;
