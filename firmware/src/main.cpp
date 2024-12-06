@@ -1,8 +1,10 @@
 #include "main.h"
+
 #include "effects.h"
 #include "tft.h"
 #include "globals.h"
 #include "cli.h"
+#include "led.h"
 
 #include <DallasTemperature.h>
 #include <INA226.h>
@@ -28,12 +30,11 @@ unsigned long taskReadCurrent = 0;
 unsigned long taskReadControllerInput = 0;
 
 // Sensor Values
-SensorValues* sensorValues = new SensorValues;
+SensorValues *sensorValues = new SensorValues;
 
-ControllerStatus* controller = new ControllerStatus;
+ControllerStatus *controller = new ControllerStatus;
 
-void setup()
-{
+void setup() {
     pinMode(13, OUTPUT);
     digitalWrite(13, HIGH);
 
@@ -70,35 +71,31 @@ void setup()
     currentSensorTop.setMaxCurrentShunt(10, 0.006);
     currentSensorTop.setAverage(3);
 
+
     initCLI();
-    initOctoWS2811();
+    LED_init();
     initTFT();
 
     Entropy.Initialize();
-
-    setCurrentEffect(&effects[9]);
 }
 
 uint8_t controllerBuffer[27] = {};
 bool toggleTemperatureReadWrite = false;
 bool activityLedState = false;
 
-void loop()
-{
+void loop() {
     unsigned long time = millis();
 
-    if ((time - taskReadSensors) > 1000)
-    {
+    LED_render();
+
+    if ((time - taskReadSensors) > 1000) {
         taskReadSensors = time;
 
         // Read Temperature Values
-        if (toggleTemperatureReadWrite)
-        {
+        if (toggleTemperatureReadWrite) {
             tempSensors.requestTemperatures();
             toggleTemperatureReadWrite = false;
-        }
-        else
-        {
+        } else {
             fetchTemperatureValue(tempProbeTop, TOP, &sensorValues->temperatureTop);
             fetchTemperatureValue(tempProbeCenter, CENTER, &sensorValues->temperatureCenter);
             fetchTemperatureValue(tempProbeBottom, BOTTOM, &sensorValues->temperatureBottom);
@@ -107,8 +104,7 @@ void loop()
         }
     }
 
-    if ((time - taskReadCurrent) > 100)
-    {
+    if ((time - taskReadCurrent) > 100) {
         fetchCurrentValue(currentSensorTop, TOP, &sensorValues->currentSensorTop);
         fetchCurrentValue(currentSensorCenter, CENTER, &sensorValues->currentSensorCenter);
         fetchCurrentValue(currentSensorBottom, BOTTOM, &sensorValues->currentSensorBottom);
@@ -120,8 +116,7 @@ void loop()
         taskReadCurrent = time;
     }
 
-    if ((time - taskReadControllerInput) > 20)
-    {
+    if ((time - taskReadControllerInput) > 20) {
         memset(controllerBuffer, 0, sizeof(controllerBuffer));
         uint8_t quantity = Wire.requestFrom(0x55, sizeof(controllerBuffer));
         Wire.readBytes(controllerBuffer, quantity);
@@ -133,44 +128,36 @@ void loop()
 
     processCLI();
 
-    if (Wire.getReadError())
-    {
+    if (Wire.getReadError()) {
         Wire.clearReadError();
     }
 
-    if (Wire.getWriteError())
-    {
+    if (Wire.getWriteError()) {
         Wire.clearWriteError();
     }
 }
 
-void processButton(bool* value, Button type, uint8_t mask, uint8_t source)
-{
+void processButton(bool *value, Button type, uint8_t mask, uint8_t source) {
     bool pressed = (source & mask) > 0;
 
-    if (pressed && !*value)
-    {
-        if (state->current != nullptr)
-        {
+    if (pressed && !*value) {
+        if (state->current != nullptr) {
             state->current->onButtonPress(type);
         }
     }
     *value = pressed;
 }
 
-void processAnalogValue(size_t offset, int* value, Button type)
-{
-    *value = ((int)(controllerBuffer[offset + 0])) << 24 | ((int)controllerBuffer[offset + 1]) << 16 |
-        ((int)controllerBuffer[offset + 2]) << 8 | ((int)controllerBuffer[offset + 3]);
+void processAnalogValue(size_t offset, int *value, Button type) {
+    *value = ((int) (controllerBuffer[offset + 0])) << 24 | ((int) controllerBuffer[offset + 1]) << 16 |
+             ((int) controllerBuffer[offset + 2]) << 8 | ((int) controllerBuffer[offset + 3]);
 
-    if (*value != 0 && state->current != nullptr)
-    {
+    if (*value != 0 && state->current != nullptr) {
         state->current->onAnalogButton(type, *value);
     }
 }
 
-void processControllerInputs()
-{
+void processControllerInputs() {
     processButton(&controller->dpadLeft, DPAD_LEFT, 0b00001000, controllerBuffer[0]);
     processButton(&controller->dpadRight, DPAD_RIGHT, 0b00000100, controllerBuffer[0]);
     processButton(&controller->dpadDown, DPAD_DOWN, 0b00000010, controllerBuffer[0]);
@@ -202,34 +189,28 @@ void processControllerInputs()
     processAnalogValue(23, &controller->stickRY, STICK_R_Y);
 }
 
-void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float* oldvalue)
-{
+void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue) {
     float value = round(sensor.getBusVoltage() * 100.0f) / 100.0f;
 
-    if (*oldvalue != value)
-    {
+    if (*oldvalue != value) {
         *oldvalue = value;
         renderVoltageValue(section, value);
     }
 }
 
-void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float* oldvalue)
-{
+void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue) {
     float value = round((sensor.getShuntVoltage() / 0.006f) * 100.0f) / 100.0f;
 
-    if (*oldvalue != value)
-    {
+    if (*oldvalue != value) {
         *oldvalue = value;
         renderCurrentValue(section, value);
     }
 }
 
-void fetchTemperatureValue(const uint8_t* sensor, TUBE_SECTION section, float* oldvalue)
-{
+void fetchTemperatureValue(const uint8_t *sensor, TUBE_SECTION section, float *oldvalue) {
     float value = round(tempSensors.getTempC(sensor) * 100.0f) / 100.0f;
 
-    if (*oldvalue != value)
-    {
+    if (*oldvalue != value) {
         *oldvalue = value;
         renderTemperatureValue(section, value);
     }

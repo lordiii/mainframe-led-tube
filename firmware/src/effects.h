@@ -2,18 +2,13 @@
 #define EFFECTS_H
 
 #include "globals.h"
-#include <OctoWS2811.h>
+#include "led.h"
 
-#define LED_STRIP_AMOUNT (LED_TOTAL_RINGS / LED_RINGS_PER_SEGMENT)
-#define LED_PER_STRIP (LED_PER_RING * LED_RINGS_PER_SEGMENT)
-#define LED_TOTAL_AMOUNT (LED_PER_RING * LED_TOTAL_RINGS)
-#define LED_BYTES_PER_LED 3
-#define LED_BUFFER_SIZE ((LED_PER_RING * LED_TOTAL_RINGS * LED_BYTES_PER_LED) / 4)
+#include <OctoWS2811.h>
 
 typedef bool (*EffectCallback)(unsigned long);
 
-enum Button
-{
+enum Button {
     BUTTON_Y,
     BUTTON_B,
     BUTTON_A,
@@ -42,108 +37,66 @@ enum Button
     STICK_R_Y
 };
 
-struct Effect
-{
-    const char* name = "";
+struct Effect {
+    const char *name = "";
     EffectCallback callback = nullptr;
-    void (*resetData)() = []()
-    {
+
+    void (*resetData)() = []() {
     };
-    void (*onButtonPress)(Button button) = [](Button button)
-    {
+
+    void (*onButtonPress)(Button button) = [](Button button) {
     };
-    void (*onAnalogButton)(Button button, int value) = [](Button button, int value)
-    {
+
+    void (*onAnalogButton)(Button button, int value) = [](Button button, int value) {
     };
 };
 
-struct EffectStrobe
-{
-    bool toggle;
+struct EffectBeam {
+    LED_Ring *last;
 };
 
-struct EffectRainbowStrobe
-{
-    bool toggle;
-    int lastColor;
+struct EffectSideBeam {
+    LED_Pixel *last;
 };
 
-struct EffectTestAll
-{
-    int lastColor;
-};
-
-struct EffectPolice
-{
-    bool toggle;
-    int lastColor;
-    int blinkTimes;
-};
-
-struct EffectBeam
-{
-    int last;
-};
-
-struct EffectHelix
-{
+/*
+struct EffectHelix {
     int pixel;
 };
+*/
 
-extern OctoWS2811 leds;
-
-extern Effect* effects;
+extern Effect *effects;
 extern const int effectCount;
-extern int displayMemory[LED_BUFFER_SIZE];
-extern int drawingMemory[LED_BUFFER_SIZE];
-extern const int ZeroBuf[LED_BUFFER_SIZE];
-extern IntervalTimer* taskRenderLeds;
 
-void initOctoWS2811();
-void renderFrame();
-void setCurrentEffect(Effect* effect);
-void setBrightness(float value);
-void startAnimation();
-void stopAnimation();
+void setCurrentEffect(Effect *effect);
 
-bool effectTestLEDs(unsigned long delta);
-bool effectOff(unsigned long delta);
-bool effectStrobe(unsigned long delta);
-bool effectRainbowStrobe(unsigned long delta);
-bool effectPolice(unsigned long delta);
-bool effectSolidWhite(unsigned long delta);
 bool effectBeam(unsigned long delta);
+
 bool effectSideBeam(unsigned long delta);
-bool effectHelix(unsigned long delta);
-bool effectFilledHelix(unsigned long delta);
+
+//bool effectHelix(unsigned long delta);
+
+//bool effectFilledHelix(unsigned long delta);
 
 #include "gol.h"
 #include "tetris.h"
 
 // Data Union
-union EffectData
-{
-    EffectTestAll testAll;
-    EffectStrobe strobe;
-    EffectRainbowStrobe rainbowStrobe;
-    EffectPolice police;
+union EffectData {
     EffectBeam beam;
-    EffectGOL gol;
-    EffectTetris tetris;
-    EffectHelix helix;
+    EffectSideBeam sideBeam;
 };
 
-struct EffectState
-{
-    Effect* current = nullptr;
-    EffectData* data = new EffectData;
+struct EffectState {
+    Effect *current = nullptr;
+    EffectData *data = new EffectData;
     unsigned int lastFrameChange = 0;
     unsigned int slowRate = 0;
-    float brightness = 0.75f;
+    float brightness = 1.0f;
     bool halt = false;
     bool singleStep = false;
 };
 
-extern EffectState* state;
+extern EffectState *state;
 
 #endif

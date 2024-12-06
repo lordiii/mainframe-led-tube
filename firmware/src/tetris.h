@@ -33,7 +33,7 @@ struct EffectTetris
     bool ringStatus[LED_TOTAL_RINGS];
 };
 
-bool effectTetris(unsigned long delta);
+bool renderTetrisFrame(unsigned long delta);
 
 void initializeTetris();
 
