@@ -159,15 +159,15 @@ void commandPrintTemperature(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
     out->println("TOP\t\tCENTER\t\tBOTTOM\r\n");
 
-    auto sensor = getSensorValues();
+    //auto sensor = getSensorValues();
 
-    out->print(sensor->temperatureTop, 2);
+    out->print(0, 2);
     out->print(" °C\t");
 
-    out->print(sensor->temperatureCenter, 2);
+    out->print(0, 2);
     out->print(" °C\t");
 
-    out->print(sensor->temperatureBottom, 2);
+    out->print(0, 2);
     out->println(" °C\t");
 }
 
@@ -175,15 +175,15 @@ void commandPrintCurrent(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
     out->println("TOP\t\tCENTER\t\tBOTTOM\r\n");
 
-    auto sensor = getSensorValues();
+    //auto sensor = getSensorValues();
 
-    out->print(sensor->currentSensorTop, 2);
+    out->print(0, 2);
     out->print(" A\t");
 
-    out->print(sensor->currentSensorCenter, 2);
+    out->print(0, 2);
     out->print(" A\t");
 
-    out->print(sensor->currentSensorBottom, 2);
+    out->print(0, 2);
     out->println(" A\t");
 }
 

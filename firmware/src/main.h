@@ -6,20 +6,6 @@
 class INA226;
 
 // Temperature Sensor Values
-struct SensorValues {
-    float temperatureTop;
-    float temperatureCenter;
-    float temperatureBottom;
-
-    float currentSensorBottom;
-    float currentSensorCenter;
-    float currentSensorTop;
-
-    float busVoltageBottom;
-    float busVoltageCenter;
-    float busVoltageTop;
-};
-
 struct ControllerStatus {
     bool buttonY;
     bool buttonB;
@@ -60,7 +46,5 @@ void fetchTemperatureValue(const unsigned char *sensor, TUBE_SECTION section, fl
 void processControllerInputs();
 
 void processAnalogValue(int offset, int *value, Button type);
-
-SensorValues *getSensorValues();
 
 #endif

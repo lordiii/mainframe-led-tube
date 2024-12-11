@@ -6,23 +6,9 @@
 #include "cli.h"
 #include "led.h"
 
-#include <DallasTemperature.h>
-#include <INA226.h>
-#include <OneWire.h>
-#include <SD.h>
 #include <Entropy.h>
+#include <sensors.h>
 #include <Wire.h>
-
-// Create Sensor Objects
-INA226 currentSensorTop(CURRENT_SENSOR_TOP_ADDRESS);
-INA226 currentSensorCenter(CURRENT_SENSOR_CENTER_ADDRESS);
-INA226 currentSensorBottom(CURRENT_SENSOR_BOTTOM_ADDRESS);
-
-OneWire oneWire(24);
-DallasTemperature tempSensors(&oneWire);
-const unsigned char tempProbeTop[8] = TEMPERATURE_SENSOR_TOP_ADDRESS;
-const unsigned char tempProbeCenter[8] = TEMPERATURE_SENSOR_CENTER_ADDRESS;
-const unsigned char tempProbeBottom[8] = TEMPERATURE_SENSOR_BOTTOM_ADDRESS;
 
 // Scheduled Tasks
 unsigned long taskReadSensors = 0;
@@ -31,15 +17,12 @@ unsigned long taskReadCurrent = 0;
 unsigned long taskReadControllerInput = 0;
 
 // Sensor Values
-SensorValues sensorValues;
-
 ControllerStatus controller;
 
-void setup() {
+void setup()
+{
     pinMode(13, OUTPUT);
     digitalWrite(13, HIGH);
-
-    SD.begin(BUILTIN_SDCARD);
 
     Serial.begin(115200);
 
@@ -48,30 +31,7 @@ void setup() {
 
     digitalWrite(PIN_PW_ON, HIGH);
 
-    sensorValues.temperatureTop = 0.0f;
-    sensorValues.temperatureCenter = 0.0f;
-    sensorValues.temperatureBottom = 0.0f;
-
-    sensorValues.currentSensorBottom = 0.0f;
-    sensorValues.currentSensorCenter = 0.0f;
-    sensorValues.currentSensorTop = 0.0f;
-
     Wire.begin();
-    currentSensorBottom.reset();
-    currentSensorBottom.begin();
-    currentSensorBottom.setMaxCurrentShunt(10, 0.006);
-    currentSensorBottom.setAverage(3);
-
-    currentSensorCenter.reset();
-    currentSensorCenter.begin();
-    currentSensorCenter.setMaxCurrentShunt(10, 0.006);
-    currentSensorCenter.setAverage(3);
-
-    currentSensorTop.reset();
-    currentSensorTop.begin();
-    currentSensorTop.setMaxCurrentShunt(10, 0.006);
-    currentSensorTop.setAverage(3);
-
 
     initCLI();
     LED_init();
@@ -86,38 +46,24 @@ uint8_t controllerBuffer[27] = {};
 bool toggleTemperatureReadWrite = false;
 bool activityLedState = false;
 
-void loop() {
+void loop()
+{
     unsigned long time = millis();
 
-    if ((time - taskReadSensors) > 1000) {
+    if ((time - taskReadSensors) > 1000)
+    {
         taskReadSensors = time;
-
-        // Read Temperature Values
-        if (toggleTemperatureReadWrite) {
-            tempSensors.requestTemperatures();
-            toggleTemperatureReadWrite = false;
-        } else {
-            fetchTemperatureValue(tempProbeTop, TOP, &sensorValues.temperatureTop);
-            fetchTemperatureValue(tempProbeCenter, CENTER, &sensorValues.temperatureCenter);
-            fetchTemperatureValue(tempProbeBottom, BOTTOM, &sensorValues.temperatureBottom);
-
-            toggleTemperatureReadWrite = true;
-        }
+        SENSOR_update(true, true);
     }
 
-    if ((time - taskReadCurrent) > 100) {
-        fetchCurrentValue(currentSensorTop, TOP, &sensorValues.currentSensorTop);
-        fetchCurrentValue(currentSensorCenter, CENTER, &sensorValues.currentSensorCenter);
-        fetchCurrentValue(currentSensorBottom, BOTTOM, &sensorValues.currentSensorBottom);
-
-        fetchBusVoltageValue(currentSensorTop, TOP, &sensorValues.busVoltageTop);
-        fetchBusVoltageValue(currentSensorCenter, CENTER, &sensorValues.busVoltageCenter);
-        fetchBusVoltageValue(currentSensorBottom, BOTTOM, &sensorValues.busVoltageBottom);
-
+    if ((time - taskReadCurrent) > 100)
+    {
         taskReadCurrent = time;
+        SENSOR_update(false, true);
     }
 
-    if ((time - taskReadControllerInput) > 20) {
+    if ((time - taskReadControllerInput) > 20)
+    {
         memset(controllerBuffer, 0, sizeof(controllerBuffer));
         uint8_t quantity = Wire.requestFrom(0x55, sizeof(controllerBuffer));
         Wire.readBytes(controllerBuffer, quantity);
@@ -129,40 +75,47 @@ void loop() {
 
     processCLI();
 
-    if (Wire.getReadError()) {
+    if (Wire.getReadError())
+    {
         Wire.clearReadError();
     }
 
-    if (Wire.getWriteError()) {
+    if (Wire.getWriteError())
+    {
         Wire.clearWriteError();
     }
 }
 
-void processButton(bool *value, Button type, uint8_t mask, uint8_t source) {
-    EffectState *state = FX_getState();
+void processButton(bool* value, Button type, uint8_t mask, uint8_t source)
+{
+    EffectState* state = FX_getState();
     if (state->current == nullptr || state->current->onButtonPress == nullptr) return;
 
     bool pressed = (source & mask) > 0;
 
-    if (pressed && !*value) {
+    if (pressed && !*value)
+    {
         state->current->onButtonPress(type);
     }
     *value = pressed;
 }
 
-void processAnalogValue(int offset, int *value, Button type) {
-    EffectState *state = FX_getState();
+void processAnalogValue(int offset, int* value, Button type)
+{
+    EffectState* state = FX_getState();
     if (state->current == nullptr || state->current->onAnalogButton == nullptr) return;
 
-    *value = ((int) (controllerBuffer[offset + 0])) << 24 | ((int) controllerBuffer[offset + 1]) << 16 |
-             ((int) controllerBuffer[offset + 2]) << 8 | ((int) controllerBuffer[offset + 3]);
+    *value = ((int)(controllerBuffer[offset + 0])) << 24 | ((int)controllerBuffer[offset + 1]) << 16 |
+        ((int)controllerBuffer[offset + 2]) << 8 | ((int)controllerBuffer[offset + 3]);
 
-    if (*value != 0) {
+    if (*value != 0)
+    {
         state->current->onAnalogButton(type, *value);
     }
 }
 
-void processControllerInputs() {
+void processControllerInputs()
+{
     processButton(&controller.dpadLeft, DPAD_LEFT, 0b00001000, controllerBuffer[0]);
     processButton(&controller.dpadRight, DPAD_RIGHT, 0b00000100, controllerBuffer[0]);
     processButton(&controller.dpadDown, DPAD_DOWN, 0b00000010, controllerBuffer[0]);
@@ -192,35 +145,4 @@ void processControllerInputs() {
     processAnalogValue(15, &controller.stickLY, STICK_L_Y);
     processAnalogValue(19, &controller.stickRX, STICK_R_X);
     processAnalogValue(23, &controller.stickRY, STICK_R_Y);
-}
-
-void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue) {
-    float value = round(sensor.getBusVoltage() * 100.0f) / 100.0f;
-
-    if (*oldvalue != value) {
-        *oldvalue = value;
-        renderVoltageValue(section, value);
-    }
-}
-
-void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue) {
-    float value = round((sensor.getShuntVoltage() / 0.006f) * 100.0f) / 100.0f;
-
-    if (*oldvalue != value) {
-        *oldvalue = value;
-        renderCurrentValue(section, value);
-    }
-}
-
-void fetchTemperatureValue(const uint8_t *sensor, TUBE_SECTION section, float *oldvalue) {
-    float value = round(tempSensors.getTempC(sensor) * 100.0f) / 100.0f;
-
-    if (*oldvalue != value) {
-        *oldvalue = value;
-        renderTemperatureValue(section, value);
-    }
-}
-
-SensorValues *getSensorValues() {
-    return &sensorValues;
 }
