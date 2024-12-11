@@ -1,12 +1,13 @@
-#include <tft.h>
+#include "tft.h"
+#include "globals.h"
 
 #include <Adafruit_ST7735.h>
-#include <SD.h>
 
 // Screen
 #define RST 40
 #define CS1 35
 #define CS2 36
+
 Adafruit_ST7735 tft = Adafruit_ST7735(&SPI1, CS1, CS2, RST); // SPI, CS, DC, RST
 
 #define RECT_OFFSET 5

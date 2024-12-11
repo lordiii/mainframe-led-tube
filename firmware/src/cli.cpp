@@ -1,17 +1,18 @@
-#include <cli.h>
+#include "cli.h"
+#include "globals.h"
+#include "main.h"
+#include "effects/_effects.h"
+#include "tft.h"
+#include "led.h"
+#include <Wire.h>
 #include <embedded_cli.h>
 #include <Arduino.h>
-#include <main.h>
-#include <effects_lib.h>
-
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "UnusedParameter"
 
 EmbeddedCli *embeddedCli;
 unsigned long lastPowerToggle = 0;
 
 void initCLI() {
-    auto config = embeddedCliDefaultConfig();
+    EmbeddedCliConfig *config = embeddedCliDefaultConfig();
     config->maxBindingCount = 20;
     embeddedCli = embeddedCliNew(config);
 
@@ -35,14 +36,6 @@ void initCLI() {
             true,
             &Serial,
             commandPrintCurrent
-    });
-
-    embeddedCliAddBinding(embeddedCli, {
-            "network",
-            "Display current network information",
-            true,
-            &Serial,
-            commandPrintNetworkInfo
     });
 
     embeddedCliAddBinding(embeddedCli, {
@@ -77,7 +70,7 @@ void initCLI() {
             commandSetBrightness
     });
 
-    embeddedCliAddBinding(embeddedCli, {
+    /*embeddedCliAddBinding(embeddedCli, {
             "effect-list",
             "List known effects",
             true,
@@ -107,7 +100,7 @@ void initCLI() {
             true,
             &Serial,
             commandSlowExecution
-    });
+    });*/
 
     embeddedCliAddBinding(embeddedCli, {
             "set-ring",
@@ -166,13 +159,15 @@ void commandPrintTemperature(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
     out->println("TOP\t\tCENTER\t\tBOTTOM\r\n");
 
-    out->print(sensorValues->temperatureTop, 2);
+    auto sensor = getSensorValues();
+
+    out->print(sensor->temperatureTop, 2);
     out->print(" °C\t");
 
-    out->print(sensorValues->temperatureCenter, 2);
+    out->print(sensor->temperatureCenter, 2);
     out->print(" °C\t");
 
-    out->print(sensorValues->temperatureBottom, 2);
+    out->print(sensor->temperatureBottom, 2);
     out->println(" °C\t");
 }
 
@@ -180,34 +175,16 @@ void commandPrintCurrent(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
     out->println("TOP\t\tCENTER\t\tBOTTOM\r\n");
 
-    out->print(sensorValues->currentSensorTop, 2);
+    auto sensor = getSensorValues();
+
+    out->print(sensor->currentSensorTop, 2);
     out->print(" A\t");
 
-    out->print(sensorValues->currentSensorCenter, 2);
+    out->print(sensor->currentSensorCenter, 2);
     out->print(" A\t");
 
-    out->print(sensorValues->currentSensorBottom, 2);
+    out->print(sensor->currentSensorBottom, 2);
     out->println(" A\t");
-}
-
-//
-// Network Configuration
-//
-void commandPrintNetworkInfo(EmbeddedCli *cli, char *args, void *context) {
-    auto *out = (Print *) context;
-    out->println("IP\t\tGATEWAY\t\tBROADCAST\tDNS");
-
-    out->print(qindesign::network::Ethernet.localIP());
-    out->print("\t");
-
-    out->print(qindesign::network::Ethernet.gatewayIP());
-    out->print("\t");
-
-    out->print(qindesign::network::Ethernet.broadcastIP());
-    out->print("\t");
-
-    out->print(qindesign::network::Ethernet.dnsServerIP());
-    out->println("\t");
 }
 
 //
@@ -254,31 +231,18 @@ void commandSetEffect(EmbeddedCli *cli, char *args, void *context) {
     } else {
         const char *effectName = embeddedCliGetToken(args, 1);
 
-        Effect *effect = nullptr;
-        for (int i = 0; i < effectCount; i++) {
-            effect = &effects[i];
-
-            if (strcmp(effect->name, effectName) == 0) {
-                break;
-            } else {
-                effect = nullptr;
-            }
-        }
-
-        setCurrentEffect(effect);
-
-        if (effect == nullptr) {
-            displayEffect("");
-
-            out->print("Effect '");
-            out->print(effectName);
-            out->println("' not found!");
-        } else {
+        if (FX_setEffect(effectName)) {
             displayEffect(effectName);
 
             out->print("Effect set to '");
             out->print(effectName);
             out->println("'!");
+        } else {
+            displayEffect("");
+
+            out->print("Effect '");
+            out->print(effectName);
+            out->println("' not found!");
         }
     }
 }
@@ -297,14 +261,18 @@ void commandSetBrightness(EmbeddedCli *cli, char *args, void *context) {
             brightness = 100;
         }
 
-        float value = ((float) brightness) / 100.0f;
-        setBrightness(value);
+        //float value = ((float) brightness) / 100.0f;
+
+        //setBrightness(value);
+
+
         out->print("Brightness changed to: ");
         out->print(brightness);
         out->println("%");
     }
 }
 
+/*
 void commandPrintEffectList(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
 
@@ -346,7 +314,7 @@ void commandSlowExecution(EmbeddedCli *cli, char *args, void *context) {
         out->println("ms");
     }
 }
-
+*/
 void commandSetRing(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
 
@@ -367,7 +335,16 @@ void commandSetRing(EmbeddedCli *cli, char *args, void *context) {
         out->print(" to color ");
         out->println(color, 16);
 
-        setRingColor(ring, color);
+        LED_RGB pixel = {
+                .G = (unsigned char) ((color >> 16) & 0xFF),
+                .R = (unsigned char) ((color >> 8) & 0xFF),
+                .B = (unsigned char) ((color >> 0) & 0xFF)
+        };
+
+        LED_Ring *ring_p = LED_getRing(ring);
+        if (ring_p != nullptr) {
+            LED_fillRing(&pixel, ring_p);
+        }
     }
 }
 
@@ -382,7 +359,7 @@ void commandSetAll(EmbeddedCli *cli, char *args, void *context) {
         out->print("Setting all to color ");
         out->println(color, 16);
 
-        fillLEDs(color);
+        //fillLEDs(color);
     }
 }
 
@@ -422,5 +399,3 @@ void commandToggleGamepadRegister(EmbeddedCli *cli, char *args, void *context) {
         out->print(turnOn ? "on" : "off");
     }
 }
-
-#pragma clang diagnostic pop

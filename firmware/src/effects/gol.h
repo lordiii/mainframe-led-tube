@@ -1,7 +1,7 @@
-#ifndef FIRMWARE_GOL_H
-#define FIRMWARE_GOL_H
+#ifndef GOL_H
+#define GOL_H
 
-#include <globals.h>
+#include "globals.h"
 
 bool calculateGOLCell(int ring, int pixel);
 

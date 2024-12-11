@@ -1,11 +1,13 @@
-#ifndef FIRMWARE_GLOBALS_H
-#define FIRMWARE_GLOBALS_H
+#ifndef GLOBALS_H
+#define GLOBALS_H
+
+#include "enum.h"
 
 #define LED_TOTAL_RINGS 60
 #define LED_PER_RING 32
+#define LED_TOTAL_AMOUNT (LED_PER_RING * LED_TOTAL_RINGS)
 #define LED_RINGS_PER_SEGMENT 10
 #define LED_PINS {2, 3, 4, 6, 7, 8}
-#define LED_CONFIGURATION (WS2811_GRB | WS2811_800kHz)
 #define LED_FRAMES_PER_SECOND ((1000 / 80) * 1000)
 
 #define CURRENT_SENSOR_BOTTOM_ADDRESS 0b1000000
@@ -22,8 +24,5 @@
 #define PIN_PS_GOOD 29
 
 #define WEB_CHUNK_SIZE 1024
-
-#include <QNEthernet.h>
-using namespace qindesign::network;
 
 #endif

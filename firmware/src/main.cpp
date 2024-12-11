@@ -1,14 +1,17 @@
-#include <main.h>
-#include <globals.h>
-#include <effects.h>
-#include <web.h>
-#include <cli.h>
-#include <Wire.h>
+#include "main.h"
+
+#include "effects/_effects.h"
+#include "tft.h"
+#include "globals.h"
+#include "cli.h"
+#include "led.h"
+
+#include <DallasTemperature.h>
 #include <INA226.h>
 #include <OneWire.h>
-#include <DallasTemperature.h>
 #include <SD.h>
 #include <Entropy.h>
+#include <Wire.h>
 
 // Create Sensor Objects
 INA226 currentSensorTop(CURRENT_SENSOR_TOP_ADDRESS);
@@ -28,9 +31,9 @@ unsigned long taskReadCurrent = 0;
 unsigned long taskReadControllerInput = 0;
 
 // Sensor Values
-SensorValues *sensorValues = new SensorValues;
+SensorValues sensorValues;
 
-ControllerStatus *controller = new ControllerStatus;
+ControllerStatus controller;
 
 void setup() {
     pinMode(13, OUTPUT);
@@ -45,15 +48,13 @@ void setup() {
 
     digitalWrite(PIN_PW_ON, HIGH);
 
-    qindesign::network::Ethernet.begin();
+    sensorValues.temperatureTop = 0.0f;
+    sensorValues.temperatureCenter = 0.0f;
+    sensorValues.temperatureBottom = 0.0f;
 
-    sensorValues->temperatureTop = 0.0f;
-    sensorValues->temperatureCenter = 0.0f;
-    sensorValues->temperatureBottom = 0.0f;
-
-    sensorValues->currentSensorBottom = 0.0f;
-    sensorValues->currentSensorCenter = 0.0f;
-    sensorValues->currentSensorTop = 0.0f;
+    sensorValues.currentSensorBottom = 0.0f;
+    sensorValues.currentSensorCenter = 0.0f;
+    sensorValues.currentSensorTop = 0.0f;
 
     Wire.begin();
     currentSensorBottom.reset();
@@ -71,14 +72,14 @@ void setup() {
     currentSensorTop.setMaxCurrentShunt(10, 0.006);
     currentSensorTop.setAverage(3);
 
+
     initCLI();
-    initWebServer();
-    initOctoWS2811();
+    LED_init();
     initTFT();
 
     Entropy.Initialize();
 
-    setCurrentEffect(&effects[9]);
+    FX_setEffect("beam");
 }
 
 uint8_t controllerBuffer[27] = {};
@@ -96,32 +97,22 @@ void loop() {
             tempSensors.requestTemperatures();
             toggleTemperatureReadWrite = false;
         } else {
-            fetchTemperatureValue(tempProbeTop, TOP, &sensorValues->temperatureTop);
-            fetchTemperatureValue(tempProbeCenter, CENTER, &sensorValues->temperatureCenter);
-            fetchTemperatureValue(tempProbeBottom, BOTTOM, &sensorValues->temperatureBottom);
+            fetchTemperatureValue(tempProbeTop, TOP, &sensorValues.temperatureTop);
+            fetchTemperatureValue(tempProbeCenter, CENTER, &sensorValues.temperatureCenter);
+            fetchTemperatureValue(tempProbeBottom, BOTTOM, &sensorValues.temperatureBottom);
 
             toggleTemperatureReadWrite = true;
         }
     }
 
-    if (
-            ((time - taskActivityLed) > 125 && !qindesign::network::Ethernet.linkState()) ||
-            ((time - taskActivityLed) > 250 && qindesign::network::Ethernet.localIP()[0] == 0) ||
-            (time - taskActivityLed > 500)) {
-        taskActivityLed = time;
-
-        digitalWrite(13, activityLedState ? LOW : HIGH);
-        activityLedState = !activityLedState;
-    }
-
     if ((time - taskReadCurrent) > 100) {
-        fetchCurrentValue(currentSensorTop, TOP, &sensorValues->currentSensorTop);
-        fetchCurrentValue(currentSensorCenter, CENTER, &sensorValues->currentSensorCenter);
-        fetchCurrentValue(currentSensorBottom, BOTTOM, &sensorValues->currentSensorBottom);
+        fetchCurrentValue(currentSensorTop, TOP, &sensorValues.currentSensorTop);
+        fetchCurrentValue(currentSensorCenter, CENTER, &sensorValues.currentSensorCenter);
+        fetchCurrentValue(currentSensorBottom, BOTTOM, &sensorValues.currentSensorBottom);
 
-        fetchBusVoltageValue(currentSensorTop, TOP, &sensorValues->busVoltageTop);
-        fetchBusVoltageValue(currentSensorCenter, CENTER, &sensorValues->busVoltageCenter);
-        fetchBusVoltageValue(currentSensorBottom, BOTTOM, &sensorValues->busVoltageBottom);
+        fetchBusVoltageValue(currentSensorTop, TOP, &sensorValues.busVoltageTop);
+        fetchBusVoltageValue(currentSensorCenter, CENTER, &sensorValues.busVoltageCenter);
+        fetchBusVoltageValue(currentSensorBottom, BOTTOM, &sensorValues.busVoltageBottom);
 
         taskReadCurrent = time;
     }
@@ -137,7 +128,6 @@ void loop() {
     }
 
     processCLI();
-    handleWebClient();
 
     if (Wire.getReadError()) {
         Wire.clearReadError();
@@ -149,55 +139,59 @@ void loop() {
 }
 
 void processButton(bool *value, Button type, uint8_t mask, uint8_t source) {
+    EffectState *state = FX_getState();
+    if (state->current == nullptr || state->current->onButtonPress == nullptr) return;
+
     bool pressed = (source & mask) > 0;
 
     if (pressed && !*value) {
-        if (state->current != nullptr) {
-            state->current->onButtonPress(type);
-        }
+        state->current->onButtonPress(type);
     }
     *value = pressed;
 }
 
-void processAnalogValue(size_t offset, int *value, Button type) {
+void processAnalogValue(int offset, int *value, Button type) {
+    EffectState *state = FX_getState();
+    if (state->current == nullptr || state->current->onAnalogButton == nullptr) return;
+
     *value = ((int) (controllerBuffer[offset + 0])) << 24 | ((int) controllerBuffer[offset + 1]) << 16 |
              ((int) controllerBuffer[offset + 2]) << 8 | ((int) controllerBuffer[offset + 3]);
 
-    if (*value != 0 && state->current != nullptr) {
+    if (*value != 0) {
         state->current->onAnalogButton(type, *value);
     }
 }
 
 void processControllerInputs() {
-    processButton(&controller->dpadLeft, DPAD_LEFT, 0b00001000, controllerBuffer[0]);
-    processButton(&controller->dpadRight, DPAD_RIGHT, 0b00000100, controllerBuffer[0]);
-    processButton(&controller->dpadDown, DPAD_DOWN, 0b00000010, controllerBuffer[0]);
-    processButton(&controller->dpadUp, DPAD_UP, 0b00000001, controllerBuffer[0]);
+    processButton(&controller.dpadLeft, DPAD_LEFT, 0b00001000, controllerBuffer[0]);
+    processButton(&controller.dpadRight, DPAD_RIGHT, 0b00000100, controllerBuffer[0]);
+    processButton(&controller.dpadDown, DPAD_DOWN, 0b00000010, controllerBuffer[0]);
+    processButton(&controller.dpadUp, DPAD_UP, 0b00000001, controllerBuffer[0]);
 
-    processButton(&controller->buttonY, BUTTON_Y, 0b10000000, controllerBuffer[1]);
-    processButton(&controller->buttonB, BUTTON_B, 0b01000000, controllerBuffer[1]);
-    processButton(&controller->buttonA, BUTTON_A, 0b00100000, controllerBuffer[1]);
-    processButton(&controller->buttonX, BUTTON_X, 0b00010000, controllerBuffer[1]);
-    processButton(&controller->shoulderL1, SHOULDER_L1, 0b00001000, controllerBuffer[1]);
-    processButton(&controller->shoulderR2, SHOULDER_R2, 0b00000100, controllerBuffer[1]);
-    processButton(&controller->shoulderR1, SHOULDER_R1, 0b00000010, controllerBuffer[1]);
-    processButton(&controller->shoulderL2, SHOULDER_L2, 0b00000001, controllerBuffer[1]);
+    processButton(&controller.buttonY, BUTTON_Y, 0b10000000, controllerBuffer[1]);
+    processButton(&controller.buttonB, BUTTON_B, 0b01000000, controllerBuffer[1]);
+    processButton(&controller.buttonA, BUTTON_A, 0b00100000, controllerBuffer[1]);
+    processButton(&controller.buttonX, BUTTON_X, 0b00010000, controllerBuffer[1]);
+    processButton(&controller.shoulderL1, SHOULDER_L1, 0b00001000, controllerBuffer[1]);
+    processButton(&controller.shoulderR2, SHOULDER_R2, 0b00000100, controllerBuffer[1]);
+    processButton(&controller.shoulderR1, SHOULDER_R1, 0b00000010, controllerBuffer[1]);
+    processButton(&controller.shoulderL2, SHOULDER_L2, 0b00000001, controllerBuffer[1]);
 
-    processButton(&controller->miscHome, MISC_HOME, 0b10000000, controllerBuffer[2]);
-    processButton(&controller->miscStart, MISC_START, 0b01000000, controllerBuffer[2]);
-    processButton(&controller->miscSelect, MISC_SELECT, 0b00100000, controllerBuffer[2]);
-    processButton(&controller->miscSystem, MISC_SYSTEM, 0b00010000, controllerBuffer[2]);
-    processButton(&controller->miscBack, MISC_BACK, 0b00001000, controllerBuffer[2]);
-    processButton(&controller->miscCapture, MISC_CAPTURE, 0b00000100, controllerBuffer[2]);
-    processButton(&controller->buttonTR, BUTTON_TR, 0b00000010, controllerBuffer[2]);
-    processButton(&controller->buttonTL, BUTTON_TL, 0b00000001, controllerBuffer[2]);
+    processButton(&controller.miscHome, MISC_HOME, 0b10000000, controllerBuffer[2]);
+    processButton(&controller.miscStart, MISC_START, 0b01000000, controllerBuffer[2]);
+    processButton(&controller.miscSelect, MISC_SELECT, 0b00100000, controllerBuffer[2]);
+    processButton(&controller.miscSystem, MISC_SYSTEM, 0b00010000, controllerBuffer[2]);
+    processButton(&controller.miscBack, MISC_BACK, 0b00001000, controllerBuffer[2]);
+    processButton(&controller.miscCapture, MISC_CAPTURE, 0b00000100, controllerBuffer[2]);
+    processButton(&controller.buttonTR, BUTTON_TR, 0b00000010, controllerBuffer[2]);
+    processButton(&controller.buttonTL, BUTTON_TL, 0b00000001, controllerBuffer[2]);
 
-    processAnalogValue(3, &controller->breakForce, BREAK);
-    processAnalogValue(7, &controller->throttleForce, THROTTLE);
-    processAnalogValue(11, &controller->stickLX, STICK_L_X);
-    processAnalogValue(15, &controller->stickLY, STICK_L_Y);
-    processAnalogValue(19, &controller->stickRX, STICK_R_X);
-    processAnalogValue(23, &controller->stickRY, STICK_R_Y);
+    processAnalogValue(3, &controller.breakForce, BREAK);
+    processAnalogValue(7, &controller.throttleForce, THROTTLE);
+    processAnalogValue(11, &controller.stickLX, STICK_L_X);
+    processAnalogValue(15, &controller.stickLY, STICK_L_Y);
+    processAnalogValue(19, &controller.stickRX, STICK_R_X);
+    processAnalogValue(23, &controller.stickRY, STICK_R_Y);
 }
 
 void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue) {
@@ -225,4 +219,8 @@ void fetchTemperatureValue(const uint8_t *sensor, TUBE_SECTION section, float *o
         *oldvalue = value;
         renderTemperatureValue(section, value);
     }
+}
+
+SensorValues *getSensorValues() {
+    return &sensorValues;
 }

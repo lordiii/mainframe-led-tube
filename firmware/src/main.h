@@ -1,11 +1,9 @@
-#ifndef FIRMWARE_MAIN_H
-#define FIRMWARE_MAIN_H
+#ifndef MAIN_H
+#define MAIN_H
 
-#include <SD.h>
-#include <QNEthernet.h>
-#include <INA226.h>
-#include <tft.h>
-#include <effects.h>
+#include "globals.h"
+
+class INA226;
 
 // Temperature Sensor Values
 struct SensorValues {
@@ -22,8 +20,7 @@ struct SensorValues {
     float busVoltageTop;
 };
 
-struct ControllerStatus
-{
+struct ControllerStatus {
     bool buttonY;
     bool buttonB;
     bool buttonA;
@@ -38,7 +35,7 @@ struct ControllerStatus
     bool shoulderR2;
 
     bool miscHome;
-    bool miscStart; 
+    bool miscStart;
     bool miscSelect;
     bool miscSystem;
     bool miscBack;
@@ -54,13 +51,16 @@ struct ControllerStatus
     int stickRY;
 };
 
-extern SensorValues *sensorValues;
-extern ControllerStatus *controller;
-
 void fetchBusVoltageValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
+
 void fetchCurrentValue(INA226 sensor, TUBE_SECTION section, float *oldvalue);
-void fetchTemperatureValue(const uint8_t * sensor, TUBE_SECTION section, float *oldvalue);
+
+void fetchTemperatureValue(const unsigned char *sensor, TUBE_SECTION section, float *oldvalue);
+
 void processControllerInputs();
-void processAnalogValue(size_t offset, int *value, Button type);
+
+void processAnalogValue(int offset, int *value, Button type);
+
+SensorValues *getSensorValues();
 
 #endif
