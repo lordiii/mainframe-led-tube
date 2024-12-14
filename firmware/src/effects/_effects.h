@@ -27,9 +27,9 @@ typedef struct Effect {
 
     void (*resetData)(EffectData *);
 
-    void (*onButtonPress)(Button button);
+    void (*onButtonPress)(GP_BUTTON button);
 
-    void (*onAnalogButton)(Button button, int value);
+    void (*onAnalogButton)(GP_BUTTON button, int value);
 } Effect;
 
 typedef struct EffectState {

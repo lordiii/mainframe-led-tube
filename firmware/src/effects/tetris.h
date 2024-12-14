@@ -2,6 +2,7 @@
 #define TETRIS_H
 
 #include "_effects.h"
+#include "enum.h"
 
 #define TETRIS_MAX_SIZE 4
 
@@ -45,8 +46,8 @@ void rotateFrame(bool clockwise, Shape *shape = nullptr);
 
 void rotateShape(Shape *shape, bool clockwise);
 
-void onTetrisButtonPress(Button button);
+void onTetrisButtonPress(GP_BUTTON button);
 
-void onTetrisAnalogButton(Button button, int value);
+void onTetrisAnalogButton(GP_BUTTON button, int value);
 
 #endif

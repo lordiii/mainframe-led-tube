@@ -1,8 +1,7 @@
 #ifndef ENUM_H
 #define ENUM_H
 
-enum Button
-{
+enum GP_BUTTON {
     BUTTON_Y,
     BUTTON_B,
     BUTTON_A,
@@ -31,8 +30,7 @@ enum Button
     STICK_R_Y
 };
 
-enum TUBE_SECTION
-{
+enum TUBE_SECTION {
     TOP_SECTION,
     CENTER_SECTION,
     BOTTOM_SECTION
