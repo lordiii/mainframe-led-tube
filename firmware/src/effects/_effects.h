@@ -1,40 +1,29 @@
 #ifndef EFFECTS_H
 #define EFFECTS_H
 
-#include "beam.h"
 #include "main.h"
+#include "enum.h"
 
-/*
-struct EffectHelix {
-    int pixel;
-};
-*/
-
-//bool effectHelix(unsigned long delta);
-
-//bool effectFilledHelix(unsigned long delta);
-
-
-typedef union EffectData {
-    FX_Beam beam;
-    FX_SideBeam sideBeam;
-} EffectData;
-
-typedef struct Effect {
+class FX {
+public:
     const char *name;
 
-    bool (*callback)(EffectData *, unsigned long);
+    virtual bool render(unsigned long delta) = 0;
 
-    void (*resetData)(EffectData *);
+    virtual void resetData() = 0;
 
-    void (*onButtonPress)(GP_BUTTON button);
+    virtual void onButton(GP_BUTTON button) = 0;
 
-    void (*onAnalogButton)(GP_BUTTON button, int value);
-} Effect;
+    virtual void onAnalogButton(GP_BUTTON button, int value) = 0;
+
+protected:
+    explicit FX(const char *name) {
+        this->name = name;
+    }
+};
 
 typedef struct EffectState {
-    Effect *current;
-    EffectData data;
+    FX *current;
     unsigned int lastFrameChange;
     unsigned int slowRate;
     bool halt;

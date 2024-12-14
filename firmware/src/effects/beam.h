@@ -1,26 +1,43 @@
 #ifndef BEAM_H
 #define BEAM_H
 
-union EffectData;
-struct LED_Ring;
-struct LED_Pixel;
+#include "_effects.h"
+#include "led.h"
+#include "enum.h"
 
-typedef struct FX_Beam {
+class FX_Beam : FX {
+public:
+    FX_Beam() : FX("beam") {
+    }
+
+    bool render(unsigned long delta);
+
+    void resetData();
+
+    void onButton(GP_BUTTON button);
+
+    void onAnalogButton(GP_BUTTON button, int value);
+
+private:
     LED_Ring *last;
-} FX_Beam;
+};
 
-typedef struct FX_SideBeam {
+class FX_SideBeam : FX {
+public:
+    FX_SideBeam() : FX("side-beam") {
+    }
+
+    bool render(unsigned long delta);
+
+    void resetData();
+
+    void onButton(GP_BUTTON button);
+
+    void onAnalogButton(GP_BUTTON button, int value);
+
+private:
     LED_Pixel *last;
-} FX_SideBeam;
 
-
-void FX_resetBeam(EffectData *effectData);
-
-void FX_resetSideBeam(EffectData *effectData);
-
-bool FX_beam(EffectData *effectData, unsigned long delta);
-
-bool FX_sideBeam(EffectData *effectData, unsigned long delta);
-
+};
 
 #endif

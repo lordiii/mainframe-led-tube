@@ -4,16 +4,14 @@
 
 #include <Arduino.h>
 
-EffectState state;
+FX_Beam *beam = new FX_Beam();
+
+FX_SideBeam *sideBeam = new FX_SideBeam();
 
 const int fxCnt = 2;
-Effect effects[fxCnt] = {
-        {"beam",      &FX_beam,     &FX_resetBeam},
-        {"side-beam", &FX_sideBeam, &FX_resetSideBeam},
-        //{"helix", &effectHelix},
-        //{"gol", &effectGOL, &initializeGOLData},
-        //{"tetris", &renderTetrisFrame, &initializeTetris, &onTetrisButtonPress, &onTetrisAnalogButton}
-};
+FX *effects[fxCnt] = {(FX *) beam, (FX *) sideBeam};
+
+EffectState state;
 
 EffectState *FX_getState() {
     return &state;
@@ -24,26 +22,19 @@ bool FX_setEffect(const char *effectName) {
 
     // Reset State
     state.lastFrameChange = 0;
-    memset(&state.data, 0, sizeof(EffectData));
     LED_clear();
 
-    Effect *effect = nullptr;
+    FX *effect = nullptr;
     for (int i = 0; i < fxCnt; i++) {
-        effect = &effects[i];
-
-        if (strcmp(effect->name, effectName) == 0) {
+        if (strcmp(effects[i]->name, effectName) == 0) {
+            effect = effects[i];
             break;
-        } else {
-            effect = nullptr;
         }
     }
 
     // Reset Data
     if (effect != nullptr) {
-        if (effect->resetData != nullptr) {
-            effect->resetData(&state.data);
-        }
-
+        effect->resetData();
         state.current = effect;
         return true;
     } else {

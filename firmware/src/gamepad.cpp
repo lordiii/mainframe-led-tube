@@ -10,7 +10,7 @@ unsigned char controllerBuffer[27] = {};
 
 void GP_update() {
     memset(controllerBuffer, 0, sizeof(controllerBuffer));
-    
+
     uint8_t quantity = Wire.requestFrom(0x55, sizeof(controllerBuffer));
     Wire.readBytes(controllerBuffer, quantity);
     Wire.begin();
@@ -50,8 +50,8 @@ void GP_button(bool *target, GP_BUTTON type, unsigned char mask, unsigned char s
     bool pressed = (source & mask) > 0;
 
     EffectState *state = FX_getState();
-    if (state->current != nullptr && state->current->onButtonPress != nullptr && pressed && !*target) {
-        state->current->onButtonPress(type);
+    if (state->current != nullptr && pressed && !*target) {
+        state->current->onButton(type);
     }
     *target = pressed;
 }
@@ -61,7 +61,7 @@ void GP_analog(int offset, int *value, GP_BUTTON type) {
              ((int) controllerBuffer[offset + 2]) << 8 | ((int) controllerBuffer[offset + 3]);
 
     EffectState *state = FX_getState();
-    if (state->current != nullptr && state->current->onAnalogButton != nullptr && *value != 0) {
+    if (state->current != nullptr && *value != 0) {
         state->current->onAnalogButton(type, *value);
     }
 }
