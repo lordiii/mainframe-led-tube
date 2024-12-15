@@ -17,11 +17,6 @@ void commandPrintTemperature(EmbeddedCli *cli, char *args, void *context);
 void commandPrintCurrent(EmbeddedCli *cli, char *args, void *context);
 
 //
-// Network Configuration
-//
-void commandPrintNetworkInfo(EmbeddedCli *cli, char *args, void *context);
-
-//
 // Device Control
 //
 void commandReboot(EmbeddedCli *cli, char *args, void *context);
@@ -35,13 +30,13 @@ void commandSetEffect(EmbeddedCli *cli, char *args, void *context);
 
 void commandSetBrightness(EmbeddedCli *cli, char *args, void *context);
 
-//void commandToggleHalt(EmbeddedCli* cli, char* args, void* context);
+void commandToggleHalt(EmbeddedCli *cli, char *args, void *context);
 
-//void commandExecuteNext(EmbeddedCli* cli, char* args, void* context);
+void commandExecuteNext(EmbeddedCli *cli, char *args, void *context);
 
-//void commandSlowExecution(EmbeddedCli* cli, char* args, void* context);
+void commandSlowExecution(EmbeddedCli *cli, char *args, void *context);
 
-//void commandPrintEffectList(EmbeddedCli* cli, char* args, void* context);
+void commandPrintEffectList(EmbeddedCli *cli, char *args, void *context);
 
 void commandSetRing(EmbeddedCli *cli, char *args, void *context);
 
@@ -54,4 +49,4 @@ void commandClearGamepads(EmbeddedCli *cli, char *args, void *context);
 
 void commandToggleGamepadRegister(EmbeddedCli *cli, char *args, void *context);
 
-#endif //FIRMWARE_CLI_H
+#endif

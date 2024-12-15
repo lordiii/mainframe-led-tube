@@ -70,7 +70,7 @@ void initCLI() {
             commandSetBrightness
     });
 
-    /*embeddedCliAddBinding(embeddedCli, {
+    embeddedCliAddBinding(embeddedCli, {
             "effect-list",
             "List known effects",
             true,
@@ -100,7 +100,7 @@ void initCLI() {
             true,
             &Serial,
             commandSlowExecution
-    });*/
+    });
 
     embeddedCliAddBinding(embeddedCli, {
             "set-ring",
@@ -272,15 +272,17 @@ void commandSetBrightness(EmbeddedCli *cli, char *args, void *context) {
     }
 }
 
-/*
+
 void commandPrintEffectList(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
+    FX **effects = FX_getEffects();
+    int effectCount = FX_getCount();
 
     out->println("Known effects: ");
 
     for (int i = 0; i < effectCount; i++) {
         out->print("\t* ");
-        out->println(effects[i].name);
+        out->println(effects[i]->name);
     }
 
     out->println();
@@ -288,24 +290,28 @@ void commandPrintEffectList(EmbeddedCli *cli, char *args, void *context) {
 
 void commandToggleHalt(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
-    state->halt = !state->halt;
+    EffectState *state = FX_getState();
 
-    if (state->halt) {
+    if (!state->halt) {
+        state->halt = true;
         out->println("Halt Enabled!");
     } else {
+        state->halt = false;
         out->println("Halt Disabled!");
     }
 }
 
 void commandExecuteNext(EmbeddedCli *cli, char *args, void *context) {
+    EffectState *state = FX_getState();
     state->singleStep = true;
 }
 
 void commandSlowExecution(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
+    EffectState *state = FX_getState();
 
     if (embeddedCliGetTokenCount(args) == 0) {
-        out->println("Missing argument: brightness [0-100]");
+        out->println("Missing argument: slow [0-100]");
     } else {
         state->slowRate = strtol(embeddedCliGetToken(args, 1), nullptr, 10);
 
@@ -314,7 +320,8 @@ void commandSlowExecution(EmbeddedCli *cli, char *args, void *context) {
         out->println("ms");
     }
 }
-*/
+
+
 void commandSetRing(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
 
@@ -359,7 +366,17 @@ void commandSetAll(EmbeddedCli *cli, char *args, void *context) {
         out->print("Setting all to color ");
         out->println(color, 16);
 
-        //fillLEDs(color);
+        LED_RGB pixel = {
+                .G = (unsigned char) ((color >> 16) & 0xFF),
+                .R = (unsigned char) ((color >> 8) & 0xFF),
+                .B = (unsigned char) ((color >> 0) & 0xFF)
+        };
+
+        LED_fillSection(
+                &pixel,
+                LED_getPixel(LED_getRing(0), 0),
+                LED_getPixel(LED_getRing(LED_TOTAL_RINGS - 1), LED_PER_RING - 1)
+        );
     }
 }
 
