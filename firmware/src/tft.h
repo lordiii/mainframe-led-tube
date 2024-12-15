@@ -2,6 +2,7 @@
 #define TFT_H
 
 #include "globals.h"
+#include "enum.h"
 
 struct XY {
     short X;

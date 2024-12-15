@@ -5,45 +5,49 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-ControllerStatus controller;
-unsigned char controllerBuffer[27] = {};
+GamepadStatus gamepad;
+unsigned char gamepadBuffer[27] = {};
 
 void GP_update() {
-    memset(controllerBuffer, 0, sizeof(controllerBuffer));
+    memset(gamepadBuffer, 0, sizeof(gamepadBuffer));
 
-    uint8_t quantity = Wire.requestFrom(0x55, sizeof(controllerBuffer));
-    Wire.readBytes(controllerBuffer, quantity);
+    uint8_t quantity = Wire.requestFrom(0x55, sizeof(gamepadBuffer));
+    Wire.readBytes(gamepadBuffer, quantity);
     Wire.begin();
 
-    GP_button(&controller.dpadLeft, DPAD_LEFT, 0b00001000, controllerBuffer[0]);
-    GP_button(&controller.dpadRight, DPAD_RIGHT, 0b00000100, controllerBuffer[0]);
-    GP_button(&controller.dpadDown, DPAD_DOWN, 0b00000010, controllerBuffer[0]);
-    GP_button(&controller.dpadUp, DPAD_UP, 0b00000001, controllerBuffer[0]);
+    GP_button(&gamepad.dpadLeft, DPAD_LEFT, 0b00001000, gamepadBuffer[0]);
+    GP_button(&gamepad.dpadRight, DPAD_RIGHT, 0b00000100, gamepadBuffer[0]);
+    GP_button(&gamepad.dpadDown, DPAD_DOWN, 0b00000010, gamepadBuffer[0]);
+    GP_button(&gamepad.dpadUp, DPAD_UP, 0b00000001, gamepadBuffer[0]);
 
-    GP_button(&controller.buttonY, BUTTON_Y, 0b10000000, controllerBuffer[1]);
-    GP_button(&controller.buttonB, BUTTON_B, 0b01000000, controllerBuffer[1]);
-    GP_button(&controller.buttonA, BUTTON_A, 0b00100000, controllerBuffer[1]);
-    GP_button(&controller.buttonX, BUTTON_X, 0b00010000, controllerBuffer[1]);
-    GP_button(&controller.shoulderL1, SHOULDER_L1, 0b00001000, controllerBuffer[1]);
-    GP_button(&controller.shoulderR2, SHOULDER_R2, 0b00000100, controllerBuffer[1]);
-    GP_button(&controller.shoulderR1, SHOULDER_R1, 0b00000010, controllerBuffer[1]);
-    GP_button(&controller.shoulderL2, SHOULDER_L2, 0b00000001, controllerBuffer[1]);
+    GP_button(&gamepad.buttonY, BUTTON_Y, 0b10000000, gamepadBuffer[1]);
+    GP_button(&gamepad.buttonB, BUTTON_B, 0b01000000, gamepadBuffer[1]);
+    GP_button(&gamepad.buttonA, BUTTON_A, 0b00100000, gamepadBuffer[1]);
+    GP_button(&gamepad.buttonX, BUTTON_X, 0b00010000, gamepadBuffer[1]);
+    GP_button(&gamepad.shoulderL1, SHOULDER_L1, 0b00001000, gamepadBuffer[1]);
+    GP_button(&gamepad.shoulderR2, SHOULDER_R2, 0b00000100, gamepadBuffer[1]);
+    GP_button(&gamepad.shoulderR1, SHOULDER_R1, 0b00000010, gamepadBuffer[1]);
+    GP_button(&gamepad.shoulderL2, SHOULDER_L2, 0b00000001, gamepadBuffer[1]);
 
-    GP_button(&controller.miscHome, MISC_HOME, 0b10000000, controllerBuffer[2]);
-    GP_button(&controller.miscStart, MISC_START, 0b01000000, controllerBuffer[2]);
-    GP_button(&controller.miscSelect, MISC_SELECT, 0b00100000, controllerBuffer[2]);
-    GP_button(&controller.miscSystem, MISC_SYSTEM, 0b00010000, controllerBuffer[2]);
-    GP_button(&controller.miscBack, MISC_BACK, 0b00001000, controllerBuffer[2]);
-    GP_button(&controller.miscCapture, MISC_CAPTURE, 0b00000100, controllerBuffer[2]);
-    GP_button(&controller.buttonTR, BUTTON_TR, 0b00000010, controllerBuffer[2]);
-    GP_button(&controller.buttonTL, BUTTON_TL, 0b00000001, controllerBuffer[2]);
+    GP_button(&gamepad.miscHome, MISC_HOME, 0b10000000, gamepadBuffer[2]);
+    GP_button(&gamepad.miscStart, MISC_START, 0b01000000, gamepadBuffer[2]);
+    GP_button(&gamepad.miscSelect, MISC_SELECT, 0b00100000, gamepadBuffer[2]);
+    GP_button(&gamepad.miscSystem, MISC_SYSTEM, 0b00010000, gamepadBuffer[2]);
+    GP_button(&gamepad.miscBack, MISC_BACK, 0b00001000, gamepadBuffer[2]);
+    GP_button(&gamepad.miscCapture, MISC_CAPTURE, 0b00000100, gamepadBuffer[2]);
+    GP_button(&gamepad.buttonTR, BUTTON_TR, 0b00000010, gamepadBuffer[2]);
+    GP_button(&gamepad.buttonTL, BUTTON_TL, 0b00000001, gamepadBuffer[2]);
 
-    GP_analog(3, &controller.breakForce, BREAK);
-    GP_analog(7, &controller.throttleForce, THROTTLE);
-    GP_analog(11, &controller.stickLX, STICK_L_X);
-    GP_analog(15, &controller.stickLY, STICK_L_Y);
-    GP_analog(19, &controller.stickRX, STICK_R_X);
-    GP_analog(23, &controller.stickRY, STICK_R_Y);
+    GP_analog(3, &gamepad.breakForce, BREAK);
+    GP_analog(7, &gamepad.throttleForce, THROTTLE);
+    GP_analog(11, &gamepad.stickLX, STICK_L_X);
+    GP_analog(15, &gamepad.stickLY, STICK_L_Y);
+    GP_analog(19, &gamepad.stickRX, STICK_R_X);
+    GP_analog(23, &gamepad.stickRY, STICK_R_Y);
+}
+
+GamepadStatus *GP_getState() {
+    return &gamepad;
 }
 
 void GP_button(bool *target, GP_BUTTON type, unsigned char mask, unsigned char source) {
@@ -57,8 +61,8 @@ void GP_button(bool *target, GP_BUTTON type, unsigned char mask, unsigned char s
 }
 
 void GP_analog(int offset, int *value, GP_BUTTON type) {
-    *value = ((int) (controllerBuffer[offset + 0])) << 24 | ((int) controllerBuffer[offset + 1]) << 16 |
-             ((int) controllerBuffer[offset + 2]) << 8 | ((int) controllerBuffer[offset + 3]);
+    *value = ((int) (gamepadBuffer[offset + 0])) << 24 | ((int) gamepadBuffer[offset + 1]) << 16 |
+             ((int) gamepadBuffer[offset + 2]) << 8 | ((int) gamepadBuffer[offset + 3]);
 
     EffectState *state = FX_getState();
     if (state->current != nullptr && *value != 0) {

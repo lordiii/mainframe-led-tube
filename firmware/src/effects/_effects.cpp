@@ -1,6 +1,7 @@
 #include "_effects.h"
 #include "led.h"
 #include "beam.h"
+#include "tetris.h"
 
 #include <Arduino.h>
 
@@ -8,8 +9,10 @@ FX_Beam *beam = new FX_Beam();
 
 FX_SideBeam *sideBeam = new FX_SideBeam();
 
-const int fxCnt = 2;
-FX *effects[fxCnt] = {(FX *) beam, (FX *) sideBeam};
+FX_Tetris *tetris = new FX_Tetris();
+
+const int fxCnt = 3;
+FX *effects[fxCnt] = {(FX *) beam, (FX *) sideBeam, (FX *) tetris};
 
 EffectState state;
 

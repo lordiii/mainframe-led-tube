@@ -3,7 +3,7 @@
 
 #include "enum.h"
 
-struct ControllerStatus {
+struct GamepadStatus {
     bool buttonY;
     bool buttonB;
     bool buttonA;
@@ -39,5 +39,7 @@ void GP_update();
 void GP_button(bool *value, GP_BUTTON type, unsigned char mask, unsigned char source);
 
 void GP_analog(int offset, int *value, GP_BUTTON type);
+
+GamepadStatus *GP_getState();
 
 #endif

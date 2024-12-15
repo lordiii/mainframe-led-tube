@@ -1,8 +1,6 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include "enum.h"
-
 #define LED_TOTAL_RINGS 60
 #define LED_PER_RING 32
 #define LED_TOTAL_AMOUNT (LED_PER_RING * LED_TOTAL_RINGS)

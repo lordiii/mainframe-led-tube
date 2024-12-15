@@ -47,22 +47,33 @@ void LED_init() {
         LEDS[i].next = LED_getPixel(ring, i + 1);
     }
 
+    LED_animationStart();
+}
+
+void LED_animationStop() {
+    renderTask.end();
+}
+
+void LED_animationStart() {
     renderTask.begin(LED_render, LED_FRAMES_PER_SECOND);
+    while (leds.busy()) {}
 }
 
 LED_Ring *LED_getRing(int ring) {
-    if (ring < 0 || ring >= LED_TOTAL_RINGS) {
-        return nullptr;
+    if (ring >= LED_TOTAL_RINGS) {
+        ring = LED_TOTAL_RINGS - 1;
+    } else if (ring < 0) {
+        ring = 0;
     }
 
-    return LED_RINGS + ring;
+    return &LED_RINGS[ring];
 }
 
 LED_Pixel *LED_getPixel(LED_Ring *ring, int pixel) {
     pixel = (pixel >= 0) ? pixel : (LED_PER_RING + (pixel % -LED_PER_RING));
     pixel = pixel % LED_PER_RING;
 
-    return ring->start + pixel;
+    return &ring->start[pixel];
 }
 
 void LED_render() {
@@ -102,12 +113,13 @@ void LED_fillRing(LED_RGB *src, LED_Ring *ring) {
         return;
     }
 
-    LED_fillSection(src, ring->start->color, ring->next->start->color);
+    LED_fillSection(src, ring->start, ring->start->previous);
 }
 
-void LED_fillSection(LED_RGB *src, LED_RGB *start, LED_RGB *end) {
-    while (start < end) {
-        memcpy(start++, src, sizeof(LED_RGB));
+void LED_fillSection(LED_RGB *src, LED_Pixel *start, LED_Pixel *end) {
+    while (start < &LEDS[LED_TOTAL_AMOUNT] && start >= &LEDS[0] && start->color <= end->color) {
+        memcpy(start->color, src, sizeof(LED_RGB));
+        start++;
     }
 }
 
@@ -115,11 +127,11 @@ void LED_clear() {
     memset(drawingMemory, 0, sizeof(drawingMemory));
 }
 
-void LED_move(LED_RGB *src_s, LED_RGB *src_e, LED_RGB *dst) {
-    const int size = src_e - src_s;
-    if (size < 0) {
+void LED_move(LED_Pixel *src_s, LED_Pixel *src_e, LED_Pixel *dst) {
+    const int size = src_e->color - src_s->color;
+    if (size <= 0 || size > LED_TOTAL_AMOUNT) {
         return;
     }
 
-    memmove(dst, src_s, size);
+    memmove(dst->color, src_s->color, size);
 }
