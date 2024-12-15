@@ -5,6 +5,10 @@
 #include <DallasTemperature.h>
 #include <OneWire.h>
 
+const unsigned char tempProbeTop[8] = TEMPERATURE_SENSOR_TOP_ADDRESS;
+const unsigned char tempProbeCenter[8] = TEMPERATURE_SENSOR_CENTER_ADDRESS;
+const unsigned char tempProbeBottom[8] = TEMPERATURE_SENSOR_BOTTOM_ADDRESS;
+
 // Current sensors
 INA226 currentSensorTop(CURRENT_SENSOR_TOP_ADDRESS);
 INA226 currentSensorCenter(CURRENT_SENSOR_CENTER_ADDRESS);
@@ -15,76 +19,68 @@ OneWire oneWire(24);
 DallasTemperature tempSensors(&oneWire);
 
 SensorValues top = {
-    &currentSensorTop,
-    (unsigned char[])TEMPERATURE_SENSOR_TOP_ADDRESS,
-    0,
-    0,
-    0
+        &currentSensorTop,
+        tempProbeTop,
+        0,
+        0,
+        0
 };
 
 SensorValues center = {
-    &currentSensorCenter,
-    (unsigned char[])TEMPERATURE_SENSOR_CENTER_ADDRESS,
-    0,
-    0,
-    0
+        &currentSensorCenter,
+        tempProbeCenter,
+        0,
+        0,
+        0
 };
 
 SensorValues bottom = {
-    &currentSensorBottom,
-    (unsigned char[])TEMPERATURE_SENSOR_BOTTOM_ADDRESS,
-    0,
-    0,
-    0
+        &currentSensorBottom,
+        tempProbeBottom,
+        0,
+        0,
+        0
 };
 
-void SENSOR_init()
-{
+void SENSOR_init() {
     SENSOR_init_ina(top.currentSensor);
     SENSOR_init_ina(center.currentSensor);
     SENSOR_init_ina(bottom.currentSensor);
 }
 
-void SENSOR_init_ina(INA226* ina)
-{
+void SENSOR_init_ina(INA226 *ina) {
     ina->reset();
     ina->begin();
     ina->setMaxCurrentShunt(10, 0.006);
     ina->setAverage(3);
 }
 
-void SENSOR_update(const bool temperature, const bool current)
-{
-    SENSOR_update_values(getSensorValues(TOP_SECTION), temperature, current);
-    SENSOR_update_values(getSensorValues(CENTER_SECTION), temperature, current);
-    SENSOR_update_values(getSensorValues(BOTTOM_SECTION), temperature, current);
+void SENSOR_update(const bool temperature, const bool current) {
+    SENSOR_update_values(SENSOR_getValues(TOP_SECTION), temperature, current);
+    SENSOR_update_values(SENSOR_getValues(CENTER_SECTION), temperature, current);
+    SENSOR_update_values(SENSOR_getValues(BOTTOM_SECTION), temperature, current);
 }
 
-void SENSOR_update_values(SensorValues* dst, const bool temperature, const bool current)
-{
-    if (temperature)
-    {
+void SENSOR_update_values(SensorValues *dst, const bool temperature, const bool current) {
+    if (temperature) {
         dst->temperature = round(tempSensors.getTempC(dst->temperatureProbeId) * 100.0f) / 100.0f;
     }
 
-    if (current)
-    {
+    if (current) {
         dst->busVoltage = round(dst->currentSensor->getBusVoltage() * 100.0f) / 100.0f;
-        dst->current = round(dst->currentSensor->getBusVoltage() * 100.0f) / 100.0f;
+        dst->current = round((dst->currentSensor->getShuntVoltage() / 0.006f) * 100.0f) / 100.0f;
     }
 }
 
-SensorValues* getSensorValues(const TUBE_SECTION section)
-{
-    switch (section)
-    {
-    case TOP_SECTION:
-        return &top;
-    case CENTER_SECTION:
-        return &center;
-    case BOTTOM_SECTION:
-        return &bottom;
-    default:
-        return nullptr;
+SensorValues *SENSOR_getValues(const TUBE_SECTION section) {
+    switch (section) {
+        case TOP_SECTION:
+            return &top;
+        case CENTER_SECTION:
+            return &center;
+        case BOTTOM_SECTION:
+            return &bottom;
+        default:
+            return nullptr;
     }
 }

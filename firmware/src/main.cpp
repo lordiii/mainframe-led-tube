@@ -13,7 +13,7 @@
 
 // Scheduled Tasks
 unsigned long taskReadSensors = 0;
-unsigned long taskActivityLed = 0;
+unsigned long taskUpdateTFT = 0;
 unsigned long taskReadCurrent = 0;
 unsigned long taskReadControllerInput = 0;
 
@@ -44,7 +44,7 @@ void loop() {
 
     if ((time - taskReadSensors) > 1000) {
         taskReadSensors = time;
-        SENSOR_update(true, true);
+        SENSOR_update(true, false);
     }
 
     if ((time - taskReadCurrent) > 100) {
@@ -58,6 +58,11 @@ void loop() {
     }
 
     processCLI();
+
+    if ((time - taskUpdateTFT) > 250) {
+        taskUpdateTFT = time;
+        TFT_update();
+    }
 
     if (Wire.getReadError()) {
         Wire.clearReadError();

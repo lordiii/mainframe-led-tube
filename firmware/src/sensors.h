@@ -4,10 +4,9 @@
 #include <INA226.h>
 #include "enum.h"
 
-typedef struct SensorValues
-{
-    INA226* currentSensor;
-    const unsigned char* temperatureProbeId;
+typedef struct SensorValues {
+    INA226 *currentSensor;
+    const unsigned char *temperatureProbeId;
 
     float current;
     float busVoltage;
@@ -15,9 +14,13 @@ typedef struct SensorValues
 } SensorValues;
 
 void SENSOR_init();
-void SENSOR_init_ina(INA226* ina);
+
+void SENSOR_init_ina(INA226 *ina);
+
 void SENSOR_update(bool temperature, bool current);
-void SENSOR_update_values(SensorValues* dst, bool temperature, bool current);
-SensorValues* getSensorValues(TUBE_SECTION section);
+
+void SENSOR_update_values(SensorValues *dst, bool temperature, bool current);
+
+SensorValues *SENSOR_getValues(TUBE_SECTION section);
 
 #endif

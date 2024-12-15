@@ -1,5 +1,6 @@
 #include "tft.h"
 #include "globals.h"
+#include "sensors.h"
 
 #include <Adafruit_ST7735.h>
 
@@ -23,8 +24,20 @@ Adafruit_ST7735 tft = Adafruit_ST7735(&SPI1, CS1, CS2, RST); // SPI, CS, DC, RST
 #define RECT_BOTTOM_START_Y (RECT_CENTER_START_Y + (RECT_HEIGHT / 3))
 #define RECT_BOTTOM_START_X (RECT_OFFSET)
 
-void initTFT()
-{
+void TFT_update_section(TUBE_SECTION section) {
+    SensorValues *values = SENSOR_getValues(section);
+    renderCurrentValue(section, values->current);
+    renderVoltageValue(section, values->busVoltage);
+    renderTemperatureValue(section, values->temperature);
+}
+
+void TFT_update() {
+    TFT_update_section(TOP_SECTION);
+    TFT_update_section(CENTER_SECTION);
+    TFT_update_section(BOTTOM_SECTION);
+}
+
+void initTFT() {
     tft.initR(INITR_BLACKTAB);
     tft.fillScreen(ST7735_BLACK);
     tft.setTextColor(ST7735_GREEN);
@@ -55,23 +68,20 @@ void initTFT()
     tft.print("Effect:");
 }
 
-XY getStartPosition(TUBE_SECTION section)
-{
-    switch (section)
-    {
-    case TOP_SECTION:
-        return {RECT_TOP_START_X, RECT_TOP_START_Y};
-    case CENTER_SECTION:
-        return {RECT_CENTER_START_X, RECT_CENTER_START_Y};
-    case BOTTOM_SECTION:
-        return {RECT_BOTTOM_START_X, RECT_BOTTOM_START_Y};
+XY getStartPosition(TUBE_SECTION section) {
+    switch (section) {
+        case TOP_SECTION:
+            return {RECT_TOP_START_X, RECT_TOP_START_Y};
+        case CENTER_SECTION:
+            return {RECT_CENTER_START_X, RECT_CENTER_START_Y};
+        case BOTTOM_SECTION:
+            return {RECT_BOTTOM_START_X, RECT_BOTTOM_START_Y};
     }
 
     return {0, 0};
 }
 
-void displayEffect(const char* effectName)
-{
+void displayEffect(const char *effectName) {
     XY xy = getStartPosition(TOP_SECTION);
     tft.fillRect(xy.X + RECT_WIDTH + 8, xy.Y + 20, RECT_WIDTH, 10, ST7735_BLACK);
     tft.setCursor(xy.X + RECT_WIDTH + 8, xy.Y + 20);
@@ -79,8 +89,7 @@ void displayEffect(const char* effectName)
     tft.print(effectName);
 }
 
-void renderCurrentValue(TUBE_SECTION section, float value)
-{
+void renderCurrentValue(TUBE_SECTION section, float value) {
     XY xy = getStartPosition(section);
     tft.fillRect(xy.X + 10, xy.Y + 10, RECT_WIDTH - 20, 10, ST7735_BLACK);
 
@@ -92,8 +101,7 @@ void renderCurrentValue(TUBE_SECTION section, float value)
     tft.print("A");
 }
 
-void renderVoltageValue(TUBE_SECTION section, float value)
-{
+void renderVoltageValue(TUBE_SECTION section, float value) {
     XY xy = getStartPosition(section);
     tft.fillRect(xy.X + 10, xy.Y + 20, RECT_WIDTH - 20, 10, ST7735_BLACK);
 
@@ -104,8 +112,7 @@ void renderVoltageValue(TUBE_SECTION section, float value)
     tft.print("V");
 }
 
-void renderTemperatureValue(TUBE_SECTION section, float value)
-{
+void renderTemperatureValue(TUBE_SECTION section, float value) {
     XY xy = getStartPosition(section);
     tft.fillRect(xy.X + 10, xy.Y + 30, RECT_WIDTH - 20, 10, ST7735_BLACK);
 

@@ -11,6 +11,8 @@ struct XY {
 
 void initTFT();
 
+void TFT_update();
+
 XY getStartPosition(TUBE_SECTION section);
 
 void renderCurrentValue(TUBE_SECTION section, float value);
