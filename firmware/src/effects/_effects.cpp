@@ -1,64 +1,58 @@
 #include "_effects.h"
 #include "led.h"
 #include "beam.h"
+#include "pictogram.h"
 #include "tetris.h"
 
 #include <Arduino.h>
 
-FX_Beam* beam = new FX_Beam();
+FX_Beam *beam = new FX_Beam();
 
-FX_SideBeam* sideBeam = new FX_SideBeam();
+FX_SideBeam *sideBeam = new FX_SideBeam();
 
-FX_Tetris* tetris = new FX_Tetris();
+FX_Tetris *tetris = new FX_Tetris();
 
-const int fxCnt = 3;
-FX* effects[fxCnt] = {(FX*)beam, (FX*)sideBeam, (FX*)tetris};
+FX_Pictogram *pictogram = new FX_Pictogram();
+
+const int fxCnt = 4;
+FX *effects[fxCnt] = {(FX *) beam, (FX *) sideBeam, (FX *) tetris, (FX *) pictogram};
 
 EffectState state;
 
-EffectState* FX_getState()
-{
+EffectState *FX_getState() {
     return &state;
 }
 
-FX** FX_getEffects()
-{
+FX **FX_getEffects() {
     return effects;
 }
 
-int FX_getCount()
-{
+int FX_getCount() {
     return fxCnt;
 }
 
 
-bool FX_setEffect(const char* effectName)
-{
+bool FX_setEffect(const char *effectName) {
     state.current = nullptr;
 
     // Reset State
     state.lastFrameChange = 0;
     LED_clear();
 
-    FX* effect = nullptr;
-    for (int i = 0; i < fxCnt; i++)
-    {
-        if (strcmp(effects[i]->name, effectName) == 0)
-        {
+    FX *effect = nullptr;
+    for (int i = 0; i < fxCnt; i++) {
+        if (strcmp(effects[i]->name, effectName) == 0) {
             effect = effects[i];
             break;
         }
     }
 
     // Reset Data
-    if (effect != nullptr)
-    {
+    if (effect != nullptr) {
         effect->resetData();
         state.current = effect;
         return true;
-    }
-    else
-    {
+    } else {
         return false;
     }
 }
