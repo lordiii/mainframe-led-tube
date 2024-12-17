@@ -1,6 +1,7 @@
 #include "gamepad.h"
 #include "enum.h"
 #include "effects/_effects.h"
+#include "globals.h"
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -8,12 +9,17 @@
 GamepadStatus gamepad;
 unsigned char gamepadBuffer[27] = {};
 
-void GP_update() {
+bool GP_update() {
     memset(gamepadBuffer, 0, sizeof(gamepadBuffer));
 
     uint8_t quantity = Wire.requestFrom(0x55, sizeof(gamepadBuffer));
     Wire.readBytes(gamepadBuffer, quantity);
     Wire.begin();
+
+    if (gamepadBuffer[0] == 0xFF && gamepadBuffer[1] == 0xFF) {
+        memset(gamepadBuffer, 0, sizeof(gamepadBuffer));
+        return false;
+    }
 
     GP_button(&gamepad.dpadLeft, DPAD_LEFT, 0b00001000, gamepadBuffer[0]);
     GP_button(&gamepad.dpadRight, DPAD_RIGHT, 0b00000100, gamepadBuffer[0]);
@@ -44,6 +50,8 @@ void GP_update() {
     GP_analog(15, &gamepad.stickLY, STICK_L_Y);
     GP_analog(19, &gamepad.stickRX, STICK_R_X);
     GP_analog(23, &gamepad.stickRY, STICK_R_Y);
+
+    return true;
 }
 
 GamepadStatus *GP_getState() {
@@ -68,4 +76,22 @@ void GP_analog(int offset, int *value, GP_BUTTON type) {
     if (state->current != nullptr && *value != 0) {
         state->current->onAnalogButton(type, *value);
     }
+}
+
+void GP_enablePairing() {
+    Wire.beginTransmission(I2C_CONTROLLER);
+    Wire.write(0x01);
+    Wire.endTransmission();
+}
+
+void GP_disablePairing() {
+    Wire.beginTransmission(I2C_CONTROLLER);
+    Wire.write(0x02);
+    Wire.endTransmission();
+}
+
+void GP_clear() {
+    Wire.beginTransmission(I2C_CONTROLLER);
+    Wire.write(0x01);
+    Wire.endTransmission();
 }

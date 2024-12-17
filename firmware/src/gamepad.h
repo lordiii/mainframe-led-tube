@@ -34,11 +34,17 @@ struct GamepadStatus {
     int stickRY;
 };
 
-void GP_update();
+bool GP_update();
 
 void GP_button(bool *value, GP_BUTTON type, unsigned char mask, unsigned char source);
 
 void GP_analog(int offset, int *value, GP_BUTTON type);
+
+void GP_enablePairing();
+
+void GP_disablePairing();
+
+void GP_clear();
 
 GamepadStatus *GP_getState();
 

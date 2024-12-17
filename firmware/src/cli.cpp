@@ -5,6 +5,7 @@
 #include "tft.h"
 #include "led.h"
 #include "display.h"
+#include "gamepad.h"
 
 #include <Wire.h>
 #include <embedded_cli.h>
@@ -407,9 +408,7 @@ void commandSetAll(EmbeddedCli *cli, char *args, void *context) {
 void commandClearGamepads(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
 
-    Wire.beginTransmission(I2C_CONTROLLER);
-    Wire.write(0x00);
-    Wire.endTransmission();
+    GP_clear();
 
     out->println("Gamepads cleared!");
 }
@@ -424,13 +423,9 @@ void commandToggleGamepadRegister(EmbeddedCli *cli, char *args, void *context) {
 
         bool turnOn = strcmp(command, "on") == 0;
         if (turnOn) {
-            Wire.beginTransmission(I2C_CONTROLLER);
-            Wire.write(0x01);
-            Wire.endTransmission();
+            GP_enablePairing();
         } else {
-            Wire.beginTransmission(I2C_CONTROLLER);
-            Wire.write(0x02);
-            Wire.endTransmission();
+            GP_disablePairing();
         }
 
         out->print("Controller registration turned ");

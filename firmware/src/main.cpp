@@ -52,7 +52,14 @@ void loop() {
     }
 
     if ((time - taskReadControllerInput) > 20) {
-        GP_update();
+        if (!GP_update()) {
+            GP_clear();
+            GP_enablePairing();
+        } else {
+            GP_disablePairing();
+        }
+
+
         taskReadControllerInput = time;
     }
 
