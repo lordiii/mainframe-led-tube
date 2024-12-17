@@ -28,22 +28,22 @@ public:
     FX_Tetris() : FX("tetris") {
     }
 
-    bool render(unsigned long delta);
+    bool render(unsigned long delta) override;
 
-    void resetData();
+    void resetData() override;
 
-    void onButton(GP_BUTTON button);
+    bool onButton(GP_BUTTON button) override;
 
-    void onAnalogButton(GP_BUTTON button, int value);
+    bool onAnalogButton(GP_BUTTON button, int value) override;
 
 private:
-    TShape current_shape;
-    int score;
-    TState state;
-    int lastEndAnimationRing;
-    unsigned int lastInput;
-    unsigned short lastRotation;
-    bool ringStatus[LED_TOTAL_RINGS];
+    TShape current_shape = {};
+    int score = 0;
+    TState state = {};
+    int lastEndAnimationRing = 0;
+    unsigned int lastInput = 0;
+    unsigned short lastRotation = 0;
+    bool ringStatus[LED_TOTAL_RINGS] = {};
 
     bool renderShape(unsigned char current_shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRing, int currentPixel,
                      LED_RGB *color, bool testRun);
@@ -55,10 +55,6 @@ private:
     void rotateFrame(bool clockwise, TShape *shape = nullptr);
 
     void rotateShape(TShape *shape, bool clockwise);
-
-    void onTetrisButtonPress(GP_BUTTON button);
-
-    void onTetrisAnalogButton(GP_BUTTON button, int value);
 };
 
 

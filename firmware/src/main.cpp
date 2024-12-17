@@ -51,7 +51,7 @@ void loop() {
         SENSOR_update(false, true);
     }
 
-    if ((time - taskReadControllerInput) > 20) {
+    if ((time - taskReadControllerInput) > 5) {
         if (!GP_update()) {
             GP_clear();
             GP_enablePairing();

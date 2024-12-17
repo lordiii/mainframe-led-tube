@@ -9,16 +9,16 @@ public:
     FX_Pictogram() : FX("pictogram") {
     }
 
-    bool render(unsigned long delta);
+    bool render(unsigned long delta) override;
 
-    void resetData();
+    void resetData() override;
 
-    void onButton(GP_BUTTON button) {}
+    bool onButton(GP_BUTTON button) override { return false; }
 
-    void onAnalogButton(GP_BUTTON button, int value) {}
+    bool onAnalogButton(GP_BUTTON button, int value) override { return false; }
 
 private:
-    LED_Pixel *last;
+    LED_Pixel *last = nullptr;
 };
 
 #endif

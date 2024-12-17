@@ -61,7 +61,7 @@ typedef struct DSP_State {
 
 void DSP_init();
 
-void DSP_onButtonBackClick(DSP_Btn *btn);
+void DSP_onButtonMainMenuClick(DSP_Btn *btn);
 
 void DSP_onEffectBtnClick(DSP_Btn *btn);
 

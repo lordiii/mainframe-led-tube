@@ -19,12 +19,6 @@ void FX_Beam::resetData() {
     this->last = LED_getRing(0);
 }
 
-void FX_Beam::onButton(GP_BUTTON button) {
-}
-
-void FX_Beam::onAnalogButton(GP_BUTTON button, int value) {
-}
-
 bool FX_SideBeam::render(unsigned long delta) {
     if (delta > 30) {
         LED_clear(); // fade?
@@ -45,10 +39,4 @@ bool FX_SideBeam::render(unsigned long delta) {
 
 void FX_SideBeam::resetData() {
     this->last = LED_getPixel(LED_getRing(0), 0);
-}
-
-void FX_SideBeam::onButton(GP_BUTTON button) {
-}
-
-void FX_SideBeam::onAnalogButton(GP_BUTTON button, int value) {
 }

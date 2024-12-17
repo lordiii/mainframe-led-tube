@@ -2,6 +2,7 @@
 #include "enum.h"
 #include "effects/_effects.h"
 #include "globals.h"
+#include "display.h"
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -51,30 +52,76 @@ bool GP_update() {
     GP_analog(19, &gamepad.stickRX, STICK_R_X);
     GP_analog(23, &gamepad.stickRY, STICK_R_Y);
 
+    GP_processButtons();
+
     return true;
+}
+
+void GP_processButtons() {
+    EffectState *state = FX_getState();
+    bool navEnabled = state->halt || state->current == nullptr;
+
+    if (gamepad.miscHome.value && !gamepad.miscHome.locked) {
+        state->halt = !state->halt;
+        gamepad.miscHome.locked = true;
+    }
+
+    if (navEnabled) {
+        if (gamepad.dpadUp.value && !gamepad.dpadUp.locked) {
+            DSP_nextButton(-1);
+            gamepad.dpadUp.locked = true;
+        } else if (gamepad.dpadDown.value && !gamepad.dpadDown.locked) {
+            DSP_nextButton(1);
+            gamepad.dpadDown.locked = true;
+        }
+
+        if (gamepad.buttonA.value && !gamepad.buttonA.locked) {
+            DSP_selectButton();
+            gamepad.buttonA.locked = true;
+        }
+    }
 }
 
 GamepadStatus *GP_getState() {
     return &gamepad;
 }
 
-void GP_button(bool *target, GP_BUTTON type, unsigned char mask, unsigned char source) {
+void GP_button(GP_ButtonInput *target, GP_BUTTON type, unsigned char mask, unsigned char source) {
     bool pressed = (source & mask) > 0;
+    bool handled = false;
 
     EffectState *state = FX_getState();
-    if (state->current != nullptr && pressed && !*target) {
-        state->current->onButton(type);
+    if (!state->halt && state->current != nullptr && pressed && !target->value) {
+        handled = state->current->onButton(type);
     }
-    *target = pressed;
+    target->value = pressed;
+
+    if (!handled) {
+        if (!target->value) {
+            target->locked = target->value;
+        }
+    } else {
+        target->locked = true;
+    }
 }
 
-void GP_analog(int offset, int *value, GP_BUTTON type) {
-    *value = ((int) (gamepadBuffer[offset + 0])) << 24 | ((int) gamepadBuffer[offset + 1]) << 16 |
-             ((int) gamepadBuffer[offset + 2]) << 8 | ((int) gamepadBuffer[offset + 3]);
+void GP_analog(int offset, GP_AnalogInput *target, GP_BUTTON type) {
+    bool handled = false;
+
+    target->value = ((int) (gamepadBuffer[offset + 0])) << 24 | ((int) gamepadBuffer[offset + 1]) << 16 |
+                    ((int) gamepadBuffer[offset + 2]) << 8 | ((int) gamepadBuffer[offset + 3]);
 
     EffectState *state = FX_getState();
-    if (state->current != nullptr && *value != 0) {
-        state->current->onAnalogButton(type, *value);
+    if (!state->halt && state->current != nullptr && target->value != 0) {
+        handled = state->current->onAnalogButton(type, target->value);
+    }
+
+    if (!handled) {
+        if (!target->value) {
+            target->locked = target->value;
+        }
+    } else {
+        target->locked = true;
     }
 }
 

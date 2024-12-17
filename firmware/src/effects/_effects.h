@@ -4,40 +4,37 @@
 #include "main.h"
 #include "enum.h"
 
-class FX
-{
+class FX {
 public:
-    const char* name;
+    const char *name;
 
     virtual bool render(unsigned long delta) = 0;
 
     virtual void resetData() = 0;
 
-    virtual void onButton(GP_BUTTON button) = 0;
+    virtual bool onButton(GP_BUTTON button) = 0;
 
-    virtual void onAnalogButton(GP_BUTTON button, int value) = 0;
+    virtual bool onAnalogButton(GP_BUTTON button, int value) = 0;
 
 protected:
-    explicit FX(const char* name)
-    {
+    explicit FX(const char *name) {
         this->name = name;
     }
 };
 
-typedef struct EffectState
-{
-    FX* current;
+typedef struct EffectState {
+    FX *current;
     unsigned int lastFrameChange;
     unsigned int slowRate;
     bool halt;
     bool singleStep;
 } EffectState;
 
-bool FX_setEffect(const char* effectName);
+bool FX_setEffect(const char *effectName);
 
-EffectState* FX_getState();
+EffectState *FX_getState();
 
-FX** FX_getEffects();
+FX **FX_getEffects();
 
 int FX_getCount();
 

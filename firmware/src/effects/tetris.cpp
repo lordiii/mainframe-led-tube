@@ -43,7 +43,7 @@ bool FX_Tetris::render(unsigned long delta) {
                 renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
                             &Color_Black, false);
 
-                if (forceMovement || ((millis() - this->lastInput) > 100 && gamepad->dpadDown)) {
+                if (forceMovement || ((millis() - this->lastInput) > 100 && gamepad->dpadDown.value)) {
                     this->current_shape.ring--;
                     if (!renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
                                      this->current_shape.color, true)) {
@@ -285,11 +285,15 @@ void FX_Tetris::rotateFrame(bool clockwise, TShape *shape) {
     }
 }
 
-void FX_Tetris::onButton(GP_BUTTON button) {
+bool FX_Tetris::onButton(GP_BUTTON button) {
+    bool handled = false;
+
     if (this->state == RUNNING) {
+        handled = true;
+        LED_animationStop();
+
         renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel, &Color_Black,
                     false);
-        LED_animationStop();
 
         switch (button) {
             case SHOULDER_L1:
@@ -329,19 +333,25 @@ void FX_Tetris::onButton(GP_BUTTON button) {
                 }
                 break;
             default:
+                handled = false;
                 break;
         }
 
         renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
                     this->current_shape.color, false);
-        if (button != MISC_START) {
-            LED_animationStart();
-        }
+
+        LED_animationStart();
     }
+
+    return handled;
 }
 
-void FX_Tetris::onAnalogButton(GP_BUTTON button, int value) {
+bool FX_Tetris::onAnalogButton(GP_BUTTON button, int value) {
+    bool handled = false;
+
     if (this->state == RUNNING) {
+        handled = true;
+
         if (this->lastRotation > ((1020 - value) / 50)) {
             LED_animationStop();
 
@@ -356,6 +366,7 @@ void FX_Tetris::onAnalogButton(GP_BUTTON button, int value) {
                     rotateFrame(false, &this->current_shape);
                     break;
                 default:
+                    handled = false;
                     break;
             }
 
@@ -368,4 +379,6 @@ void FX_Tetris::onAnalogButton(GP_BUTTON button, int value) {
 
         this->lastRotation++;
     }
+
+    return handled;
 }

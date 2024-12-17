@@ -12,7 +12,7 @@
 Adafruit_ST7735 tft = Adafruit_ST7735(&SPI1, CS1, CS2, RST); // SPI, CS, DC, RST
 
 DSP_Page pageEffects = {{"Select Effect", DSP_WHITE}, {}, 0};
-DSP_Btn btnBack = {false, {"Back", DSP_WHITE}, &DSP_onButtonBackClick};
+DSP_Btn btnBack = {false, {"Back", DSP_WHITE}, &DSP_onButtonMainMenuClick};
 DSP_Btn btnReboot = {false, {"Reboot", DSP_WHITE}, &DSP_onButtonRebootClick};
 DSP_Element effectMenuBtn = {
         (DSP_Element_Data) {
@@ -103,7 +103,7 @@ void DSP_onButtonRebootClick(DSP_Btn *btn) {
     _reboot_Teensyduino_();
 }
 
-void DSP_onButtonBackClick(DSP_Btn *btn) {
+void DSP_onButtonMainMenuClick(DSP_Btn *btn) {
     DSP_renderPage(&pageMainMenu);
 }
 
@@ -113,7 +113,7 @@ void DSP_onEffectMenuClick(DSP_Btn *btn) {
 
 void DSP_onEffectBtnClick(DSP_Btn *btn) {
     FX_setEffect(btn->text.text);
-    DSP_onButtonBackClick(btn);
+    DSP_onButtonMainMenuClick(btn);
 }
 
 #define TEXT_SPACING 8
