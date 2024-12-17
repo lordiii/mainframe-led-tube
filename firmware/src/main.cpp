@@ -1,11 +1,10 @@
 #include "main.h"
 
-#include "effects/_effects.h"
-#include "tft.h"
 #include "globals.h"
 #include "cli.h"
 #include "led.h"
 #include "gamepad.h"
+#include "display.h"
 
 #include <Entropy.h>
 #include <sensors.h>
@@ -13,11 +12,14 @@
 
 // Scheduled Tasks
 unsigned long taskReadSensors = 0;
-unsigned long taskUpdateTFT = 0;
 unsigned long taskReadCurrent = 0;
 unsigned long taskReadControllerInput = 0;
 
 void setup() {
+    delay(1000);
+
+    Entropy.Initialize();
+
     pinMode(13, OUTPUT);
     digitalWrite(13, HIGH);
 
@@ -32,11 +34,8 @@ void setup() {
 
     initCLI();
     LED_init();
-    initTFT();
-
-    Entropy.Initialize();
-
-    FX_setEffect("beam");
+    SENSOR_init();
+    DSP_init();
 }
 
 void loop() {
@@ -58,11 +57,6 @@ void loop() {
     }
 
     processCLI();
-
-    if ((time - taskUpdateTFT) > 250) {
-        taskUpdateTFT = time;
-        TFT_update();
-    }
 
     if (Wire.getReadError()) {
         Wire.clearReadError();

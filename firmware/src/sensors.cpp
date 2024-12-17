@@ -18,6 +18,8 @@ INA226 currentSensorBottom(CURRENT_SENSOR_BOTTOM_ADDRESS);
 OneWire oneWire(24);
 DallasTemperature tempSensors(&oneWire);
 
+bool temperatureToggle = false;
+
 SensorValues top = {
         &currentSensorTop,
         tempProbeTop,
@@ -63,7 +65,11 @@ void SENSOR_update(const bool temperature, const bool current) {
 
 void SENSOR_update_values(SensorValues *dst, const bool temperature, const bool current) {
     if (temperature) {
-        dst->temperature = round(tempSensors.getTempC(dst->temperatureProbeId) * 100.0f) / 100.0f;
+        if (temperatureToggle) {
+            dst->temperature = round(tempSensors.getTempC(dst->temperatureProbeId) * 100.0f) / 100.0f;
+        } else {
+            tempSensors.requestTemperaturesByAddress(dst->temperatureProbeId);
+        }
     }
 
     if (current) {

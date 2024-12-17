@@ -4,6 +4,8 @@
 #include "effects/_effects.h"
 #include "tft.h"
 #include "led.h"
+#include "display.h"
+
 #include <Wire.h>
 #include <embedded_cli.h>
 #include <Arduino.h>
@@ -134,6 +136,29 @@ void initCLI() {
             commandToggleGamepadRegister
     });
 
+    embeddedCliAddBinding(embeddedCli, {
+            "button-next",
+            "Select next display button",
+            true,
+            &Serial,
+            commandButtonNext
+    });
+
+    embeddedCliAddBinding(embeddedCli, {
+            "button-prev",
+            "Select previous display button",
+            true,
+            &Serial,
+            commandButtonPrev
+    });
+
+    embeddedCliAddBinding(embeddedCli, {
+            "button-select",
+            "Select current display button",
+            true,
+            &Serial,
+            commandButtonSelect
+    });
 
     embeddedCli->writeChar = writeCmdOutChar;
 }
@@ -232,14 +257,10 @@ void commandSetEffect(EmbeddedCli *cli, char *args, void *context) {
         const char *effectName = embeddedCliGetToken(args, 1);
 
         if (FX_setEffect(effectName)) {
-            displayEffect(effectName);
-
             out->print("Effect set to '");
             out->print(effectName);
             out->println("'!");
         } else {
-            displayEffect("");
-
             out->print("Effect '");
             out->print(effectName);
             out->println("' not found!");
@@ -415,4 +436,19 @@ void commandToggleGamepadRegister(EmbeddedCli *cli, char *args, void *context) {
         out->print("Controller registration turned ");
         out->print(turnOn ? "on" : "off");
     }
+}
+
+//
+// Display
+//
+void commandButtonPrev(EmbeddedCli *cli, char *args, void *context) {
+    DSP_nextButton(-1);
+}
+
+void commandButtonNext(EmbeddedCli *cli, char *args, void *context) {
+    DSP_nextButton(1);
+}
+
+void commandButtonSelect(EmbeddedCli *cli, char *args, void *context) {
+    DSP_selectButton();
 }

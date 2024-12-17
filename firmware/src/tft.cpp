@@ -1,9 +1,9 @@
+/*
 #include "tft.h"
 #include "globals.h"
 #include "sensors.h"
 
 #include <Adafruit_ST7735.h>
-
 // Screen
 #define RST 40
 #define CS1 35
@@ -124,3 +124,4 @@ void renderTemperatureValue(TUBE_SECTION section, float value) {
     tft.setCursor(tft.getCursorX() + 4, tft.getCursorY());
     tft.print("C");
 }
+*/

@@ -1,6 +1,6 @@
 #ifndef TFT_H
 #define TFT_H
-
+/*
 #include "globals.h"
 #include "enum.h"
 
@@ -23,4 +23,5 @@ void renderTemperatureValue(TUBE_SECTION section, float value);
 
 void displayEffect(const char *effectName);
 
+*/
 #endif

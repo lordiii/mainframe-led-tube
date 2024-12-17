@@ -49,4 +49,13 @@ void commandClearGamepads(EmbeddedCli *cli, char *args, void *context);
 
 void commandToggleGamepadRegister(EmbeddedCli *cli, char *args, void *context);
 
+//
+// Display
+//
+void commandButtonNext(EmbeddedCli *cli, char *args, void *context);
+
+void commandButtonPrev(EmbeddedCli *cli, char *args, void *context);
+
+void commandButtonSelect(EmbeddedCli *cli, char *args, void *context);
+
 #endif
