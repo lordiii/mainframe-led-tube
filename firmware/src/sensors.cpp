@@ -58,9 +58,9 @@ void SENSOR_init_ina(INA226 *ina) {
 }
 
 void SENSOR_update(const bool temperature, const bool current) {
-    SENSOR_update_values(SENSOR_getValues(TOP_SECTION), temperature, current);
-    SENSOR_update_values(SENSOR_getValues(CENTER_SECTION), temperature, current);
-    SENSOR_update_values(SENSOR_getValues(BOTTOM_SECTION), temperature, current);
+    SENSOR_update_values(&top, temperature, current);
+    SENSOR_update_values(&center, temperature, current);
+    SENSOR_update_values(&bottom, temperature, current);
 }
 
 void SENSOR_update_values(SensorValues *dst, const bool temperature, const bool current) {

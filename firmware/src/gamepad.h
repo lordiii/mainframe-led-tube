@@ -3,52 +3,69 @@
 
 #include "enum.h"
 
-typedef struct GP_ButtonInput {
-    bool value;
-    bool locked;
-} GP_ButtonInput;
+typedef struct GP_Locks {
+    bool buttonY;
+    bool buttonB;
+    bool buttonA;
+    bool buttonX;
+    bool dpadLeft;
+    bool dpadRight;
+    bool dpadUp;
+    bool dpadDown;
+    bool shoulderL1;
+    bool shoulderL2;
+    bool shoulderR1;
+    bool shoulderR2;
 
-typedef struct GP_AnalogInput {
-    int value;
-    bool locked;
-} GP_AnalogInput;
+    bool miscHome;
+    bool miscStart;
+    bool miscSelect;
+    bool miscSystem;
+    bool miscBack;
+    bool miscCapture;
+    bool buttonTR;
+    bool buttonTL;
 
-struct GamepadStatus {
-    GP_ButtonInput buttonY;
-    GP_ButtonInput buttonB;
-    GP_ButtonInput buttonA;
-    GP_ButtonInput buttonX;
-    GP_ButtonInput dpadLeft;
-    GP_ButtonInput dpadRight;
-    GP_ButtonInput dpadUp;
-    GP_ButtonInput dpadDown;
-    GP_ButtonInput shoulderL1;
-    GP_ButtonInput shoulderL2;
-    GP_ButtonInput shoulderR1;
-    GP_ButtonInput shoulderR2;
+    bool breakForce;
+    bool throttleForce;
+    bool stickLX;
+    bool stickLY;
+    bool stickRX;
+    bool stickRY;
+} GP_Locks;
 
-    GP_ButtonInput miscHome;
-    GP_ButtonInput miscStart;
-    GP_ButtonInput miscSelect;
-    GP_ButtonInput miscSystem;
-    GP_ButtonInput miscBack;
-    GP_ButtonInput miscCapture;
-    GP_ButtonInput buttonTR;
-    GP_ButtonInput buttonTL;
+typedef struct GP_Status {
+    bool buttonY;
+    bool buttonB;
+    bool buttonA;
+    bool buttonX;
+    bool dpadLeft;
+    bool dpadRight;
+    bool dpadUp;
+    bool dpadDown;
+    bool shoulderL1;
+    bool shoulderL2;
+    bool shoulderR1;
+    bool shoulderR2;
 
-    GP_AnalogInput breakForce;
-    GP_AnalogInput throttleForce;
-    GP_AnalogInput stickLX;
-    GP_AnalogInput stickLY;
-    GP_AnalogInput stickRX;
-    GP_AnalogInput stickRY;
-};
+    bool miscHome;
+    bool miscStart;
+    bool miscSelect;
+    bool miscSystem;
+    bool miscBack;
+    bool miscCapture;
+    bool buttonTR;
+    bool buttonTL;
+
+    int breakForce;
+    int throttleForce;
+    int stickLX;
+    int stickLY;
+    int stickRX;
+    int stickRY;
+} GP_Status;
 
 bool GP_update();
-
-void GP_button(GP_ButtonInput *value, GP_BUTTON type, unsigned char mask, unsigned char source);
-
-void GP_analog(int offset, GP_AnalogInput *target, GP_BUTTON type);
 
 void GP_processButtons();
 
@@ -58,6 +75,6 @@ void GP_disablePairing();
 
 void GP_clear();
 
-GamepadStatus *GP_getState();
+GP_Status *GP_getState();
 
 #endif

@@ -78,7 +78,12 @@ LED_Pixel *LED_getPixel(LED_Ring *ring, int pixel) {
 
 void LED_render() {
     EffectState *state = FX_getState();
+    if (state->halt) {
+        return;
+    }
+
     unsigned long delta = millis() - state->lastFrameChange;
+
     if (state->current == nullptr) {
         if (delta > 100) {
             LED_clear();
@@ -88,8 +93,7 @@ void LED_render() {
     }
 
 
-    if ((!state->halt && state->slowRate == 0) || state->singleStep ||
-        (state->slowRate != 0 && delta > state->slowRate && !state->halt)) {
+    if (state->slowRate == 0 || (state->slowRate != 0 && delta > state->slowRate)) {
         bool updated = false;
 
         if (state->current != nullptr) {
@@ -99,8 +103,6 @@ void LED_render() {
         if (updated) {
             state->lastFrameChange = millis();
         }
-
-        state->singleStep = false;
     }
 
     leds.show();

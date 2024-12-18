@@ -11,9 +11,11 @@
 #include <Wire.h>
 
 // Scheduled Tasks
-unsigned long taskReadSensors = 0;
-unsigned long taskReadCurrent = 0;
+unsigned long taskReadSensorTemperature = 0;
+unsigned long taskReadSensorCurrent = 0;
 unsigned long taskReadControllerInput = 0;
+
+unsigned long taskTimes[3] = {};
 
 void setup() {
     delay(1000);
@@ -40,18 +42,25 @@ void setup() {
 
 void loop() {
     unsigned long time = millis();
+    if ((time - taskReadSensorTemperature) > 1000) {
+        taskReadSensorTemperature = time;
 
-    if ((time - taskReadSensors) > 1000) {
-        taskReadSensors = time;
         SENSOR_update(true, false);
+        taskTimes[0] = millis() - taskReadSensorTemperature;
     }
 
-    if ((time - taskReadCurrent) > 100) {
-        taskReadCurrent = time;
+    time = millis();
+    if ((time - taskReadSensorCurrent) > 100) {
+        taskReadSensorCurrent = time;
+
         SENSOR_update(false, true);
+        taskTimes[1] = millis() - taskReadSensorCurrent;
     }
 
-    if ((time - taskReadControllerInput) > 5) {
+    time = millis();
+    if ((time - taskReadControllerInput) > 10) {
+        taskReadControllerInput = time;
+
         if (!GP_update()) {
             GP_clear();
             GP_enablePairing();
@@ -59,8 +68,7 @@ void loop() {
             GP_disablePairing();
         }
 
-
-        taskReadControllerInput = time;
+        taskTimes[2] = millis() - taskReadControllerInput;
     }
 
     processCLI();

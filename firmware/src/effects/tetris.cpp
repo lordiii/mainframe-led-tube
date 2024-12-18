@@ -24,7 +24,7 @@ LED_RGB *TETRONIMO_COLORS[TETRONIMO_COUNT] = {
 unsigned char rotateBuffer[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE] = {};
 
 bool FX_Tetris::render(unsigned long delta) {
-    GamepadStatus *gamepad = GP_getState();
+    GP_Status *gamepad = GP_getState();
 
     const bool forceMovement = delta > (unsigned long) max(500 - ((this->score / 100) * 25), 50);
 
@@ -43,7 +43,7 @@ bool FX_Tetris::render(unsigned long delta) {
                 renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
                             &Color_Black, false);
 
-                if (forceMovement || ((millis() - this->lastInput) > 100 && gamepad->dpadDown.value)) {
+                if (forceMovement || ((millis() - this->lastInput) > 100 && gamepad->dpadDown)) {
                     this->current_shape.ring--;
                     if (!renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
                                      this->current_shape.color, true)) {

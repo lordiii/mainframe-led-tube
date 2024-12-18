@@ -122,7 +122,7 @@ void initCLI() {
     });
 
     embeddedCliAddBinding(embeddedCli, {
-            "gamepad-clear",
+            "gp-clear",
             "Tell Gamepad Controller to clear all known controllers",
             true,
             &Serial,
@@ -130,8 +130,8 @@ void initCLI() {
     });
 
     embeddedCliAddBinding(embeddedCli, {
-            "gamepad-register",
-            "Toggle registration of new controller on gamepad controller. Usage: gamepad-register: [on|off]",
+            "gp-register",
+            "Toggle registration of new controller on gp controller. Usage: gp-register: [on|off]",
             true,
             &Serial,
             commandToggleGamepadRegister
@@ -417,7 +417,7 @@ void commandToggleGamepadRegister(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
 
     if (embeddedCliGetTokenCount(args) == 0) {
-        out->println("Missing argument: gamepad-register [on|off]");
+        out->println("Missing argument: gp-register [on|off]");
     } else {
         const char *command = embeddedCliGetToken(args, 1);
 
