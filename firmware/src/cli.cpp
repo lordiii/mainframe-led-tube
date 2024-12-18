@@ -2,7 +2,6 @@
 #include "globals.h"
 #include "main.h"
 #include "effects/_effects.h"
-#include "tft.h"
 #include "led.h"
 #include "display.h"
 #include "gamepad.h"
