@@ -17,6 +17,8 @@ unsigned long taskReadControllerInput = 0;
 
 unsigned long taskTimes[3] = {};
 
+bool shouldRerenderDisplay = false;
+
 void setup() {
     delay(1000);
 
@@ -29,8 +31,6 @@ void setup() {
 
     pinMode(PIN_PW_ON, OUTPUT);
     pinMode(PIN_PS_GOOD, INPUT);
-
-    digitalWrite(PIN_PW_ON, HIGH);
 
     Wire.begin();
 
@@ -72,6 +72,11 @@ void loop() {
     }
 
     processCLI();
+
+    if (shouldRerenderDisplay) {
+        DSP_renderPage(nullptr);
+        shouldRerenderDisplay = false;
+    }
 
     if (Wire.getReadError()) {
         Wire.clearReadError();

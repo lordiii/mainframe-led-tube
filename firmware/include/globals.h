@@ -21,6 +21,8 @@
 #define PIN_PW_ON 28
 #define PIN_PS_GOOD 29
 
+#define PWR_LOCK_TIME 5 * 1000 * 1000
+
 #define WEB_CHUNK_SIZE 1024
 
 #endif

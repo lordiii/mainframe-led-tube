@@ -1,5 +1,6 @@
 ﻿#include "display.h"
 #include "effects/_effects.h"
+#include "globals.h"
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -11,9 +12,20 @@
 
 Adafruit_ST7735 tft = Adafruit_ST7735(&SPI1, CS1, CS2, RST); // SPI, CS, DC, RST
 
+const char *textPowerOff = "Power: OFF";
+const char *textPowerOn = "Power: ON";
+const char *textPowerLock = "Power: LOCK";
+const char *textPowerSupply = "Power: PWR FAIL";
+
+IntervalTimer powerUnlockTimer;
+bool powerToggleLocked = true;
+
 DSP_Page pageEffects = {{"Select Effect", DSP_WHITE}, {}, 0};
 DSP_Btn btnBack = {false, {"Back", DSP_WHITE}, &DSP_onButtonMainMenuClick};
-DSP_Btn btnReboot = {false, {"Reboot", DSP_WHITE}, &DSP_onButtonRebootClick};
+
+DSP_Btn btnPower = {false, {"", DSP_WHITE}, &DSP_onButtonCyclePowerClick, true, false, DSP_BLACK, DSP_BLACK, DSP_GREEN,
+                    DSP_RED};
+
 DSP_Element effectMenuBtn = {
         (DSP_Element_Data) {
                 .btn = {true, {"Select Effect", DSP_WHITE}, &DSP_onEffectMenuClick}
@@ -34,7 +46,7 @@ void DSP_init() {
     displayState.width = tft.width();
 
     pageEffects.count = FX_getCount();
-    pageEffects.elements = (DSP_Element *) calloc(pageEffects.count * 2, sizeof(DSP_Element));
+    pageEffects.elements = (DSP_Element *) calloc(pageEffects.count + 1, sizeof(DSP_Element));
 
     FX **effects = FX_getEffects();
     for (int i = 0; i < pageEffects.count; i++) {
@@ -43,14 +55,54 @@ void DSP_init() {
 
         DSP_Btn *btn = &element->data.btn;
 
-        btn->active = i == 0;
+        btn->selected = i == 0;
         btn->text = {effects[i]->name, DSP_WHITE};
         btn->onClick = DSP_onEffectBtnClick;
+
+        btn->active = false;
+        btn->activeColor = DSP_WHITE;
+        btn->inactiveColor = DSP_BLACK;
     }
+
+    // Configure "none" effect
+    DSP_Element *element = &pageEffects.elements[pageEffects.count++];
+    element->type = BTN;
+    DSP_Btn *btn = &element->data.btn;
+
+    btn->selected = false;
+    btn->text = {"none", DSP_WHITE};
+    btn->onClick = DSP_onEffectBtnClick;
+
+    btn->active = false;
+    btn->activeColor = DSP_WHITE;
+    btn->inactiveColor = DSP_BLACK;
 
     displayState.currentButtons = (DSP_Btn **) calloc(16, sizeof(DSP_Btn **));
 
+    // Configure power button
+    btnPower.active = false;
+    btnPower.text.text = textPowerLock;
+    powerUnlockTimer.begin(DSP_reenablePower, PWR_LOCK_TIME);
+
+    // Render
     DSP_renderPage(&pageMainMenu);
+}
+
+void DSP_reenablePower() {
+    powerUnlockTimer.end();
+    bool pwGood = digitalRead(PIN_PS_GOOD);
+
+    // PW Good is inverted due to hardware error
+    if (!pwGood || !btnPower.active) {
+        btnPower.text.text = btnPower.active ? textPowerOn : textPowerOff;
+        powerToggleLocked = false;
+    } else {
+        powerUnlockTimer.begin(DSP_reenablePower, PWR_LOCK_TIME);
+        btnPower.text.text = textPowerSupply;
+        powerToggleLocked = true;
+    }
+
+    shouldRerenderDisplay = true;
 }
 
 void DSP_nextButton(signed char dir) {
@@ -59,26 +111,26 @@ void DSP_nextButton(signed char dir) {
     }
 
     bool found = false;
-    if (dir == 1 && displayState.currentButtons[displayState.btnCount - 1]->active) {
+    if (dir == 1 && displayState.currentButtons[displayState.btnCount - 1]->selected) {
 
-        displayState.currentButtons[displayState.btnCount - 1]->active = false;
-        displayState.currentButtons[0]->active = true;
+        displayState.currentButtons[displayState.btnCount - 1]->selected = false;
+        displayState.currentButtons[0]->selected = true;
 
         found = true;
-    } else if (dir == -1 && displayState.currentButtons[0]->active) {
-        displayState.currentButtons[displayState.btnCount - 1]->active = true;
-        displayState.currentButtons[0]->active = false;
+    } else if (dir == -1 && displayState.currentButtons[0]->selected) {
+        displayState.currentButtons[displayState.btnCount - 1]->selected = true;
+        displayState.currentButtons[0]->selected = false;
 
         found = true;
     } else {
         for (int i = 0; i < displayState.btnCount; i++) {
             DSP_Btn *btn = displayState.currentButtons[dir == 1 ? i : (displayState.btnCount - 1) - i];
             if (found) {
-                btn->active = true;
+                btn->selected = true;
                 break;
             } else {
-                found = btn->active;
-                btn->active = false;
+                found = btn->selected;
+                btn->selected = false;
             }
         }
     }
@@ -90,17 +142,35 @@ void DSP_nextButton(signed char dir) {
 
 void DSP_selectButton() {
     for (int i = 0; i < displayState.btnCount; i++) {
-        if (displayState.currentButtons[i]->active) {
+        if (displayState.currentButtons[i]->selected) {
             displayState.currentButtons[i]->onClick(&displayState.currentPage->elements[i].data.btn);
             return;
         }
     }
-
     DSP_renderPage(&pageMainMenu);
 }
 
-void DSP_onButtonRebootClick(DSP_Btn *btn) {
-    _reboot_Teensyduino_();
+void DSP_onButtonCyclePowerClick(DSP_Btn *btn) {
+    if (powerToggleLocked) {
+        return;
+    }
+
+    bool pwOn = digitalRead(PIN_PW_ON);
+
+    if (pwOn) {
+        btnPower.active = false;
+        digitalWrite(PIN_PW_ON, LOW);
+    } else {
+        btnPower.active = true;
+        digitalWrite(PIN_PW_ON, HIGH);
+    }
+
+    btnPower.text.text = textPowerLock;
+    powerToggleLocked = true;
+
+    powerUnlockTimer.begin(DSP_reenablePower, PWR_LOCK_TIME);
+
+    shouldRerenderDisplay = true;
 }
 
 void DSP_onButtonMainMenuClick(DSP_Btn *btn) {
@@ -118,12 +188,12 @@ void DSP_onEffectBtnClick(DSP_Btn *btn) {
 
 #define TEXT_SPACING 8
 
-void DSP_renderText(DSP_Text *text) {
+void DSP_renderText(DSP_Text *text, unsigned short color) {
     displayState.currentY += 2;
 
     tft.setCursor(displayState.currentX, displayState.currentY);
     tft.setTextSize(1);
-    tft.setTextColor(text->color);
+    tft.setTextColor(color);
     tft.print(text->text);
 
     displayState.currentY += TEXT_SPACING;
@@ -133,21 +203,30 @@ void DSP_renderButton(DSP_Btn *btn) {
     displayState.currentY += 2;
     displayState.currentX += 8;
 
-    if (btn->active) {
+    if (btn->selected) {
         tft.fillRoundRect(displayState.currentX - 4, displayState.currentY,
                           displayState.width - 4 - 2 - displayState.currentX, TEXT_SPACING + 3,
                           4, DSP_WHITE);
 
-        btn->text.color = DSP_BLACK;
-        DSP_renderText(&btn->text);
+        DSP_renderText(&btn->text, DSP_BLACK);
         displayState.currentY += 2;
     } else {
-        tft.drawRoundRect(displayState.currentX - 4, displayState.currentY,
-                          displayState.width - 4 - 2 - displayState.currentX, TEXT_SPACING + 3,
-                          4, DSP_WHITE);
+        unsigned short textColor = 0;
 
-        btn->text.color = DSP_WHITE;
-        DSP_renderText(&btn->text);
+        if (btn->hasActiveMode) {
+            tft.fillRoundRect(displayState.currentX - 4, displayState.currentY,
+                              displayState.width - 4 - 2 - displayState.currentX, TEXT_SPACING + 3,
+                              4, btn->active ? btn->activeColor : btn->inactiveColor);
+
+            textColor = btn->active ? btn->activeTextColor : btn->inactiveTextColor;
+        } else {
+            tft.drawRoundRect(displayState.currentX - 4, displayState.currentY,
+                              displayState.width - 4 - 2 - displayState.currentX, TEXT_SPACING + 3,
+                              4, DSP_WHITE);
+            textColor = DSP_WHITE;
+        }
+
+        DSP_renderText(&btn->text, textColor);
         displayState.currentY += 2;
     }
 
@@ -155,6 +234,13 @@ void DSP_renderButton(DSP_Btn *btn) {
 }
 
 void DSP_renderPage(DSP_Page *page) {
+    if (page == nullptr) {
+        if (displayState.currentPage != nullptr) {
+            DSP_renderPage(displayState.currentPage);
+        }
+        return;
+    }
+
     displayState.currentX = 4;
     displayState.currentY = 4;
 
@@ -164,7 +250,7 @@ void DSP_renderPage(DSP_Page *page) {
 
     displayState.currentX += 4;
     displayState.currentY += 2;
-    DSP_renderText(&page->title);
+    DSP_renderText(&page->title, page->title.color);
     displayState.currentX -= 4;
 
     displayState.currentY += 2;
@@ -179,7 +265,7 @@ void DSP_renderPage(DSP_Page *page) {
 
         switch (element->type) {
             case TEXT:
-                DSP_renderText(&element->data.text);
+                DSP_renderText(&element->data.text, element->data.text.color);
                 break;
             case BTN:
                 displayState.currentButtons[displayState.btnCount++] = btn;
@@ -197,7 +283,7 @@ void DSP_renderPage(DSP_Page *page) {
         displayState.currentButtons[displayState.btnCount++] = &btnBack;
         DSP_renderButton(&btnBack);
     } else {
-        displayState.currentButtons[displayState.btnCount++] = &btnReboot;
-        DSP_renderButton(&btnReboot);
+        displayState.currentButtons[displayState.btnCount++] = &btnPower;
+        DSP_renderButton(&btnPower);
     }
 }

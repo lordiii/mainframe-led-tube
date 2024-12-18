@@ -24,10 +24,17 @@ typedef struct DSP_Text {
 } DSP_Text;
 
 typedef struct DSP_Btn {
-    bool active;
+    bool selected;
     DSP_Text text;
 
     void (*onClick)(DSP_Btn *btn);
+
+    bool hasActiveMode = false;
+    bool active = false;
+    unsigned short activeTextColor = DSP_BLACK;
+    unsigned short inactiveTextColor = DSP_BLACK;
+    unsigned short activeColor = DSP_BLACK;
+    unsigned short inactiveColor = DSP_BLACK;
 } DSP_Btn;
 
 typedef union DSP_Element_Data {
@@ -61,24 +68,28 @@ typedef struct DSP_State {
 
 void DSP_init();
 
+void DSP_reenablePower();
+
 void DSP_onButtonMainMenuClick(DSP_Btn *btn);
 
 void DSP_onEffectBtnClick(DSP_Btn *btn);
 
 void DSP_onEffectMenuClick(DSP_Btn *btn);
 
-void DSP_renderText(DSP_Text *text);
+void DSP_renderText(DSP_Text *text, unsigned short color);
 
 void DSP_renderButton(DSP_Btn *btn);
 
-void DSP_onButtonRebootClick(DSP_Btn *btn);
+void DSP_onButtonCyclePowerClick(DSP_Btn *btn);
 
 void DSP_renderPage(DSP_Page *page);
 
+void DSP_renderStateButton(DSP_Btn *btn);
 
 void DSP_nextButton(signed char dir);
 
 void DSP_selectButton();
 
+extern bool shouldRerenderDisplay;
 
 #endif
