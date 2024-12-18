@@ -43,23 +43,11 @@ void setup() {
 }
 
 void loop() {
+    if (LED_renderRequested()) {
+        LED_render();
+    }
+
     unsigned long time = millis();
-    if ((time - taskReadSensorTemperature) > 1000) {
-        taskReadSensorTemperature = time;
-
-        SENSOR_update(true, false);
-        taskTimes[0] = millis() - taskReadSensorTemperature;
-    }
-
-    time = millis();
-    if ((time - taskReadSensorCurrent) > 100) {
-        taskReadSensorCurrent = time;
-
-        SENSOR_update(false, true);
-        taskTimes[1] = millis() - taskReadSensorCurrent;
-    }
-
-    time = millis();
     if ((time - taskReadControllerInput) > 10) {
         taskReadControllerInput = time;
 
@@ -71,9 +59,26 @@ void loop() {
         }
 
         taskTimes[2] = millis() - taskReadControllerInput;
+        return;
     }
 
-    processCLI();
+    time = millis();
+    if ((time - taskReadSensorCurrent) > 100) {
+        taskReadSensorCurrent = time;
+
+        SENSOR_update(false, true);
+        taskTimes[1] = millis() - taskReadSensorCurrent;
+        return;
+    }
+
+    time = millis();
+    if ((time - taskReadSensorTemperature) > 1000) {
+        taskReadSensorTemperature = time;
+
+        SENSOR_update(true, false);
+        taskTimes[0] = millis() - taskReadSensorTemperature;
+        return;
+    }
 
     if (shouldRerenderDisplay) {
         DSP_renderPage(nullptr);
@@ -87,4 +92,6 @@ void loop() {
     if (Wire.getWriteError()) {
         Wire.clearWriteError();
     }
+
+    processCLI();
 }

@@ -46,4 +46,6 @@ void LED_clear();
 
 void LED_move(LED_Pixel *src_s, LED_Pixel *src_e, LED_Pixel *dst);
 
+bool LED_renderRequested();
+
 #endif

@@ -21,6 +21,11 @@ LED_Pixel LEDS[LED_TOTAL_AMOUNT];
 
 // LED Render Task
 IntervalTimer renderTask = IntervalTimer();
+bool shouldRenderLeds = false;
+
+bool LED_renderRequested() {
+    return shouldRenderLeds;
+}
 
 void LED_init() {
     leds.begin();
@@ -54,8 +59,13 @@ void LED_animationStop() {
     renderTask.end();
 }
 
+void LED_requestFrame() {
+    LED_animationStop();
+    shouldRenderLeds = true;
+}
+
 void LED_animationStart() {
-    renderTask.begin(LED_render, LED_FRAMES_PER_SECOND);
+    renderTask.begin(LED_requestFrame, LED_FRAMES_PER_SECOND);
     while (leds.busy()) {}
 }
 
@@ -106,6 +116,8 @@ void LED_render() {
     }
 
     leds.show();
+    shouldRenderLeds = false;
+    LED_animationStart();
 }
 
 void LED_setColor(LED_RGB *src, LED_Pixel *dst) {
