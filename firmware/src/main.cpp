@@ -43,6 +43,8 @@ void setup() {
 }
 
 void loop() {
+    processCLI();
+
     if (LED_renderRequested()) {
         LED_render();
     }
@@ -80,6 +82,7 @@ void loop() {
         return;
     }
 
+
     if (shouldRerenderDisplay) {
         DSP_renderPage(nullptr);
         shouldRerenderDisplay = false;
@@ -93,5 +96,4 @@ void loop() {
         Wire.clearWriteError();
     }
 
-    processCLI();
 }

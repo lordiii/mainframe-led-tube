@@ -19,7 +19,7 @@ const uint8_t TETRONIMOS[TETRONIMO_COUNT][TETRIS_MAX_SIZE][TETRIS_MAX_SIZE] = {
 };
 
 LED_RGB *TETRONIMO_COLORS[TETRONIMO_COUNT] = {
-        &Color_Red, &Color_Green, &Color_Blue, &Color_Yellow, &Color_Violet, &Color_PeachPuff, &Color_Snow,
+        &Color_Coral, &Color_Green, &Color_Blue, &Color_Yellow, &Color_Violet, &Color_Crimson, &Color_Snow,
 };
 unsigned char rotateBuffer[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE] = {};
 
@@ -81,15 +81,15 @@ bool FX_Tetris::render(unsigned long delta) {
             break;
         }
         case WAITING: {
-            LED_Pixel *pxl = LED_getPixel(LED_getRing(0), 0);
-            bool startNew = pxl->color->R > 0 || pxl->color->G > 0 || pxl->color->B > 0;
+            LED_Pixel *pxl = LED_getPixel(LED_getRing(1), 0);
+            bool startNew = pxl->color->R == 0 && pxl->color->G == 0 && pxl->color->B == 0;
 
             if (startNew && delta > 1000) {
                 LED_clear();
                 this->resetData();
                 this->state = RUNNING;
                 return true;
-            } else if (delta > 10 && !startNew) {
+            } else if (delta > 10) {
                 LED_clear(); // TODO: Clear via fade animation
                 return true;
             }
@@ -104,11 +104,10 @@ bool FX_Tetris::render(unsigned long delta) {
                         LED_Ring *ring = LED_getRing(i);
                         LED_fillRing(&Color_Black, ring); // TODO: Clear via fade animation
 
-                        LED_move(ring->start, LED_getRing(0)->previous->start, ring->start);
+                        LED_move(ring->next->start, LED_getRing(LED_TOTAL_RINGS - 1)->start, ring->start);
 
                         // Move ring status
-                        memmove(this->ringStatus + i, this->ringStatus + i + 1,
-                                (LED_TOTAL_RINGS - i) * sizeof(bool));
+                        memmove(this->ringStatus + i, this->ringStatus + i + 1, (LED_TOTAL_RINGS - i) * sizeof(bool));
 
                         this->ringStatus[LED_TOTAL_RINGS - 1] = false;
                     } else {
@@ -173,10 +172,15 @@ bool FX_Tetris::renderShape(unsigned char shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE
 
 void FX_Tetris::setTetrisShape(TShape *shape) {
     unsigned char shapeID = Entropy.random(0, TETRONIMO_COUNT);
+    if (shapeID == shape->id) {
+        return setTetrisShape(shape);
+    }
+
     memcpy(shape->array, TETRONIMOS[shapeID], sizeof(TETRONIMOS[shapeID]));
     shape->ring = LED_TOTAL_RINGS - (TETRIS_MAX_SIZE + 1);
     shape->placed = false;
     shape->color = TETRONIMO_COLORS[shapeID];
+    shape->id = shapeID;
 
     while (renderShape(shape->array, shape->ring, shape->pixel, shape->color, true)) {
         shape->ring++;
@@ -191,10 +195,12 @@ bool FX_Tetris::eliminateRings() {
     for (int i = 1; i < (LED_TOTAL_RINGS - 1); i++) {
         this->ringStatus[i] = true;
 
-        for (int j = 0; j < LED_PER_RING; j++) {
-            LED_Pixel *pxl = LED_getPixel(LED_getRing(i), j);
+        LED_Ring *ring = LED_getRing(i);
 
-            if (pxl->color->R > 0 || pxl->color->G > 0 || pxl->color->B > 0) {
+        for (int j = 0; j < LED_PER_RING; j++) {
+            LED_Pixel *pxl = LED_getPixel(ring, j);
+
+            if (pxl->color->R == 0 && pxl->color->G == 0 && pxl->color->B == 0) {
                 this->ringStatus[i] = false;
                 break;
             }
@@ -266,28 +272,18 @@ void FX_Tetris::rotateShape(TShape *shape, bool clockwise) {
         }
     }
 
-    if (renderShape(rotateBuffer, shape->ring, shape->pixel, shape->color, true)) {
-        memcpy(shape->array, rotateBuffer, sizeof(rotateBuffer));
+    memcpy(shape->array, rotateBuffer, sizeof(rotateBuffer));
+    if (!renderShape(rotateBuffer, shape->ring, shape->pixel, shape->color, true)) {
+        rotateShape(shape, clockwise);
     }
 }
 
-void FX_Tetris::rotateFrame(bool clockwise, TShape *shape) {
-    if (shape != nullptr) {
-        shape->pixel += clockwise ? -1 : 1;
-    }
+void moveShape(bool left) {
+    tetris->current_shape.pixel += left ? -1 : 1;
 
-    LED_Pixel *buffer[2];
-
-    for (int i = 0; i < LED_TOTAL_RINGS; i++) {
-        LED_Ring *ring = LED_getRing(i);
-        buffer[0] = LED_getPixel(ring, 0);
-
-        for (int j = (LED_PER_RING - 1); j >= 0; j--) {
-            buffer[1] = LED_getPixel(ring, clockwise ? j : -j);
-            LED_setColor(buffer[0]->color, buffer[1]);
-
-            buffer[0] = buffer[1];
-        }
+    if (!tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring,
+                             tetris->current_shape.pixel, tetris->current_shape.color, true)) {
+        tetris->current_shape.pixel += left ? 1 : -1;
     }
 }
 
@@ -299,7 +295,7 @@ void onRotateStationary(GP_BUTTON btn, GP_Status *gp) {
 
     int value = btn == BREAK ? gp->breakForce : gp->throttleForce;
 
-    if (tetris->lastRotation > ((1020 - value) / 50)) {
+    if (tetris->lastRotation > ((1100 - value) / 50)) {
         LED_animationStop();
 
         tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring,
@@ -307,10 +303,18 @@ void onRotateStationary(GP_BUTTON btn, GP_Status *gp) {
 
         switch (btn) {
             case BREAK:
-                tetris->rotateFrame(true, &tetris->current_shape);
+                LED_rotateAll(true);
+                if (!tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring,
+                                         tetris->current_shape.pixel, tetris->current_shape.color, true)) {
+                    tetris->current_shape.pixel--;
+                }
                 break;
             case THROTTLE:
-                tetris->rotateFrame(false, &tetris->current_shape);
+                LED_rotateAll(false);
+                if (!tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring,
+                                         tetris->current_shape.pixel, tetris->current_shape.color, true)) {
+                    tetris->current_shape.pixel++;
+                }
                 break;
             default:
                 return;
@@ -368,20 +372,10 @@ void onShapeMove(GP_BUTTON btn, GP_Status *gp) {
 
     switch (btn) {
         case DPAD_LEFT:
-            tetris->current_shape.pixel -= 1;
-
-            if (!tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring,
-                                     tetris->current_shape.pixel, tetris->current_shape.color, true)) {
-                tetris->current_shape.pixel += 1;
-            }
+            moveShape(true);
             break;
         case DPAD_RIGHT:
-            tetris->current_shape.pixel += 1;
-
-            if (!tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring,
-                                     tetris->current_shape.pixel, tetris->current_shape.color, true)) {
-                tetris->current_shape.pixel -= 1;
-            }
+            moveShape(false);
             break;
         default:
             break;

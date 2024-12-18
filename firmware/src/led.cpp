@@ -23,6 +23,8 @@ LED_Pixel LEDS[LED_TOTAL_AMOUNT];
 IntervalTimer renderTask = IntervalTimer();
 bool shouldRenderLeds = false;
 
+LED_RGB buf;
+
 bool LED_renderRequested() {
     return shouldRenderLeds;
 }
@@ -125,10 +127,6 @@ void LED_setColor(LED_RGB *src, LED_Pixel *dst) {
 }
 
 void LED_fillRing(LED_RGB *src, LED_Ring *ring) {
-    if (ring == nullptr) {
-        return;
-    }
-
     LED_fillSection(src, ring->start, ring->start->previous);
 }
 
@@ -139,13 +137,35 @@ void LED_fillSection(LED_RGB *src, LED_Pixel *start, LED_Pixel *end) {
     }
 }
 
+void LED_rotateAll(bool clockwise) {
+    for (int i = 0; i < LED_TOTAL_RINGS; i++) {
+        LED_rotateRing(LED_getRing(i), clockwise);
+    }
+}
+
+void LED_rotateRing(LED_Ring *ring, bool clockwise) {
+    if (ring == nullptr) {
+        return;
+    }
+
+    if (clockwise) {
+        memcpy(&buf, ring->start->color, sizeof(LED_RGB));
+        LED_move(ring->start->next, ring->start->previous + 1, ring->start);
+        LED_setColor(&buf, ring->start->previous);
+    } else {
+        memcpy(&buf, ring->start->previous->color, sizeof(LED_RGB));
+        LED_move(ring->start, ring->start->previous, ring->start->next);
+        LED_setColor(&buf, ring->start);
+    }
+}
+
 void LED_clear() {
     memset(drawingMemory, 0, sizeof(drawingMemory));
 }
 
 void LED_move(LED_Pixel *src_s, LED_Pixel *src_e, LED_Pixel *dst) {
-    const int size = src_e->color - src_s->color;
-    if (size <= 0 || size > LED_TOTAL_AMOUNT) {
+    const int size = ((int) src_e->color) - ((int) src_s->color);
+    if (size <= 0 || size > (LED_TOTAL_AMOUNT * sizeof(LED_RGB))) {
         return;
     }
 

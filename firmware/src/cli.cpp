@@ -12,6 +12,7 @@
 
 EmbeddedCli *embeddedCli;
 unsigned long lastPowerToggle = 0;
+LED_RGB pixelBuf;
 
 void initCLI() {
     EmbeddedCliConfig *config = embeddedCliDefaultConfig();
@@ -339,15 +340,13 @@ void commandSetRing(EmbeddedCli *cli, char *args, void *context) {
         out->print(" to color ");
         out->println(color, 16);
 
-        LED_RGB pixel = {
-                .G = (unsigned char) ((color >> 16) & 0xFF),
-                .R = (unsigned char) ((color >> 8) & 0xFF),
-                .B = (unsigned char) ((color >> 0) & 0xFF)
-        };
+        pixelBuf.R = (unsigned char) ((color >> 16) & 0xFF);
+        pixelBuf.G = (unsigned char) ((color >> 8) & 0xFF);
+        pixelBuf.B = (unsigned char) ((color >> 0) & 0xFF);
 
         LED_Ring *ring_p = LED_getRing(ring);
         if (ring_p != nullptr) {
-            LED_fillRing(&pixel, ring_p);
+            LED_fillRing(&pixelBuf, ring_p);
         }
     }
 }

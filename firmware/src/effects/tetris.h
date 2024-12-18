@@ -15,6 +15,7 @@ typedef struct TShape {
     int pixel;
     bool placed;
     LED_RGB *color;
+    unsigned char id;
 } TShape;
 
 enum TState {

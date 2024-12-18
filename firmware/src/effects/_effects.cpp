@@ -11,7 +11,6 @@ FX_Beam *beam = new FX_Beam();
 
 FX_SideBeam *sideBeam = new FX_SideBeam();
 
-
 FX_Pictogram *pictogram = new FX_Pictogram();
 
 const int fxCnt = 4;
@@ -63,9 +62,10 @@ void FX_toggleHalt(GP_BUTTON btn, GP_Status *gp) {
 
     if (state.halt) {
         GP_clearKeybindings();
+        GP_registerKeybind(MISC_HOME, FX_toggleHalt);
         DSP_addKeybindings();
     } else {
-        GP_clearKeybindings();
+        DSP_removeKeybindings();
         if (state.current != nullptr) {
             state.current->registerKeybindings();
         }

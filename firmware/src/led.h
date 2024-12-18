@@ -48,4 +48,8 @@ void LED_move(LED_Pixel *src_s, LED_Pixel *src_e, LED_Pixel *dst);
 
 bool LED_renderRequested();
 
+void LED_rotateAll(bool clockwise);
+
+void LED_rotateRing(LED_Ring *ring, bool clockwise);
+
 #endif
