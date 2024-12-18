@@ -1,8 +1,8 @@
 #include "gamepad.h"
-#include "enum.h"
-#include "effects/_effects.h"
-#include "globals.h"
 #include "display.h"
+#include "effects/_effects.h"
+#include "enum.h"
+#include "globals.h"
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -52,7 +52,8 @@ bool GP_update() {
     bool *p_bool = &gp.buttonY;
     int *p_int = &gp.breakForce;
 
-    for (GP_BUTTON type = BUTTON_Y; type < BREAK; type = (GP_BUTTON) ((int) type + 1)) {
+    GP_BUTTON type = BUTTON_Y;
+    for (; type < BREAK; type = (GP_BUTTON) ((int) type + 1)) {
         bool handled = false;
 
         if (hasEventHandler && *p_bool && !*p_lock) {
@@ -69,6 +70,17 @@ bool GP_update() {
 
         p_lock = p_lock + 1;
         p_bool = p_bool + 1;
+    }
+
+    for (; type <= STICK_R_Y; type = (GP_BUTTON) ((int) type + 1)) {
+        if (hasEventHandler && *p_int != 0) {
+            state->current->onAnalogButton(type, *p_int);
+        }
+
+        *p_lock = false;
+
+        p_lock = p_lock + 1;
+        p_int = p_int + 1;
     }
 
     GP_processButtons();
