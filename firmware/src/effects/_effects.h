@@ -1,12 +1,16 @@
 #ifndef EFFECTS_H
 #define EFFECTS_H
 
-#include "main.h"
+#include "display.h"
 #include "enum.h"
+#include "main.h"
 
 class FX {
 public:
     const char *name;
+
+    DSP_Page displayPage = {};
+    bool hasPage = false;
 
     virtual bool render(unsigned long delta) = 0;
 
@@ -29,6 +33,10 @@ typedef struct EffectState {
     bool halt;
     bool singleStep;
 } EffectState;
+
+void FX_resetState();
+
+void FX_stopEffect(DSP_Btn *btn);
 
 bool FX_setEffect(const char *effectName);
 

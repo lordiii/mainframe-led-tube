@@ -20,7 +20,7 @@ const char *textPowerSupply = "Power: PWR FAIL";
 IntervalTimer powerUnlockTimer;
 bool powerToggleLocked = true;
 
-DSP_Page pageEffects = {{"Select Effect", DSP_WHITE}, {}, 0};
+DSP_Page pageEffects = {{"Select Effect", DSP_WHITE}, {}, 0, true};
 DSP_Btn btnBack = {false, {"Back", DSP_WHITE}, &DSP_onButtonMainMenuClick};
 
 DSP_Btn btnPower = {false, {"", DSP_WHITE}, &DSP_onButtonCyclePowerClick, true, false, DSP_BLACK, DSP_BLACK, DSP_GREEN,
@@ -182,8 +182,9 @@ void DSP_onEffectMenuClick(DSP_Btn *btn) {
 }
 
 void DSP_onEffectBtnClick(DSP_Btn *btn) {
-    FX_setEffect(btn->text.text);
-    DSP_onButtonMainMenuClick(btn);
+    if(!FX_setEffect(btn->text.text)) {
+        DSP_onButtonMainMenuClick(btn);
+    }
 }
 
 #define TEXT_SPACING 8
@@ -279,11 +280,11 @@ void DSP_renderPage(DSP_Page *page) {
     displayState.currentPage = page;
 
     displayState.currentY = displayState.height - 4 - 12;
-    if (displayState.currentPage != &pageMainMenu) {
-        displayState.currentButtons[displayState.btnCount++] = &btnBack;
-        DSP_renderButton(&btnBack);
-    } else {
+    if (displayState.currentPage == &pageMainMenu) {
         displayState.currentButtons[displayState.btnCount++] = &btnPower;
         DSP_renderButton(&btnPower);
+    } else if(displayState.currentPage->showBackButton) {
+        displayState.currentButtons[displayState.btnCount++] = &btnBack;
+        DSP_renderButton(&btnBack);
     }
 }

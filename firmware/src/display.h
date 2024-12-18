@@ -48,9 +48,10 @@ typedef struct DSP_Element {
 } DSP_Element;
 
 typedef struct DSP_Page {
-    DSP_Text title;
-    DSP_Element *elements;
-    unsigned char count;
+    DSP_Text title = {nullptr, DSP_BLACK};
+    DSP_Element *elements = nullptr;
+    unsigned char count = 0;
+    bool showBackButton = false;
 } DSP_Page;
 
 typedef struct DSP_State {

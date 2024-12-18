@@ -1,9 +1,9 @@
 #include "_effects.h"
-#include "led.h"
 #include "beam.h"
+#include "display.h"
+#include "led.h"
 #include "pictogram.h"
 #include "tetris.h"
-#include "display.h"
 
 #include <Arduino.h>
 
@@ -20,6 +20,12 @@ FX *effects[fxCnt] = {(FX *) beam, (FX *) sideBeam, (FX *) tetris, (FX *) pictog
 
 EffectState state;
 
+DSP_Element buttonStopEffect = {
+        (DSP_Element_Data) {
+                .btn = {true, {"Stop Effect", DSP_WHITE}, &FX_stopEffect}},
+        BTN};
+DSP_Page defaultEffectPage = {{"", DSP_WHITE}, &buttonStopEffect, 1};
+
 EffectState *FX_getState() {
     return &state;
 }
@@ -32,16 +38,23 @@ int FX_getCount() {
     return fxCnt;
 }
 
+void FX_stopEffect(DSP_Btn *btn) {
+    FX_resetState();
+    DSP_onEffectMenuClick(&buttonStopEffect.data.btn);
+}
 
-bool FX_setEffect(const char *effectName) {
-
-    // Reset State
+void FX_resetState() {
     state.lastFrameChange = 0;
     state.current = nullptr;
     state.halt = false;
     state.singleStep = false;
     state.slowRate = 0;
     LED_clear();
+}
+
+
+bool FX_setEffect(const char *effectName) {
+    FX_resetState();
 
     FX *effect = nullptr;
     for (int i = 0; i < fxCnt; i++) {
@@ -55,10 +68,18 @@ bool FX_setEffect(const char *effectName) {
     if (effect != nullptr) {
         effect->resetData();
         state.current = effect;
+
+        if (effect->hasPage) {
+            DSP_renderPage(&effect->displayPage);
+        } else {
+            defaultEffectPage.title.text = effect->name;
+            DSP_renderPage(&defaultEffectPage);
+        }
+
         return true;
-    } else {
-        return false;
     }
+
+    return false;
 }
 
 
