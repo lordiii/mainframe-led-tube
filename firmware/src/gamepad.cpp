@@ -3,6 +3,7 @@
 #include "effects/_effects.h"
 #include "enum.h"
 #include "globals.h"
+#include "led.h"
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -15,6 +16,9 @@
 #define GP_HAS_CHANGES 0x01
 #define GP_NO_CHANGES 0x00
 
+#define GP_BTN_CNT sizeof(GP_Locks) / sizeof(bool)
+#define GP_MAX_KEYBINDS 8
+
 bool gpPairingEnabled = false;
 unsigned long lastClear = 0;
 unsigned long lastEnableToggle = 0;
@@ -23,6 +27,52 @@ GP_Locks gpLocks;
 GP_Status gp;
 
 unsigned char gamepadBuffer[sizeof(GP_Status) + 10] = {};
+
+KeybindFn keybindings[GP_BTN_CNT][GP_MAX_KEYBINDS];
+unsigned char bindCount[GP_BTN_CNT];
+
+void GP_unregisterKeybind(GP_BUTTON btn, KeybindFn fn) {
+    unsigned char *cnt = &bindCount[btn];
+
+    int i;
+    for (i = 0; i < *cnt; i++) {
+        if ((int) keybindings[btn][i] == (int) fn) {
+            break;
+        }
+    }
+
+    int remaining = GP_MAX_KEYBINDS - i - 1;
+    if (remaining > 0) {
+        memmove(&keybindings[btn][i], &keybindings[btn][i + 1], remaining);
+
+        (*cnt)--;
+    }
+}
+
+void GP_registerKeybind(GP_BUTTON btn, KeybindFn fn) {
+    unsigned char *cnt = &bindCount[btn];
+
+    for (int i = 0; i < *cnt; i++) {
+        if (keybindings[btn][i] == fn) {
+            return;
+        }
+    }
+
+    if (*cnt < GP_MAX_KEYBINDS) {
+        keybindings[btn][*cnt] = fn;
+        (*cnt)++;
+    }
+}
+
+void GP_clearKeybindings(GP_BUTTON btn) {
+    bindCount[btn] = 0;
+}
+
+void GP_clearKeybindings() {
+    for (GP_BUTTON btn = BUTTON_Y; btn <= STICK_R_Y; btn = (GP_BUTTON) ((int) btn + 1)) {
+        GP_clearKeybindings(btn);
+    }
+}
 
 bool GP_update() {
     uint8_t quantity = Wire.requestFrom(0x55, sizeof(GP_Status) + 1);
@@ -45,27 +95,25 @@ bool GP_update() {
 
     memcpy(&gp, gamepadBuffer + 1, sizeof(GP_Status));
 
-    EffectState *state = FX_getState();
-    bool hasEventHandler = !state->halt && state->current;
-
     bool *p_lock = &gpLocks.buttonY;
     bool *p_bool = &gp.buttonY;
     int *p_int = &gp.breakForce;
 
+    LED_animationStop();
+
     GP_BUTTON type = BUTTON_Y;
     for (; type < BREAK; type = (GP_BUTTON) ((int) type + 1)) {
-        bool handled = false;
+        if (*p_bool && !*p_lock) {
+            unsigned char bindingCnt = bindCount[type];
+            KeybindFn *bindings = keybindings[type];
 
-        if (hasEventHandler && *p_bool && !*p_lock) {
-            handled = state->current->onButton(type);
-        }
-
-        if (handled) {
-            *p_lock = true;
-        } else {
-            if (!*p_bool) {
-                *p_lock = false;
+            for (int i = 0; i < bindingCnt; i++) {
+                bindings[i](type, &gp);
             }
+
+            *p_lock = true;
+        } else if (!*p_bool) {
+            *p_lock = false;
         }
 
         p_lock = p_lock + 1;
@@ -73,44 +121,21 @@ bool GP_update() {
     }
 
     for (; type <= STICK_R_Y; type = (GP_BUTTON) ((int) type + 1)) {
-        if (hasEventHandler && *p_int != 0) {
-            state->current->onAnalogButton(type, *p_int);
+        if (*p_int != 0) {
+            unsigned char bindingCnt = bindCount[type];
+            KeybindFn *bindings = keybindings[type];
+
+            for (int i = 0; i < bindingCnt; i++) {
+                bindings[i](type, &gp);
+            }
         }
 
-        *p_lock = false;
-
-        p_lock = p_lock + 1;
         p_int = p_int + 1;
     }
 
-    GP_processButtons();
+    LED_animationStart();
 
     return true;
-}
-
-void GP_processButtons() {
-    EffectState *state = FX_getState();
-    bool navEnabled = state->halt || state->current == nullptr;
-
-    if (gp.miscHome && !gpLocks.miscHome) {
-        state->halt = !state->halt;
-        gpLocks.miscHome = true;
-    }
-
-    if (navEnabled) {
-        if (gp.dpadUp && !gpLocks.dpadUp) {
-            DSP_nextButton(-1);
-            gpLocks.dpadUp = true;
-        } else if (gp.dpadDown && !gpLocks.dpadDown) {
-            DSP_nextButton(1);
-            gpLocks.dpadDown = true;
-        }
-
-        if (gp.buttonA && !gpLocks.buttonA) {
-            DSP_selectButton();
-            gpLocks.buttonA = true;
-        }
-    }
 }
 
 GP_Status *GP_getState() {

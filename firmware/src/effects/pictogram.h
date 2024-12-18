@@ -13,9 +13,7 @@ public:
 
     void resetData() override;
 
-    bool onButton(GP_BUTTON button) override { return false; }
-
-    bool onAnalogButton(GP_BUTTON button, int value) override { return false; }
+    bool registerKeybindings() override { return false; };
 
 private:
     LED_Pixel *last = nullptr;

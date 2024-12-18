@@ -87,9 +87,9 @@ void DSP_renderPage(DSP_Page *page);
 
 void DSP_renderStateButton(DSP_Btn *btn);
 
-void DSP_nextButton(signed char dir);
+void DSP_addKeybindings();
 
-void DSP_selectButton();
+void DSP_removeKeybindings();
 
 extern bool shouldRerenderDisplay;
 

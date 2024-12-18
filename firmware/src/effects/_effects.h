@@ -12,13 +12,13 @@ public:
     DSP_Page displayPage = {};
     bool hasPage = false;
 
+    bool usesButtons = false;
+
     virtual bool render(unsigned long delta) = 0;
 
     virtual void resetData() = 0;
 
-    virtual bool onButton(GP_BUTTON button) = 0;
-
-    virtual bool onAnalogButton(GP_BUTTON button, int value) = 0;
+    virtual bool registerKeybindings() = 0;
 
 protected:
     explicit FX(const char *name) {
@@ -33,6 +33,8 @@ typedef struct EffectState {
     bool halt;
     bool singleStep;
 } EffectState;
+
+void FX_init();
 
 void FX_resetState();
 

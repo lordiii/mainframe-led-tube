@@ -136,30 +136,6 @@ void initCLI() {
             commandToggleGamepadRegister
     });
 
-    embeddedCliAddBinding(embeddedCli, {
-            "button-next",
-            "Select next display button",
-            true,
-            &Serial,
-            commandButtonNext
-    });
-
-    embeddedCliAddBinding(embeddedCli, {
-            "button-prev",
-            "Select previous display button",
-            true,
-            &Serial,
-            commandButtonPrev
-    });
-
-    embeddedCliAddBinding(embeddedCli, {
-            "button-select",
-            "Select current display button",
-            true,
-            &Serial,
-            commandButtonSelect
-    });
-
     embeddedCli->writeChar = writeCmdOutChar;
 }
 
@@ -430,19 +406,4 @@ void commandToggleGamepadRegister(EmbeddedCli *cli, char *args, void *context) {
         out->print("Controller registration turned ");
         out->print(turnOn ? "on" : "off");
     }
-}
-
-//
-// Display
-//
-void commandButtonPrev(EmbeddedCli *cli, char *args, void *context) {
-    DSP_nextButton(-1);
-}
-
-void commandButtonNext(EmbeddedCli *cli, char *args, void *context) {
-    DSP_nextButton(1);
-}
-
-void commandButtonSelect(EmbeddedCli *cli, char *args, void *context) {
-    DSP_selectButton();
 }

@@ -23,6 +23,12 @@ LED_RGB *TETRONIMO_COLORS[TETRONIMO_COUNT] = {
 };
 unsigned char rotateBuffer[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE] = {};
 
+FX_Tetris *tetris = new FX_Tetris();
+
+FX_Tetris *TETRIS_getInstance() {
+    return tetris;
+}
+
 bool FX_Tetris::render(unsigned long delta) {
     GP_Status *gamepad = GP_getState();
 
@@ -285,7 +291,48 @@ void FX_Tetris::rotateFrame(bool clockwise, TShape *shape) {
     }
 }
 
-bool FX_Tetris::onButton(GP_BUTTON button) {
+void rotateStationary(GP_BUTTON btn, GP_Status *gp) {
+    EffectState *state = FX_getState();
+    if (state->halt || tetris->state != RUNNING) {
+        return;
+    }
+
+    int value = btn == BREAK ? gp->breakForce : gp->throttleForce;
+
+    if (tetris->lastRotation > ((1020 - value) / 50)) {
+        LED_animationStop();
+
+        tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring,
+                            tetris->current_shape.pixel, &Color_Black, false);
+
+        switch (btn) {
+            case BREAK:
+                tetris->rotateFrame(true, &tetris->current_shape);
+                break;
+            case THROTTLE:
+                tetris->rotateFrame(false, &tetris->current_shape);
+                break;
+            default:
+                return;
+        }
+
+        tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring, tetris->current_shape.pixel,
+                            tetris->current_shape.color, false);
+
+        tetris->lastRotation = 0;
+
+        LED_animationStart();
+    }
+}
+
+bool FX_Tetris::registerKeybindings() {
+    GP_registerKeybind(BREAK, rotateStationary);
+    GP_registerKeybind(THROTTLE, rotateStationary);
+
+    return true;
+}
+
+/*bool FX_Tetris::onButton(GP_BUTTON button) {
     bool handled = false;
 
     if (this->state == RUNNING) {
@@ -344,41 +391,4 @@ bool FX_Tetris::onButton(GP_BUTTON button) {
     }
 
     return handled;
-}
-
-bool FX_Tetris::onAnalogButton(GP_BUTTON button, int value) {
-    bool handled = false;
-
-    if (this->state == RUNNING) {
-        handled = true;
-
-        if (this->lastRotation > ((1020 - value) / 50)) {
-            LED_animationStop();
-
-            renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
-                        &Color_Black, false);
-
-            switch (button) {
-                case BREAK:
-                    rotateFrame(true, &this->current_shape);
-                    break;
-                case THROTTLE:
-                    rotateFrame(false, &this->current_shape);
-                    break;
-                default:
-                    handled = false;
-                    break;
-            }
-
-            renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
-                        this->current_shape.color, false);
-
-            LED_animationStart();
-            this->lastRotation = 0;
-        }
-
-        this->lastRotation++;
-    }
-
-    return handled;
-}
+}*/

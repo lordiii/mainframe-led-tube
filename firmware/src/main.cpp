@@ -5,6 +5,7 @@
 #include "led.h"
 #include "gamepad.h"
 #include "display.h"
+#include "effects/_effects.h"
 
 #include <Entropy.h>
 #include <sensors.h>
@@ -36,6 +37,7 @@ void setup() {
 
     initCLI();
     LED_init();
+    FX_init();
     SENSOR_init();
     DSP_init();
 }

@@ -5,6 +5,7 @@
 #include "enum.h"
 #include "globals.h"
 #include "led.h"
+#include "gamepad.h"
 
 #define TETRIS_MAX_SIZE 4
 
@@ -23,27 +24,18 @@ enum TState {
     RINGS
 };
 
+
 class FX_Tetris : FX {
 public:
     FX_Tetris() : FX("tetris") {
+        this->usesButtons = true;
     }
 
     bool render(unsigned long delta) override;
 
     void resetData() override;
 
-    bool onButton(GP_BUTTON button) override;
-
-    bool onAnalogButton(GP_BUTTON button, int value) override;
-
-private:
-    TShape current_shape = {};
-    int score = 0;
-    TState state = {};
-    int lastEndAnimationRing = 0;
-    unsigned int lastInput = 0;
-    unsigned short lastRotation = 0;
-    bool ringStatus[LED_TOTAL_RINGS] = {};
+    bool registerKeybindings() override;
 
     bool renderShape(unsigned char current_shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE], int currentRing, int currentPixel,
                      LED_RGB *color, bool testRun);
@@ -55,7 +47,17 @@ private:
     void rotateFrame(bool clockwise, TShape *shape = nullptr);
 
     void rotateShape(TShape *shape, bool clockwise);
+
+    TShape current_shape = {};
+    int score = 0;
+    TState state = {};
+    int lastEndAnimationRing = 0;
+    unsigned int lastInput = 0;
+    unsigned short lastRotation = 0;
+    bool ringStatus[LED_TOTAL_RINGS] = {};
 };
+
+FX_Tetris *TETRIS_getInstance();
 
 
 #endif

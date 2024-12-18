@@ -11,12 +11,11 @@ FX_Beam *beam = new FX_Beam();
 
 FX_SideBeam *sideBeam = new FX_SideBeam();
 
-FX_Tetris *tetris = new FX_Tetris();
 
 FX_Pictogram *pictogram = new FX_Pictogram();
 
 const int fxCnt = 4;
-FX *effects[fxCnt] = {(FX *) beam, (FX *) sideBeam, (FX *) tetris, (FX *) pictogram};
+FX *effects[fxCnt] = {(FX *) beam, (FX *) sideBeam, nullptr, (FX *) pictogram};
 
 EffectState state;
 
@@ -25,6 +24,10 @@ DSP_Element buttonStopEffect = {
                 .btn = {true, {"Stop Effect", DSP_WHITE}, &FX_stopEffect}},
         BTN};
 DSP_Page defaultEffectPage = {{"", DSP_WHITE}, &buttonStopEffect, 1};
+
+void FX_init() {
+    effects[2] = (FX *) TETRIS_getInstance();
+}
 
 EffectState *FX_getState() {
     return &state;
@@ -50,8 +53,20 @@ void FX_resetState() {
     state.singleStep = false;
     state.slowRate = 0;
     LED_clear();
+
+    GP_clearKeybindings();
+    DSP_addKeybindings();
 }
 
+void FX_toggleHalt(GP_BUTTON btn, GP_Status *gp) {
+    state.halt = !state.halt;
+
+    if (state.halt) {
+        DSP_addKeybindings();
+    } else {
+        DSP_removeKeybindings();
+    }
+}
 
 bool FX_setEffect(const char *effectName) {
     FX_resetState();
@@ -74,6 +89,11 @@ bool FX_setEffect(const char *effectName) {
         } else {
             defaultEffectPage.title.text = effect->name;
             DSP_renderPage(&defaultEffectPage);
+        }
+
+        if (effect->registerKeybindings()) {
+            DSP_removeKeybindings();
+            GP_registerKeybind(MISC_HOME, FX_toggleHalt);
         }
 
         return true;

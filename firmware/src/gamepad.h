@@ -65,15 +65,23 @@ typedef struct GP_Status {
     int stickRY;
 } GP_Status;
 
-bool GP_update();
+typedef void (*KeybindFn)(GP_BUTTON btn, GP_Status *);
 
-void GP_processButtons();
+bool GP_update();
 
 void GP_enablePairing();
 
 void GP_disablePairing();
 
 void GP_clear();
+
+void GP_unregisterKeybind(GP_BUTTON btn, KeybindFn fn);
+
+void GP_registerKeybind(GP_BUTTON btn, KeybindFn fn);
+
+void GP_clearKeybindings(GP_BUTTON btn);
+
+void GP_clearKeybindings();
 
 GP_Status *GP_getState();
 

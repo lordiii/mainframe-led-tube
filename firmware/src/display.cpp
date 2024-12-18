@@ -1,6 +1,7 @@
 ﻿#include "display.h"
 #include "effects/_effects.h"
 #include "globals.h"
+#include "gamepad.h"
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -64,19 +65,6 @@ void DSP_init() {
         btn->inactiveColor = DSP_BLACK;
     }
 
-    // Configure "none" effect
-    DSP_Element *element = &pageEffects.elements[pageEffects.count++];
-    element->type = BTN;
-    DSP_Btn *btn = &element->data.btn;
-
-    btn->selected = false;
-    btn->text = {"none", DSP_WHITE};
-    btn->onClick = DSP_onEffectBtnClick;
-
-    btn->active = false;
-    btn->activeColor = DSP_WHITE;
-    btn->inactiveColor = DSP_BLACK;
-
     displayState.currentButtons = (DSP_Btn **) calloc(16, sizeof(DSP_Btn **));
 
     // Configure power button
@@ -86,6 +74,7 @@ void DSP_init() {
 
     // Render
     DSP_renderPage(&pageMainMenu);
+    DSP_addKeybindings();
 }
 
 void DSP_reenablePower() {
@@ -105,50 +94,6 @@ void DSP_reenablePower() {
     shouldRerenderDisplay = true;
 }
 
-void DSP_nextButton(signed char dir) {
-    if (displayState.btnCount == 0) {
-        return;
-    }
-
-    bool found = false;
-    if (dir == 1 && displayState.currentButtons[displayState.btnCount - 1]->selected) {
-
-        displayState.currentButtons[displayState.btnCount - 1]->selected = false;
-        displayState.currentButtons[0]->selected = true;
-
-        found = true;
-    } else if (dir == -1 && displayState.currentButtons[0]->selected) {
-        displayState.currentButtons[displayState.btnCount - 1]->selected = true;
-        displayState.currentButtons[0]->selected = false;
-
-        found = true;
-    } else {
-        for (int i = 0; i < displayState.btnCount; i++) {
-            DSP_Btn *btn = displayState.currentButtons[dir == 1 ? i : (displayState.btnCount - 1) - i];
-            if (found) {
-                btn->selected = true;
-                break;
-            } else {
-                found = btn->selected;
-                btn->selected = false;
-            }
-        }
-    }
-
-    if (found) {
-        DSP_renderPage(displayState.currentPage);
-    }
-}
-
-void DSP_selectButton() {
-    for (int i = 0; i < displayState.btnCount; i++) {
-        if (displayState.currentButtons[i]->selected) {
-            displayState.currentButtons[i]->onClick(&displayState.currentPage->elements[i].data.btn);
-            return;
-        }
-    }
-    DSP_renderPage(&pageMainMenu);
-}
 
 void DSP_onButtonCyclePowerClick(DSP_Btn *btn) {
     if (powerToggleLocked) {
@@ -182,7 +127,7 @@ void DSP_onEffectMenuClick(DSP_Btn *btn) {
 }
 
 void DSP_onEffectBtnClick(DSP_Btn *btn) {
-    if(!FX_setEffect(btn->text.text)) {
+    if (!FX_setEffect(btn->text.text)) {
         DSP_onButtonMainMenuClick(btn);
     }
 }
@@ -234,13 +179,73 @@ void DSP_renderButton(DSP_Btn *btn) {
     displayState.currentX -= 8;
 }
 
-void DSP_renderPage(DSP_Page *page) {
-    if (page == nullptr) {
-        if (displayState.currentPage != nullptr) {
-            DSP_renderPage(displayState.currentPage);
-        }
+void DSP_changeButton(signed char dir) {
+    if (displayState.btnCount <= 1) {
         return;
     }
+
+    bool found = false;
+    if (dir == 1 && displayState.currentButtons[displayState.btnCount - 1]->selected) {
+        displayState.currentButtons[displayState.btnCount - 1]->selected = false;
+        displayState.currentButtons[0]->selected = true;
+
+        found = true;
+    } else if (dir == -1 && displayState.currentButtons[0]->selected) {
+        displayState.currentButtons[displayState.btnCount - 1]->selected = true;
+        displayState.currentButtons[0]->selected = false;
+
+        found = true;
+    } else {
+        for (int i = 0; i < displayState.btnCount; i++) {
+            DSP_Btn *btn = displayState.currentButtons[dir == 1 ? i : (displayState.btnCount - 1) - i];
+            if (found) {
+                btn->selected = true;
+                break;
+            } else {
+                found = btn->selected;
+                btn->selected = false;
+            }
+        }
+    }
+
+    if (found) {
+        DSP_renderPage(nullptr);
+    }
+}
+
+void DSP_clickButton(GP_BUTTON btn, GP_Status *gp) {
+    for (int i = 0; i < displayState.btnCount; i++) {
+        if (displayState.currentButtons[i]->selected) {
+            displayState.currentButtons[i]->onClick(&displayState.currentPage->elements[i].data.btn);
+            return;
+        }
+    }
+
+    DSP_renderPage(&pageMainMenu);
+}
+
+void DSP_nextButton(GP_BUTTON btn, GP_Status *gp) {
+    DSP_changeButton(1);
+}
+
+void DSP_prevButton(GP_BUTTON btn, GP_Status *gp) {
+    DSP_changeButton(-1);
+}
+
+void DSP_addKeybindings() {
+    GP_registerKeybind(DPAD_DOWN, DSP_nextButton);
+    GP_registerKeybind(DPAD_UP, DSP_prevButton);
+    GP_registerKeybind(BUTTON_A, DSP_clickButton);
+}
+
+void DSP_removeKeybindings() {
+    GP_unregisterKeybind(DPAD_DOWN, DSP_nextButton);
+    GP_unregisterKeybind(DPAD_UP, DSP_prevButton);
+    GP_unregisterKeybind(BUTTON_A, DSP_clickButton);
+}
+
+void DSP_renderPage(DSP_Page *wantedPage) {
+    DSP_Page *page = wantedPage == nullptr ? displayState.currentPage : wantedPage;
 
     displayState.currentX = 4;
     displayState.currentY = 4;
@@ -269,6 +274,10 @@ void DSP_renderPage(DSP_Page *page) {
                 DSP_renderText(&element->data.text, element->data.text.color);
                 break;
             case BTN:
+                if (wantedPage != nullptr) {
+                    btn->selected = displayState.btnCount == 0;
+                }
+
                 displayState.currentButtons[displayState.btnCount++] = btn;
                 DSP_renderButton(btn);
                 break;
@@ -276,14 +285,18 @@ void DSP_renderPage(DSP_Page *page) {
                 continue;
         }
     }
-
     displayState.currentPage = page;
+
+    if (wantedPage != nullptr) {
+        btnBack.selected = displayState.btnCount == 0;
+        btnPower.selected = displayState.btnCount == 0;
+    }
 
     displayState.currentY = displayState.height - 4 - 12;
     if (displayState.currentPage == &pageMainMenu) {
         displayState.currentButtons[displayState.btnCount++] = &btnPower;
         DSP_renderButton(&btnPower);
-    } else if(displayState.currentPage->showBackButton) {
+    } else if (displayState.currentPage->showBackButton) {
         displayState.currentButtons[displayState.btnCount++] = &btnBack;
         DSP_renderButton(&btnBack);
     }
