@@ -172,7 +172,7 @@ bool FX_Tetris::renderShape(unsigned char shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE
 }
 
 void FX_Tetris::setTetrisShape(TShape *shape) {
-    unsigned char shapeID = 0;//Entropy.random(0, TETRONIMO_COUNT);
+    unsigned char shapeID = Entropy.random(0, TETRONIMO_COUNT);
     memcpy(shape->array, TETRONIMOS[shapeID], sizeof(TETRONIMOS[shapeID]));
     shape->ring = LED_TOTAL_RINGS - (TETRIS_MAX_SIZE + 1);
     shape->placed = false;
@@ -291,7 +291,7 @@ void FX_Tetris::rotateFrame(bool clockwise, TShape *shape) {
     }
 }
 
-void rotateStationary(GP_BUTTON btn, GP_Status *gp) {
+void onRotateStationary(GP_BUTTON btn, GP_Status *gp) {
     EffectState *state = FX_getState();
     if (state->halt || tetris->state != RUNNING) {
         return;
@@ -323,72 +323,85 @@ void rotateStationary(GP_BUTTON btn, GP_Status *gp) {
 
         LED_animationStart();
     }
+
+    tetris->lastRotation++;
+}
+
+void onRotateShape(GP_BUTTON btn, GP_Status *gp) {
+    EffectState *state = FX_getState();
+    if (state->halt || tetris->state != RUNNING) {
+        return;
+    }
+
+    LED_animationStop();
+
+    tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring, tetris->current_shape.pixel,
+                        &Color_Black, false);
+
+    switch (btn) {
+        case BUTTON_X:
+            tetris->rotateShape(&tetris->current_shape, true);
+            break;
+        case BUTTON_A:
+            tetris->rotateShape(&tetris->current_shape, false);
+            break;
+        default:
+            break;
+    }
+
+    tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring, tetris->current_shape.pixel,
+                        tetris->current_shape.color, false);
+
+    LED_animationStart();
+}
+
+void onShapeMove(GP_BUTTON btn, GP_Status *gp) {
+    EffectState *state = FX_getState();
+    if (state->halt || tetris->state != RUNNING) {
+        return;
+    }
+
+    LED_animationStop();
+
+    tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring, tetris->current_shape.pixel,
+                        &Color_Black, false);
+
+    switch (btn) {
+        case DPAD_LEFT:
+            tetris->current_shape.pixel -= 1;
+
+            if (!tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring,
+                                     tetris->current_shape.pixel, tetris->current_shape.color, true)) {
+                tetris->current_shape.pixel += 1;
+            }
+            break;
+        case DPAD_RIGHT:
+            tetris->current_shape.pixel += 1;
+
+            if (!tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring,
+                                     tetris->current_shape.pixel, tetris->current_shape.color, true)) {
+                tetris->current_shape.pixel -= 1;
+            }
+            break;
+        default:
+            break;
+    }
+
+    tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring, tetris->current_shape.pixel,
+                        tetris->current_shape.color, false);
+
+    LED_animationStart();
 }
 
 bool FX_Tetris::registerKeybindings() {
-    GP_registerKeybind(BREAK, rotateStationary);
-    GP_registerKeybind(THROTTLE, rotateStationary);
+    GP_registerKeybind(BREAK, onRotateStationary);
+    GP_registerKeybind(THROTTLE, onRotateStationary);
+
+    GP_registerKeybind(BUTTON_X, onRotateShape);
+    GP_registerKeybind(BUTTON_A, onRotateShape);
+
+    GP_registerKeybind(DPAD_LEFT, onShapeMove);
+    GP_registerKeybind(DPAD_RIGHT, onShapeMove);
 
     return true;
 }
-
-/*bool FX_Tetris::onButton(GP_BUTTON button) {
-    bool handled = false;
-
-    if (this->state == RUNNING) {
-        handled = true;
-        LED_animationStop();
-
-        renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel, &Color_Black,
-                    false);
-
-        switch (button) {
-            case SHOULDER_L1:
-                rotateFrame(true);
-                if (!renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
-                                 this->current_shape.color, true)) {
-                    rotateFrame(false);
-                }
-                break;
-            case SHOULDER_R1:
-                rotateFrame(false);
-                if (!renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
-                                 this->current_shape.color, true)) {
-                    rotateFrame(true);
-                }
-                break;
-            case BUTTON_X:
-                rotateShape(&this->current_shape, true);
-                break;
-            case BUTTON_A:
-                rotateShape(&this->current_shape, false);
-                break;
-            case DPAD_LEFT:
-                this->current_shape.pixel -= 1;
-
-                if (!renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
-                                 this->current_shape.color, true)) {
-                    this->current_shape.pixel += 1;
-                }
-                break;
-            case DPAD_RIGHT:
-                this->current_shape.pixel += 1;
-
-                if (!renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
-                                 this->current_shape.color, true)) {
-                    this->current_shape.pixel -= 1;
-                }
-                break;
-            default:
-                handled = false;
-                break;
-        }
-
-        renderShape(this->current_shape.array, this->current_shape.ring, this->current_shape.pixel,
-                    this->current_shape.color, false);
-
-        LED_animationStart();
-    }
-
-    return handled;
-}*/

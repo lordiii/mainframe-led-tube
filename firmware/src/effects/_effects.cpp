@@ -62,9 +62,13 @@ void FX_toggleHalt(GP_BUTTON btn, GP_Status *gp) {
     state.halt = !state.halt;
 
     if (state.halt) {
+        GP_clearKeybindings();
         DSP_addKeybindings();
     } else {
-        DSP_removeKeybindings();
+        GP_clearKeybindings();
+        if (state.current != nullptr) {
+            state.current->registerKeybindings();
+        }
     }
 }
 

@@ -147,11 +147,13 @@ void loop() {
   newStatus.throttleForce = ctl->throttle();
   newStatus.stickLX = ctl->axisX();
   newStatus.stickRX = ctl->axisRX();
-
   newStatus.stickLY = ctl->axisY();
   newStatus.stickRY = ctl->axisRY();
 
-  if(memcmp(&newStatus, &lastStatus, sizeof(GP_Status)) != 0) {
+  if(memcmp(&newStatus, &lastStatus, sizeof(GP_Status)) != 0
+   || newStatus.breakForce != 0 || newStatus.throttleForce != 0
+   || newStatus.stickLX != 0 || newStatus.stickRX != 0
+   || newStatus.stickLY != 0 || newStatus.stickRY != 0) {
     Serial.println("GP CHANGE DETECTED");
     memcpy(&lastStatus, &newStatus, sizeof(GP_Status));
     hasChanged = true;
