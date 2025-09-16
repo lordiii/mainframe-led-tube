@@ -58,7 +58,4 @@ public:
     bool ringStatus[LED_TOTAL_RINGS] = {};
 };
 
-FX_Tetris *TETRIS_getInstance();
-
-
 #endif

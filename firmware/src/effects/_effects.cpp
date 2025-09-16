@@ -2,19 +2,24 @@
 #include "beam.h"
 #include "display.h"
 #include "led.h"
+#include "dummy.h"
 #include "pictogram.h"
 #include "tetris.h"
 
 #include <Arduino.h>
 
-FX_Beam *beam = new FX_Beam();
+FX_Beam *fx_beam = new FX_Beam();
 
-FX_SideBeam *sideBeam = new FX_SideBeam();
+FX_SideBeam *fx_sideBeam = new FX_SideBeam();
 
-FX_Pictogram *pictogram = new FX_Pictogram();
+FX_Pictogram *fx_pictogram = new FX_Pictogram();
 
-const int fxCnt = 4;
-FX *effects[fxCnt] = {(FX *) beam, (FX *) sideBeam, nullptr, (FX *) pictogram};
+FX_Dummy *fx_dummy = new FX_Dummy();
+
+FX_Tetris *fx_tetris = new FX_Tetris();
+
+const int fxCnt = 5;
+FX *effects[fxCnt] = {(FX *) fx_beam, (FX *) fx_sideBeam, (FX *) fx_tetris, (FX *) fx_pictogram, (FX *) fx_dummy};
 
 EffectState state;
 
@@ -25,7 +30,6 @@ DSP_Element buttonStopEffect = {
 DSP_Page defaultEffectPage = {{"", DSP_WHITE}, &buttonStopEffect, 1};
 
 void FX_init() {
-    effects[2] = (FX *) TETRIS_getInstance();
 }
 
 EffectState *FX_getState() {
@@ -57,7 +61,7 @@ void FX_resetState() {
     DSP_addKeybindings();
 }
 
-void FX_toggleHalt(GP_BUTTON btn, GP_Status *gp) {
+void FX_toggleHalt(GP_BUTTON btn, GP_Status *gp, FX *fx) {
     state.halt = !state.halt;
 
     if (state.halt) {

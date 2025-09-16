@@ -101,6 +101,8 @@ bool GP_update() {
 
     LED_animationStop();
 
+    EffectState *state = FX_getState();
+
     GP_BUTTON type = BUTTON_Y;
     for (; type < BREAK; type = (GP_BUTTON) ((int) type + 1)) {
         if (*p_bool && !*p_lock) {
@@ -108,7 +110,7 @@ bool GP_update() {
             KeybindFn *bindings = keybindings[type];
 
             for (int i = 0; i < bindingCnt; i++) {
-                bindings[i](type, &gp);
+                bindings[i](type, &gp, state->current);
             }
 
             *p_lock = true;
@@ -126,7 +128,7 @@ bool GP_update() {
             KeybindFn *bindings = keybindings[type];
 
             for (int i = 0; i < bindingCnt; i++) {
-                bindings[i](type, &gp);
+                bindings[i](type, &gp, state->current);
             }
         }
 

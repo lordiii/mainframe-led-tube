@@ -2,6 +2,7 @@
 #define CONTROLLER_H
 
 #include "enum.h"
+#include "effects/_effects.h"
 
 typedef struct GP_Locks {
     bool buttonY;
@@ -65,7 +66,7 @@ typedef struct GP_Status {
     int stickRY;
 } GP_Status;
 
-typedef void (*KeybindFn)(GP_BUTTON btn, GP_Status *);
+typedef void (*KeybindFn)(GP_BUTTON btn, GP_Status *, FX *);
 
 bool GP_update();
 

@@ -23,12 +23,6 @@ LED_RGB *TETRONIMO_COLORS[TETRONIMO_COUNT] = {
 };
 unsigned char rotateBuffer[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE] = {};
 
-FX_Tetris *tetris = new FX_Tetris();
-
-FX_Tetris *TETRIS_getInstance() {
-    return tetris;
-}
-
 bool FX_Tetris::render(unsigned long delta) {
     GP_Status *gamepad = GP_getState();
 
@@ -278,7 +272,7 @@ void FX_Tetris::rotateShape(TShape *shape, bool clockwise) {
     }
 }
 
-void moveShape(bool left) {
+void moveShape(FX_Tetris *tetris, bool left) {
     tetris->current_shape.pixel += left ? -1 : 1;
 
     if (!tetris->renderShape(tetris->current_shape.array, tetris->current_shape.ring,
@@ -287,7 +281,9 @@ void moveShape(bool left) {
     }
 }
 
-void onRotateStationary(GP_BUTTON btn, GP_Status *gp) {
+void onRotateStationary(GP_BUTTON btn, GP_Status *gp, FX *effect) {
+    auto *tetris = (FX_Tetris *) effect;
+
     EffectState *state = FX_getState();
     if (state->halt || tetris->state != RUNNING) {
         return;
@@ -331,7 +327,8 @@ void onRotateStationary(GP_BUTTON btn, GP_Status *gp) {
     tetris->lastRotation++;
 }
 
-void onRotateShape(GP_BUTTON btn, GP_Status *gp) {
+void onRotateShape(GP_BUTTON btn, GP_Status *gp, FX *effect) {
+    auto *tetris = (FX_Tetris *) effect;
     EffectState *state = FX_getState();
     if (state->halt || tetris->state != RUNNING) {
         return;
@@ -359,7 +356,8 @@ void onRotateShape(GP_BUTTON btn, GP_Status *gp) {
     LED_animationStart();
 }
 
-void onShapeMove(GP_BUTTON btn, GP_Status *gp) {
+void onShapeMove(GP_BUTTON btn, GP_Status *gp, FX *effect) {
+    auto *tetris = (FX_Tetris *) effect;
     EffectState *state = FX_getState();
     if (state->halt || tetris->state != RUNNING) {
         return;
@@ -372,10 +370,10 @@ void onShapeMove(GP_BUTTON btn, GP_Status *gp) {
 
     switch (btn) {
         case DPAD_LEFT:
-            moveShape(true);
+            moveShape(tetris, true);
             break;
         case DPAD_RIGHT:
-            moveShape(false);
+            moveShape(tetris, false);
             break;
         default:
             break;
