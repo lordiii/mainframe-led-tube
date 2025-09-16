@@ -2,6 +2,7 @@
 #define SENSORS_H
 
 #include <INA226.h>
+#include "OneWire.h"
 #include "enum.h"
 
 typedef struct SensorValues {
@@ -22,5 +23,7 @@ void SENSOR_update(bool temperature, bool current);
 void SENSOR_update_values(SensorValues *dst, bool temperature, bool current);
 
 SensorValues *SENSOR_getValues(TUBE_SECTION section);
+
+OneWire *SENSOR_OneWire_Get();
 
 #endif

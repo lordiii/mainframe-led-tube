@@ -5,10 +5,6 @@
 #include <DallasTemperature.h>
 #include <OneWire.h>
 
-const unsigned char tempProbeTop[8] = TEMPERATURE_SENSOR_TOP_ADDRESS;
-const unsigned char tempProbeCenter[8] = TEMPERATURE_SENSOR_CENTER_ADDRESS;
-const unsigned char tempProbeBottom[8] = TEMPERATURE_SENSOR_BOTTOM_ADDRESS;
-
 // Current sensors
 INA226 currentSensorTop(CURRENT_SENSOR_TOP_ADDRESS);
 INA226 currentSensorCenter(CURRENT_SENSOR_CENTER_ADDRESS);
@@ -22,7 +18,7 @@ bool temperatureToggle = false;
 
 SensorValues top = {
         &currentSensorTop,
-        tempProbeTop,
+        (unsigned char[]) TEMPERATURE_SENSOR_TOP_ADDRESS,
         0,
         0,
         0
@@ -30,7 +26,7 @@ SensorValues top = {
 
 SensorValues center = {
         &currentSensorCenter,
-        tempProbeCenter,
+        (unsigned char[]) TEMPERATURE_SENSOR_CENTER_ADDRESS,
         0,
         0,
         0
@@ -38,11 +34,15 @@ SensorValues center = {
 
 SensorValues bottom = {
         &currentSensorBottom,
-        tempProbeBottom,
+        (unsigned char[]) TEMPERATURE_SENSOR_BOTTOM_ADDRESS,
         0,
         0,
         0
 };
+
+OneWire *SENSOR_OneWire_Get() {
+    return &oneWire;
+}
 
 void SENSOR_init() {
     SENSOR_init_ina(top.currentSensor);
@@ -70,6 +70,8 @@ void SENSOR_update_values(SensorValues *dst, const bool temperature, const bool 
         } else {
             tempSensors.requestTemperaturesByAddress(dst->temperatureProbeId);
         }
+
+        temperatureToggle = !temperatureToggle;
     }
 
     if (current) {
