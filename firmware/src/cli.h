@@ -12,9 +12,9 @@ void writeCmdOutChar(EmbeddedCli *embeddedCli, char c);
 //
 // Sensor Values
 //
-void commandPrintTemperature(EmbeddedCli *cli, char *args, void *context);
+void commandOneWireDiscover(EmbeddedCli *cli, char *args, void *context);
 
-void commandPrintCurrent(EmbeddedCli *cli, char *args, void *context);
+void commandPrintSensors(EmbeddedCli *cli, char *args, void *context);
 
 //
 // Device Control

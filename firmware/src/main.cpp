@@ -61,7 +61,6 @@ void loop() {
         }
 
         taskTimes[2] = millis() - taskReadControllerInput;
-        return;
     }
 
     time = millis();
@@ -70,7 +69,6 @@ void loop() {
 
         SENSOR_update(false, true);
         taskTimes[1] = millis() - taskReadSensorCurrent;
-        return;
     }
 
     time = millis();
@@ -79,9 +77,7 @@ void loop() {
 
         SENSOR_update(true, false);
         taskTimes[0] = millis() - taskReadSensorTemperature;
-        return;
     }
-
 
     if (shouldRerenderDisplay) {
         DSP_renderPage(nullptr);

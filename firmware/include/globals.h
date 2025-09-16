@@ -23,6 +23,4 @@
 
 #define PWR_LOCK_TIME 5 * 1000 * 1000
 
-#define WEB_CHUNK_SIZE 1024
-
 #endif

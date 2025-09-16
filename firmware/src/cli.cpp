@@ -1,12 +1,10 @@
 #include "cli.h"
 #include "globals.h"
-#include "main.h"
 #include "effects/_effects.h"
 #include "led.h"
-#include "display.h"
 #include "gamepad.h"
+#include "sensors.h"
 
-#include <Wire.h>
 #include <embedded_cli.h>
 #include <Arduino.h>
 
@@ -26,19 +24,19 @@ void initCLI() {
     }
 
     embeddedCliAddBinding(embeddedCli, {
-            "temperature",
-            "Display last temperature values",
+            "onewire-discover",
+            "Discover one wire devices",
             true,
             &Serial,
-            commandPrintTemperature
+            commandOneWireDiscover
     });
 
     embeddedCliAddBinding(embeddedCli, {
-            "current",
-            "Display last current values",
+            "sensors",
+            "Display last sensor values",
             true,
             &Serial,
-            commandPrintCurrent
+            commandPrintSensors
     });
 
     embeddedCliAddBinding(embeddedCli, {
@@ -157,36 +155,47 @@ void writeCmdOutChar(EmbeddedCli *cli, char c) {
 //
 // Sensor Values
 //
-void commandPrintTemperature(EmbeddedCli *cli, char *args, void *context) {
+void commandOneWireDiscover(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
-    out->println("TOP\t\tCENTER\t\tBOTTOM\r\n");
+    OneWire *oneWire = SENSOR_OneWire_Get();
 
-    //auto sensor = getSensorValues();
+    byte addr[8];
+    while (oneWire->search(addr)) {
+        for (int i = 0; i < 8; i++) {
+            out->print(addr[i], 16);
 
-    out->print(0, 2);
-    out->print(" °C\t");
+            if (i != 7) out->print(',');
+        }
 
-    out->print(0, 2);
-    out->print(" °C\t");
-
-    out->print(0, 2);
-    out->println(" °C\t");
+        out->println();
+    }
 }
 
-void commandPrintCurrent(EmbeddedCli *cli, char *args, void *context) {
+void commandPrintSensorsSection(Print *out, TUBE_SECTION section) {
+    SensorValues *values = SENSOR_getValues(section);
+
+    out->print(values->current, 2);
+    out->print(" A * ");
+    out->print(values->busVoltage, 2);
+    out->print(" V => ");
+    out->print(values->busVoltage * values->current, 2);
+    out->print(" W @ ");
+    out->print(values->temperature, 2);
+    out->print(" C°");
+
+}
+
+void commandPrintSensors(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
-    out->println("TOP\t\tCENTER\t\tBOTTOM\r\n");
 
-    //auto sensor = getSensorValues();
+    out->println("\n\rTOP:");
+    commandPrintSensorsSection(out, TUBE_SECTION::TOP_SECTION);
+    out->println("\n\rCENTER:");
+    commandPrintSensorsSection(out, TUBE_SECTION::CENTER_SECTION);
+    out->println("\n\rBOTTOM:");
+    commandPrintSensorsSection(out, TUBE_SECTION::BOTTOM_SECTION);
 
-    out->print(0, 2);
-    out->print(" A\t");
-
-    out->print(0, 2);
-    out->print(" A\t");
-
-    out->print(0, 2);
-    out->println(" A\t");
+    out->println("\n\r");
 }
 
 //
