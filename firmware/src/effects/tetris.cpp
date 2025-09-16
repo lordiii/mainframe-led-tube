@@ -68,8 +68,8 @@ bool FX_Tetris::render(unsigned long delta) {
         }
         case ENDING: {
             if (delta > 62) {
-                LED_fillRing(&Color_Red, LED_getRing(LED_TOTAL_RINGS - this->lastEndAnimationRing));
-                LED_fillRing(&Color_Red, LED_getRing(this->lastEndAnimationRing));
+                LED_fillRing(Color_Red, LED_getRing(LED_TOTAL_RINGS - this->lastEndAnimationRing));
+                LED_fillRing(Color_Red, LED_getRing(this->lastEndAnimationRing));
 
                 this->lastEndAnimationRing++;
 
@@ -102,7 +102,7 @@ bool FX_Tetris::render(unsigned long delta) {
                 for (int i = 1; i < (LED_TOTAL_RINGS - 1); i++) {
                     if (this->ringStatus[i]) {
                         LED_Ring *ring = LED_getRing(i);
-                        LED_fillRing(&Color_Black, ring); // TODO: Clear via fade animation
+                        LED_fillRing(Color_Black, ring); // TODO: Clear via fade animation
 
                         LED_move(ring->next->start, LED_getRing(LED_TOTAL_RINGS - 1)->start, ring->start);
 
@@ -141,8 +141,8 @@ void FX_Tetris::resetData() {
     this->state = RUNNING;
 
     LED_Ring *first = LED_getRing(0);
-    LED_fillRing(&Color_Red, first);
-    LED_fillRing(&Color_Red, LED_getRing(LED_TOTAL_RINGS));
+    LED_fillRing(Color_Red, first);
+    LED_fillRing(Color_Red, LED_getRing(LED_TOTAL_RINGS));
 
     this->setTetrisShape(&this->current_shape);
 }
@@ -158,7 +158,7 @@ bool FX_Tetris::renderShape(unsigned char shape[TETRIS_MAX_SIZE][TETRIS_MAX_SIZE
                 if ((pxl->color->R == 0 && pxl->color->G == 0 && pxl->color->B == 0) ||
                     (color->R == 0 && color->G == 0 && color->B == 0)) {
                     if (!testRun) {
-                        LED_setColor(color, pxl);
+                        *pxl->color = *color;
                     }
                 } else {
                     return false;

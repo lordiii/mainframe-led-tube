@@ -7,24 +7,24 @@ void arrow(LED_Pixel *pxl) {
     LED_Pixel *p = pxl;
 
     for (int i = 0; i < 6; i++) {
-        LED_setColor(&Color_Cyan, p);
+        *p->color = Color_Cyan;
         p = p->previous;
     }
 
     p = LED_getPixel(pxl->ring->next, pxl->i);
-    LED_setColor(&Color_Cyan, p);
+    *p->color = Color_Cyan;
 
     for (int i = 0; i < 2; i++) {
         p = LED_getPixel(p->ring->next, p->previous->i);
-        LED_setColor(&Color_Cyan, p);
+        *p->color = Color_Cyan;
     }
 
     p = LED_getPixel(pxl->ring->previous, pxl->i);
-    LED_setColor(&Color_Cyan, p);
+    *p->color = Color_Cyan;
 
     for (int i = 0; i < 2; i++) {
         p = LED_getPixel(p->ring->previous, p->previous->i);
-        LED_setColor(&Color_Cyan, p);
+        *p->color = Color_Cyan;
     }
 }
 

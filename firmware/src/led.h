@@ -36,11 +36,9 @@ void LED_animationStop();
 
 void LED_animationStart();
 
-void LED_setColor(LED_RGB *src, LED_Pixel *dst);
+void LED_fillRing(LED_RGB src, LED_Ring *ring);
 
-void LED_fillRing(LED_RGB *src, LED_Ring *ring);
-
-void LED_fillSection(LED_RGB *src, LED_Pixel *start, LED_Pixel *end);
+void LED_fillSection(LED_RGB color, LED_Pixel *start, LED_Pixel *end);
 
 void LED_clear();
 

@@ -346,7 +346,7 @@ void commandSetRing(EmbeddedCli *cli, char *args, void *context) {
 
         LED_Ring *ring_p = LED_getRing(ring);
         if (ring_p != nullptr) {
-            LED_fillRing(&pixelBuf, ring_p);
+            LED_fillRing(pixelBuf, ring_p);
         }
     }
 }
@@ -369,7 +369,7 @@ void commandSetAll(EmbeddedCli *cli, char *args, void *context) {
         };
 
         LED_fillSection(
-                &pixel,
+                pixel,
                 LED_getPixel(LED_getRing(0), 0),
                 LED_getPixel(LED_getRing(LED_TOTAL_RINGS - 1), LED_PER_RING - 1)
         );

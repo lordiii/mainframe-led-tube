@@ -6,7 +6,7 @@ bool FX_Beam::render(unsigned long delta) {
     if (delta > 30) {
         LED_clear(); // fade?
 
-        LED_fillRing(&Color_Yellow, this->last);
+        LED_fillRing(Color_Yellow, this->last);
         this->last = this->last->next;
 
         return true;
@@ -25,7 +25,7 @@ bool FX_SideBeam::render(unsigned long delta) {
 
         LED_Pixel *p = this->last;
         for (int i = 0; i < LED_TOTAL_RINGS; i++) {
-            LED_setColor(&Color_Yellow, p);
+            *p->color = Color_Yellow;
             p = LED_getPixel(p->ring->next, p->i);
         }
 
