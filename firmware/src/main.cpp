@@ -21,8 +21,6 @@ unsigned long taskTimes[3] = {};
 bool shouldRerenderDisplay = false;
 
 void setup() {
-    delay(1000);
-
     Entropy.Initialize();
 
     pinMode(13, OUTPUT);

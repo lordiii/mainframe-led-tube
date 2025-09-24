@@ -4,6 +4,7 @@
 #include <INA226.h>
 #include <DallasTemperature.h>
 #include <OneWire.h>
+#include <InternalTemperature.h>
 
 // Current sensors
 INA226 currentSensorTop(CURRENT_SENSOR_TOP_ADDRESS);
@@ -78,6 +79,10 @@ void SENSOR_update_values(SensorValues *dst, const bool temperature, const bool 
         dst->busVoltage = round(dst->currentSensor->getBusVoltage() * 100.0f) / 100.0f;
         dst->current = round((dst->currentSensor->getShuntVoltage() / 0.006f) * 100.0f) / 100.0f;
     }
+}
+
+float SENSOR_getInternalTemperature() {
+    return InternalTemperatureClass::readTemperatureC();
 }
 
 SensorValues *SENSOR_getValues(const TUBE_SECTION section) {

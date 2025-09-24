@@ -181,21 +181,24 @@ void commandPrintSensorsSection(Print *out, TUBE_SECTION section) {
     out->print(values->busVoltage * values->current, 2);
     out->print(" W @ ");
     out->print(values->temperature, 2);
-    out->print(" C°");
+    out->println(" °C");
 
 }
 
 void commandPrintSensors(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
 
-    out->println("\n\rTOP:");
-    commandPrintSensorsSection(out, TUBE_SECTION::TOP_SECTION);
-    out->println("\n\rCENTER:");
-    commandPrintSensorsSection(out, TUBE_SECTION::CENTER_SECTION);
-    out->println("\n\rBOTTOM:");
-    commandPrintSensorsSection(out, TUBE_SECTION::BOTTOM_SECTION);
+    out->println("Internal: ");
+    out->print(SENSOR_getInternalTemperature(), 2);
+    out->println("°C");
 
-    out->println("\n\r");
+    out->println("TOP:");
+    commandPrintSensorsSection(out, TUBE_SECTION::TOP_SECTION);
+    out->println("CENTER:");
+    commandPrintSensorsSection(out, TUBE_SECTION::CENTER_SECTION);
+    out->println("BOTTOM:");
+    commandPrintSensorsSection(out, TUBE_SECTION::BOTTOM_SECTION);
+    out->println();
 }
 
 //
