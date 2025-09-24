@@ -1,6 +1,6 @@
 #include "cli.h"
 #include "globals.h"
-#include "effects/_effects.h"
+#include "fx.h"
 #include "led.h"
 #include "gamepad.h"
 #include "sensors.h"
@@ -61,14 +61,6 @@ void initCLI() {
             true,
             &Serial,
             commandSetEffect
-    });
-
-    embeddedCliAddBinding(embeddedCli, {
-            "brightness",
-            "Change current brightness. Usage: brightness [0-100]",
-            true,
-            &Serial,
-            commandSetBrightness
     });
 
     embeddedCliAddBinding(embeddedCli, {
@@ -135,6 +127,14 @@ void initCLI() {
             commandToggleGamepadRegister
     });
 
+    embeddedCliAddBinding(embeddedCli, {
+            "test",
+            "Test/Debug command",
+            true,
+            &Serial,
+            commandTest
+    });
+
     embeddedCli->writeChar = writeCmdOutChar;
 }
 
@@ -181,21 +181,24 @@ void commandPrintSensorsSection(Print *out, TUBE_SECTION section) {
     out->print(values->busVoltage * values->current, 2);
     out->print(" W @ ");
     out->print(values->temperature, 2);
-    out->print(" C°");
+    out->println(" °C");
 
 }
 
 void commandPrintSensors(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
 
-    out->println("\n\rTOP:");
-    commandPrintSensorsSection(out, TUBE_SECTION::TOP_SECTION);
-    out->println("\n\rCENTER:");
-    commandPrintSensorsSection(out, TUBE_SECTION::CENTER_SECTION);
-    out->println("\n\rBOTTOM:");
-    commandPrintSensorsSection(out, TUBE_SECTION::BOTTOM_SECTION);
+    out->println("Internal: ");
+    out->print(SENSOR_getInternalTemperature(), 2);
+    out->println("°C");
 
-    out->println("\n\r");
+    out->println("TOP:");
+    commandPrintSensorsSection(out, TUBE_SECTION::TOP_SECTION);
+    out->println("CENTER:");
+    commandPrintSensorsSection(out, TUBE_SECTION::CENTER_SECTION);
+    out->println("BOTTOM:");
+    commandPrintSensorsSection(out, TUBE_SECTION::BOTTOM_SECTION);
+    out->println();
 }
 
 //
@@ -203,6 +206,17 @@ void commandPrintSensors(EmbeddedCli *cli, char *args, void *context) {
 //
 void commandReboot(EmbeddedCli *cli, char *args, void *context) {
     _reboot_Teensyduino_();
+}
+
+struct s_jmp_tbl;
+extern s_jmp_tbl fx_jmp_table;
+extern uint8_t fx_binary[];
+
+void commandTest(EmbeddedCli *cli, char *args, void *context) {
+    auto *out = (Print *) context;
+
+    out->println((int) &fx_jmp_table, 16);
+    out->println((int) &fx_binary, 16);
 }
 
 void commandTogglePowerSupply(EmbeddedCli *cli, char *args, void *context) {
@@ -254,32 +268,6 @@ void commandSetEffect(EmbeddedCli *cli, char *args, void *context) {
     }
 }
 
-void commandSetBrightness(EmbeddedCli *cli, char *args, void *context) {
-    auto *out = (Print *) context;
-
-    if (embeddedCliGetTokenCount(args) == 0) {
-        out->println("Missing argument: brightness [0-100]");
-    } else {
-        long brightness = strtol(embeddedCliGetToken(args, 1), nullptr, 10);
-
-        if (brightness < 0) {
-            brightness = 0;
-        } else if (brightness > 100) {
-            brightness = 100;
-        }
-
-        //float value = ((float) brightness) / 100.0f;
-
-        //setBrightness(value);
-
-
-        out->print("Brightness changed to: ");
-        out->print(brightness);
-        out->println("%");
-    }
-}
-
-
 void commandPrintEffectList(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
     FX **effects = FX_getEffects();
@@ -297,7 +285,7 @@ void commandPrintEffectList(EmbeddedCli *cli, char *args, void *context) {
 
 void commandToggleHalt(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
-    EffectState *state = FX_getState();
+    FXState *state = FX_getState();
 
     if (!state->halt) {
         state->halt = true;
@@ -309,13 +297,13 @@ void commandToggleHalt(EmbeddedCli *cli, char *args, void *context) {
 }
 
 void commandExecuteNext(EmbeddedCli *cli, char *args, void *context) {
-    EffectState *state = FX_getState();
+    FXState *state = FX_getState();
     state->singleStep = true;
 }
 
 void commandSlowExecution(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
-    EffectState *state = FX_getState();
+    FXState *state = FX_getState();
 
     if (embeddedCliGetTokenCount(args) == 0) {
         out->println("Missing argument: slow [0-100]");

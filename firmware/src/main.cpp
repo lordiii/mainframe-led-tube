@@ -5,11 +5,12 @@
 #include "led.h"
 #include "gamepad.h"
 #include "display.h"
-#include "effects/_effects.h"
+#include "fx.h"
 
 #include <Entropy.h>
 #include <sensors.h>
 #include <Wire.h>
+
 
 // Scheduled Tasks
 unsigned long taskReadSensorTemperature = 0;
@@ -21,8 +22,6 @@ unsigned long taskTimes[3] = {};
 bool shouldRerenderDisplay = false;
 
 void setup() {
-    delay(1000);
-
     Entropy.Initialize();
 
     pinMode(13, OUTPUT);

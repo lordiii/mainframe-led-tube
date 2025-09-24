@@ -1,12 +1,11 @@
 #include "gamepad.h"
-#include "display.h"
-#include "effects/_effects.h"
 #include "enum.h"
 #include "globals.h"
 #include "led.h"
 
 #include <Arduino.h>
 #include <Wire.h>
+#include <fx.h>
 
 #define GP_CMD_CLEAR 0x00
 #define GP_CMD_ENABLE_PAIRING 0x01
@@ -17,7 +16,7 @@
 #define GP_NO_CHANGES 0x00
 
 #define GP_BTN_CNT sizeof(GP_Locks) / sizeof(bool)
-#define GP_MAX_KEYBINDS 8
+#define GP_MAX_KEYBINDS 16
 
 bool gpPairingEnabled = false;
 unsigned long lastClear = 0;
@@ -101,7 +100,7 @@ bool GP_update() {
 
     LED_animationStop();
 
-    EffectState *state = FX_getState();
+    FXState *state = FX_getState();
 
     GP_BUTTON type = BUTTON_Y;
     for (; type < BREAK; type = (GP_BUTTON) ((int) type + 1)) {
@@ -110,7 +109,7 @@ bool GP_update() {
             KeybindFn *bindings = keybindings[type];
 
             for (int i = 0; i < bindingCnt; i++) {
-                bindings[i](type, &gp, state->current);
+                bindings[i](type, &gp);
             }
 
             *p_lock = true;
@@ -128,7 +127,7 @@ bool GP_update() {
             KeybindFn *bindings = keybindings[type];
 
             for (int i = 0; i < bindingCnt; i++) {
-                bindings[i](type, &gp, state->current);
+                bindings[i](type, &gp);
             }
         }
 
@@ -143,28 +142,6 @@ bool GP_update() {
 GP_Status *GP_getState() {
     return &gp;
 }
-
-/*
-void GP_analog(int offset, GP_AnalogInput *target, GP_BUTTON type) {
-    bool handled = false;
-
-    target->value = ((int) (gamepadBuffer[offset + 0])) << 24 | ((int) gamepadBuffer[offset + 1]) << 16 |
-                    ((int) gamepadBuffer[offset + 2]) << 8 | ((int) gamepadBuffer[offset + 3]);
-
-    EffectState *state = FX_getState();
-    if (!state->halt && state->current != nullptr && target->value != 0) {
-        handled = state->current->onAnalogButton(type, target->value);
-    }
-
-    if (!handled) {
-        if (!target->value) {
-            target->locked = target->value;
-        }
-    } else {
-        target->locked = true;
-    }
-}
-*/
 
 void GP_enablePairing() {
     if (millis() - lastEnableToggle > 1000 || !gpPairingEnabled) {

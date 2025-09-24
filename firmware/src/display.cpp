@@ -1,5 +1,4 @@
 ﻿#include "display.h"
-#include "effects/_effects.h"
 #include "globals.h"
 #include "gamepad.h"
 

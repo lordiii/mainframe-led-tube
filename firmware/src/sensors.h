@@ -22,6 +22,8 @@ void SENSOR_update(bool temperature, bool current);
 
 void SENSOR_update_values(SensorValues *dst, bool temperature, bool current);
 
+float SENSOR_getInternalTemperature();
+
 SensorValues *SENSOR_getValues(TUBE_SECTION section);
 
 OneWire *SENSOR_OneWire_Get();

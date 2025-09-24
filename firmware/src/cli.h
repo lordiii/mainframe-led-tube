@@ -23,12 +23,12 @@ void commandReboot(EmbeddedCli *cli, char *args, void *context);
 
 void commandTogglePowerSupply(EmbeddedCli *cli, char *args, void *context);
 
+void commandTest(EmbeddedCli *cli, char *args, void *context);
+
 //
 // Effect Control
 //
 void commandSetEffect(EmbeddedCli *cli, char *args, void *context);
-
-void commandSetBrightness(EmbeddedCli *cli, char *args, void *context);
 
 void commandToggleHalt(EmbeddedCli *cli, char *args, void *context);
 

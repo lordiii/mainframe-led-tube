@@ -1,5 +1,5 @@
 ﻿#include "led.h"
-#include "effects/_effects.h"
+#include "fx.h"
 #include "globals.h"
 
 #include <OctoWS2811.h>
@@ -89,14 +89,14 @@ LED_Pixel *LED_getPixel(LED_Ring *ring, int pixel) {
 }
 
 void LED_render() {
-    EffectState *state = FX_getState();
+    FXState *state = FX_getState();
     if (state->halt) {
         return;
     }
 
     unsigned long delta = millis() - state->lastFrameChange;
 
-    if (state->current == nullptr) {
+    if (state->fn_render == nullptr) {
         if (delta > 100) {
             LED_clear();
             leds.show();
@@ -108,8 +108,8 @@ void LED_render() {
     if (state->slowRate == 0 || (state->slowRate != 0 && delta > state->slowRate)) {
         bool updated = false;
 
-        if (state->current != nullptr) {
-            updated = state->current->render(delta);
+        if (state->fn_render != nullptr) {
+            updated = state->fn_render(delta);
         }
 
         if (updated) {
