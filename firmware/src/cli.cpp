@@ -135,6 +135,14 @@ void initCLI() {
             commandToggleGamepadRegister
     });
 
+    embeddedCliAddBinding(embeddedCli, {
+            "test",
+            "Test/Debug command",
+            true,
+            &Serial,
+            commandTest
+    });
+
     embeddedCli->writeChar = writeCmdOutChar;
 }
 
@@ -206,6 +214,17 @@ void commandPrintSensors(EmbeddedCli *cli, char *args, void *context) {
 //
 void commandReboot(EmbeddedCli *cli, char *args, void *context) {
     _reboot_Teensyduino_();
+}
+
+struct s_jmp_tbl;
+extern s_jmp_tbl fx_jmp_table;
+extern uint8_t fx_binary[];
+
+void commandTest(EmbeddedCli *cli, char *args, void *context) {
+    auto *out = (Print *) context;
+
+    out->println((int) &fx_jmp_table, 16);
+    out->println((int) &fx_binary, 16);
 }
 
 void commandTogglePowerSupply(EmbeddedCli *cli, char *args, void *context) {

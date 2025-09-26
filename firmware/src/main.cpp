@@ -5,11 +5,13 @@
 #include "led.h"
 #include "gamepad.h"
 #include "display.h"
+#include "fx.h"
 #include "effects/_effects.h"
 
 #include <Entropy.h>
 #include <sensors.h>
 #include <Wire.h>
+
 
 // Scheduled Tasks
 unsigned long taskReadSensorTemperature = 0;
@@ -36,6 +38,7 @@ void setup() {
     initCLI();
     LED_init();
     FX_init();
+    FX2_init();
     SENSOR_init();
     DSP_init();
 }

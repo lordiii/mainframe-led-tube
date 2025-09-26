@@ -23,6 +23,8 @@ void commandReboot(EmbeddedCli *cli, char *args, void *context);
 
 void commandTogglePowerSupply(EmbeddedCli *cli, char *args, void *context);
 
+void commandTest(EmbeddedCli *cli, char *args, void *context);
+
 //
 // Effect Control
 //
