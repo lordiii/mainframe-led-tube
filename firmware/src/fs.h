@@ -1,22 +1,30 @@
 ﻿#ifndef SD_H
 #define SD_H
 
-#define FILE_LIST_BUFFER_SIZE 32
-#define FILE_LIST_NAME_LIMIT 64
+#include <Arduino.h>
 
-struct DirectoryListing {
-  int fileCount;
-  char fileNames[FILE_LIST_BUFFER_SIZE][FILE_LIST_NAME_LIMIT];
+#define FS_LIST_LENGTH 32
+#define FS_LENGTH_LIMIT 64
+
+struct DirectoryEntry {
+    size_t size;
+    bool is_dir;
+    char fileName[FS_LENGTH_LIMIT];
 };
 
-int SD_loadFile(const char *filepath, char* buf, size_t size);
+struct DirectoryListing {
+    int cnt;
+    DirectoryEntry entries[FS_LIST_LENGTH];
+};
 
-int SD_loadFile(const char *directory, const char *filename, char* buf, size_t size);
+void FS_init();
 
-void SD_format();
+int FS_loadFile(const char *directory, const char *filename, char *buf, size_t size);
 
-void SD_assertDirectory(const char *directory);
+int FS_loadFile(const char *filepath, char *buf, size_t size);
 
-DirectoryListing *SD_listFiles(const char *directory, const char *suffix = nullptr);
+void FS_assertDirectory(const char *directory);
+
+DirectoryListing *FS_listFiles(const char *directory);
 
 #endif

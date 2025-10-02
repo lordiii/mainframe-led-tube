@@ -22,6 +22,11 @@ unsigned long taskTimes[3] = {};
 bool shouldRerenderDisplay = false;
 
 void setup() {
+    if (CrashReport) {
+        while (!Serial && millis() < 10000);
+        Serial.print(CrashReport);
+    }
+
     Entropy.Initialize();
 
     pinMode(13, OUTPUT);
@@ -42,13 +47,13 @@ void setup() {
 }
 
 void loop() {
+    unsigned long time = millis();
     processCLI();
 
     if (LED_renderRequested()) {
         LED_render();
     }
 
-    unsigned long time = millis();
     if ((time - taskReadControllerInput) > 10) {
         taskReadControllerInput = time;
 

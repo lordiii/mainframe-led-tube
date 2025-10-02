@@ -1,6 +1,6 @@
 SECTIONS
 {
-    . = 0x20010000;
+    . = 0x20020000;
 
     .bss.fx_binary ALIGN(4) (NOLOAD) :
     {

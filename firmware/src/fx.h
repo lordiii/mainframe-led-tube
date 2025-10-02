@@ -1,10 +1,15 @@
 ﻿#ifndef FX_H
 #define FX_H
 
+#include "elf.h"
 #include "led.h"
 #include "gamepad.h"
+#include "fs.h"
 
+#define MAX_EFFECTS 32
+#define EFFECT_NAME_LENGTH 64
 
+typedef void(*FX_init_elf)();
 
 typedef bool(*FX_render)(unsigned long delta);
 
@@ -36,7 +41,6 @@ struct s_jmp_tbl {
 
     void (*LED_move)(LED_Pixel *src_s, LED_Pixel *src_e, LED_Pixel *dst);
 
-
     LED_Ring *(*LED_getRing)(int);
 
     LED_Pixel *(*LED_getPixel)(LED_Ring *, int);
@@ -47,6 +51,17 @@ struct s_jmp_tbl {
 
     void (*GP_registerKeybind)(GP_BUTTON, KeybindFn);
 };
+
+struct EffectList {
+    char names[MAX_EFFECTS][EFFECT_NAME_LENGTH];
+    int count;
+};
+
+Elf32_Addr *FX_readElf(elf32_hdr *header);
+
+bool FX_setEffect(const char *effectName);
+
+EffectList *FX_getEffects();
 
 FXState *FX_getState();
 

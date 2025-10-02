@@ -1,6 +1,8 @@
 ﻿#ifndef DISPLAY_H
 #define DISPLAY_H
 
+#include "fx.h"
+
 #define DSP_BLACK 0x0000
 #define DSP_WHITE 0xFFFF
 #define DSP_RED 0xF800
@@ -11,9 +13,12 @@
 #define DSP_YELLOW 0xFFE0
 #define DSP_ORANGE 0xFC00
 
+#define MAX_ELEMENTS 32
+
 struct DSP_Page;
 
 enum DSP_ELEMENT_TYPE {
+    NONE,
     TEXT,
     BTN
 };
@@ -37,7 +42,11 @@ typedef struct DSP_Btn {
     unsigned short inactiveColor = DSP_BLACK;
 } DSP_Btn;
 
+struct DSP_None {
+};
+
 typedef union DSP_Element_Data {
+    DSP_None none;
     DSP_Text text;
     DSP_Btn btn;
 } DSP_Element_Data;
@@ -49,7 +58,7 @@ typedef struct DSP_Element {
 
 typedef struct DSP_Page {
     DSP_Text title = {nullptr, DSP_BLACK};
-    DSP_Element *elements = nullptr;
+    DSP_Element *elements[MAX_ELEMENTS];
     unsigned char count = 0;
     bool showBackButton = false;
 } DSP_Page;
@@ -63,7 +72,7 @@ typedef struct DSP_State {
 
     DSP_Page *currentPage;
 
-    DSP_Btn **currentButtons;
+    DSP_Btn *currentButtons[MAX_ELEMENTS];
     unsigned char btnCount;
 } DSP_State;
 
@@ -85,7 +94,9 @@ void DSP_onButtonCyclePowerClick(DSP_Btn *btn);
 
 void DSP_renderPage(DSP_Page *page);
 
-void DSP_renderStateButton(DSP_Btn *btn);
+void DSP_renderStateButton();
+
+void DSP_updateEffectList(DSP_Btn *btn);
 
 void DSP_addKeybindings();
 

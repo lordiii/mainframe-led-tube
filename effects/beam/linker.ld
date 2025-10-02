@@ -1,7 +1,7 @@
 ENTRY(init);
 
 MEMORY {
-    RAM (rwx): ORIGIN = 0x20010000, LENGTH = 64K
+    RAM (rwx): ORIGIN = 0x20020000, LENGTH = 64K
 }
 
 SECTIONS {

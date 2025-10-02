@@ -1,6 +1,7 @@
 ﻿#include "display.h"
 #include "globals.h"
 #include "gamepad.h"
+#include "fx.h"
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -20,7 +21,10 @@ const char *textPowerSupply = "Power: PWR FAIL";
 IntervalTimer powerUnlockTimer;
 bool powerToggleLocked = true;
 
+DSP_Element effectElements[MAX_EFFECTS] = {};
 DSP_Page pageEffects = {{"Select Effect", DSP_WHITE}, {}, 0, true};
+
+
 DSP_Btn btnBack = {false, {"Back", DSP_WHITE}, &DSP_onButtonMainMenuClick};
 
 DSP_Btn btnPower = {false, {"", DSP_WHITE}, &DSP_onButtonCyclePowerClick, true, false, DSP_BLACK, DSP_BLACK, DSP_GREEN,
@@ -32,7 +36,15 @@ DSP_Element effectMenuBtn = {
         },
         BTN
 };
-DSP_Page pageMainMenu = {{"Main Menu", DSP_WHITE}, &effectMenuBtn, 1};
+
+DSP_Element refreshEffectsBtn = {
+        (DSP_Element_Data) {
+                .btn = {true, {"Refresh Effects", DSP_WHITE}, &DSP_updateEffectList}
+        },
+        BTN
+};
+
+DSP_Page pageMainMenu = {{"Main Menu", DSP_WHITE}, {&effectMenuBtn, &refreshEffectsBtn}, 2};
 
 // State Information
 DSP_State displayState;
@@ -45,26 +57,7 @@ void DSP_init() {
     displayState.height = tft.height();
     displayState.width = tft.width();
 
-    pageEffects.count = FX_getCount();
-    pageEffects.elements = (DSP_Element *) calloc(pageEffects.count + 1, sizeof(DSP_Element));
-
-    FX **effects = FX_getEffects();
-    for (int i = 0; i < pageEffects.count; i++) {
-        DSP_Element *element = &pageEffects.elements[i];
-        element->type = BTN;
-
-        DSP_Btn *btn = &element->data.btn;
-
-        btn->selected = i == 0;
-        btn->text = {effects[i]->name, DSP_WHITE};
-        btn->onClick = DSP_onEffectBtnClick;
-
-        btn->active = false;
-        btn->activeColor = DSP_WHITE;
-        btn->inactiveColor = DSP_BLACK;
-    }
-
-    displayState.currentButtons = (DSP_Btn **) calloc(16, sizeof(DSP_Btn **));
+    //DSP_updateEffectList(nullptr);
 
     // Configure power button
     btnPower.active = false;
@@ -74,6 +67,29 @@ void DSP_init() {
     // Render
     DSP_renderPage(&pageMainMenu);
     DSP_addKeybindings();
+}
+
+void DSP_updateEffectList(DSP_Btn *) {
+    EffectList *effects = FX_getEffects();
+
+    pageEffects.count = min(effects->count, MAX_ELEMENTS);
+
+    for (int i = 0; i < pageEffects.count; i++) {
+        DSP_Element *element = &effectElements[i];
+
+        element->type = BTN;
+        DSP_Btn *btn = &element->data.btn;
+
+        btn->selected = i == 0;
+        btn->text = {effects->names[i], DSP_WHITE};
+        btn->onClick = DSP_onEffectBtnClick;
+
+        btn->active = false;
+        btn->activeColor = DSP_WHITE;
+        btn->inactiveColor = DSP_BLACK;
+
+        pageEffects.elements[i] = element;
+    }
 }
 
 void DSP_reenablePower() {
@@ -215,7 +231,7 @@ void DSP_changeButton(signed char dir) {
 void DSP_clickButton(GP_BUTTON btn, GP_Status *gp) {
     for (int i = 0; i < displayState.btnCount; i++) {
         if (displayState.currentButtons[i]->selected) {
-            displayState.currentButtons[i]->onClick(&displayState.currentPage->elements[i].data.btn);
+            displayState.currentButtons[i]->onClick(&displayState.currentPage->elements[i]->data.btn);
             return;
         }
     }
@@ -265,8 +281,7 @@ void DSP_renderPage(DSP_Page *wantedPage) {
 
     displayState.btnCount = 0;
     for (int i = 0; i < page->count; i++) {
-        DSP_Element *element = &page->elements[i];
-        DSP_Btn *btn = &element->data.btn;
+        DSP_Element *element = page->elements[i];
 
         switch (element->type) {
             case TEXT:
@@ -274,12 +289,13 @@ void DSP_renderPage(DSP_Page *wantedPage) {
                 break;
             case BTN:
                 if (wantedPage != nullptr) {
-                    btn->selected = displayState.btnCount == 0;
+                    element->data.btn.selected = displayState.btnCount == 0;
                 }
 
-                displayState.currentButtons[displayState.btnCount++] = btn;
-                DSP_renderButton(btn);
+                displayState.currentButtons[displayState.btnCount++] = &element->data.btn;
+                DSP_renderButton(&element->data.btn);
                 break;
+            case NONE:
             default:
                 continue;
         }

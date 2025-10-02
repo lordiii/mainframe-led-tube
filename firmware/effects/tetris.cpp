@@ -284,7 +284,7 @@ void moveShape(FX_Tetris *tetris, bool left) {
 void onRotateStationary(GP_BUTTON btn, GP_Status *gp, FX *effect) {
     auto *tetris = (FX_Tetris *) effect;
 
-    EffectState *state = FX_getState();
+    FXState *state = FX_getState();
     if (state->halt || tetris->state != RUNNING) {
         return;
     }
@@ -329,7 +329,7 @@ void onRotateStationary(GP_BUTTON btn, GP_Status *gp, FX *effect) {
 
 void onRotateShape(GP_BUTTON btn, GP_Status *gp, FX *effect) {
     auto *tetris = (FX_Tetris *) effect;
-    EffectState *state = FX_getState();
+    FXState *state = FX_getState();
     if (state->halt || tetris->state != RUNNING) {
         return;
     }
@@ -358,7 +358,7 @@ void onRotateShape(GP_BUTTON btn, GP_Status *gp, FX *effect) {
 
 void onShapeMove(GP_BUTTON btn, GP_Status *gp, FX *effect) {
     auto *tetris = (FX_Tetris *) effect;
-    EffectState *state = FX_getState();
+    FXState *state = FX_getState();
     if (state->halt || tetris->state != RUNNING) {
         return;
     }

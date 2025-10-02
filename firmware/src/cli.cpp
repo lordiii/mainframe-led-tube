@@ -135,6 +135,14 @@ void initCLI() {
             commandTest
     });
 
+    embeddedCliAddBinding(embeddedCli, {
+            "ls",
+            "ls [dir]",
+            true,
+            &Serial,
+            commandLs
+    });
+
     embeddedCli->writeChar = writeCmdOutChar;
 }
 
@@ -217,6 +225,17 @@ void commandTest(EmbeddedCli *cli, char *args, void *context) {
 
     out->println((int) &fx_jmp_table, 16);
     out->println((int) &fx_binary, 16);
+
+    for (int i = 0; i < 0xFF; i++) {
+        if (i % 0xF == 0) {
+            out->println();
+        }
+
+        out->print(fx_binary[i], 16);
+        out->print(' ');
+    }
+
+    out->println();
 }
 
 void commandTogglePowerSupply(EmbeddedCli *cli, char *args, void *context) {
@@ -270,14 +289,13 @@ void commandSetEffect(EmbeddedCli *cli, char *args, void *context) {
 
 void commandPrintEffectList(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
-    FX **effects = FX_getEffects();
-    int effectCount = FX_getCount();
+    EffectList *effects = FX_getEffects();
 
     out->println("Known effects: ");
 
-    for (int i = 0; i < effectCount; i++) {
-        out->print("\t* ");
-        out->println(effects[i]->name);
+    for (int i = 0; i < effects->count; i++) {
+        out->print("  * ");
+        out->println(effects->names[i]);
     }
 
     out->println();
@@ -380,7 +398,6 @@ void commandClearGamepads(EmbeddedCli *cli, char *args, void *context) {
     auto *out = (Print *) context;
 
     GP_clear();
-
     out->println("Gamepads cleared!");
 }
 
@@ -402,4 +419,42 @@ void commandToggleGamepadRegister(EmbeddedCli *cli, char *args, void *context) {
         out->print("Controller registration turned ");
         out->print(turnOn ? "on" : "off");
     }
+}
+
+///
+/// File System
+///
+void commandLs(EmbeddedCli *cli, char *args, void *context) {
+    auto *out = (Print *) context;
+
+    unsigned short arg_length = embeddedCliGetTokenCount(args);
+    if (arg_length == 0) {
+        out->println("Missing argument: ls [dir]");
+    } else {
+        const char *dir = embeddedCliGetToken(args, 1);
+
+        out->print(dir);
+        out->println(":");
+
+        DirectoryListing *info = FS_listFiles(dir);
+        if (info->cnt == 0) {
+            out->println("\tNo data");
+        } else {
+            for (int i = 0; i < info->cnt; i++) {
+                DirectoryEntry *entry = &info->entries[i];
+
+                out->print("  ");
+                out->print(entry->size);
+                if (entry->is_dir) {
+                    out->print(" D ");
+                } else {
+                    out->print(" F ");
+                }
+
+                out->println(entry->fileName);
+            }
+        }
+    }
+
+    out->println();
 }

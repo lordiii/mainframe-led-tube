@@ -100,8 +100,6 @@ bool GP_update() {
 
     LED_animationStop();
 
-    FXState *state = FX_getState();
-
     GP_BUTTON type = BUTTON_Y;
     for (; type < BREAK; type = (GP_BUTTON) ((int) type + 1)) {
         if (*p_bool && !*p_lock) {

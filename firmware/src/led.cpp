@@ -23,8 +23,6 @@ LED_Pixel LEDS[LED_TOTAL_AMOUNT];
 IntervalTimer renderTask = IntervalTimer();
 bool shouldRenderLeds = false;
 
-LED_RGB buf;
-
 bool LED_renderRequested() {
     return shouldRenderLeds;
 }

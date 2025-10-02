@@ -1,71 +1,101 @@
 ﻿#include "fs.h"
 
 #include <Arduino.h>
-#include <SdFat.h>
-
-SdFat32 sd;
-File32 file;
-File32 dir;
-
-#define SD_CONFIG SdioConfig(FIFO_SDIO)
-#define SPI_CONFIG SdSpiConfig(TeensySdioCard, DEDICATED_SPI, SPI_FULL_SPEED, &SPI2)
+#include <SD.h>
 
 DirectoryListing directoryListing;
 
-void SD_init() {
-    if (!sd.begin(SD_CONFIG)) {
-        sd.initErrorHalt();
+File file;
+File dir;
+
+void FS_init() {
+    if (!SD.begin(BUILTIN_SDCARD)) {
+        while (true) {
+            Serial.println("initialization failed!");
+            delay(1000);
+        }
     }
 }
 
-void SD_format() {
-    sd.format(&Serial);
-}
+void FS_assertDirectory(const char *directory) {
+    FS_init();
 
-void SD_assertDirectory(const char *directory) {
-    if (!dir.exists(directory)) {
-        sd.mkdir(directory);
+    if (!SD.exists(directory)) {
+        SD.mkdir(directory);
     }
 }
 
-int SD_loadFile(const char *filepath, char* buf, size_t size) {
-    if (!file.open(filepath)) {
-        // TODO: LOGGING
-        return false;
+int FS_loadFile(const char *filepath, char *buf, size_t size) {
+    FS_init();
+
+    if (!SD.exists(filepath)) {
+        return -1;
+    }
+
+    file = SD.open(filepath, FILE_READ);
+    if (!file) {
+        Serial.println(F("file read failed"));
+        return -2;
     }
 
     return file.read(buf, size);
 }
 
-int SD_loadFile(const char *directory, const char *filename, char* buf, size_t size) {
+int FS_loadFile(const char *directory, const char *filename, char *buf, size_t size) {
+    const int max_length = 128;
+    FS_init();
+
     size_t len = strlen(directory) + strlen(filename) + 1;
-    char str[len];
+
+    if (len > max_length) {
+        return -1;
+    }
+
+    char str[max_length];
+
     str[0] = '\0';
 
     strcat(str, directory);
     strcat(str, "/");
     strcat(str, filename);
 
-    return SD_loadFile(str, buf, size);
+    return FS_loadFile(str, buf, size);
 }
 
-DirectoryListing *SD_listFiles(const char *directory, const char *suffix) {
-    if (!dir.open(directory)) {
-        // TODO: LOGGING
-        return nullptr;
+DirectoryListing *FS_listFiles(const char *directory) {
+    FS_init();
+
+    directoryListing.cnt = 0;
+    for (int i = 0; i < FS_LIST_LENGTH; i++) {
+        directoryListing.entries[i].fileName[0] = '\0';
+        directoryListing.entries[i].size = -1;
     }
 
-    directoryListing.fileCount = 0;
-    for (int i = 0; i < FILE_LIST_BUFFER_SIZE; i++) {
-        directoryListing.fileNames[i][0] = '\0';
+    if (!SD.exists(directory)) {
+        return &directoryListing;
     }
 
-    while (file.openNext(&dir)) {
-        char *filename = file.name();
-        if (file.isHidden() || file.isDir() || strlen(filename) > FILE_LIST_NAME_LIMIT || (suffix != nullptr && strstr(filename, suffix) == nullptr)) continue;
+    dir = SD.open(directory);
+    if (!dir) {
+        Serial.println("DIR FAILED TO OPEN");
+        return &directoryListing;
+    }
 
-        strcpy(directoryListing.fileNames[directoryListing.fileCount], filename);
-        file.close();
+    if (!dir.isDirectory()) {
+        return &directoryListing;
+    }
+
+    while ((dir = dir.openNextFile())) {
+        const char *name = dir.name();
+
+        DirectoryEntry *entry = &directoryListing.entries[directoryListing.cnt++];
+
+        entry->size = dir.size();
+        entry->is_dir = dir.isDirectory();
+        strncpy(entry->fileName, name, FS_LENGTH_LIMIT);
+        entry->fileName[FS_LENGTH_LIMIT - 1] = '\0';
+
+        dir.close();
     }
 
     dir.close();
